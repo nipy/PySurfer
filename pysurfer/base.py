@@ -8,6 +8,25 @@ except ImportError:
 
 class Surface(object):
 
+    def __init__(self, subject=None, hemi=None, surface=None,curv="curv"):
+        """Initialize a Surface with (optionally) subject/hemi/surface/curvature
+        subject (string): subject name as found in SUBJECTS_DIR
+        hemi (string):lh or rh
+        surface (string): inflated,white,pial,orig,sphere
+        curv (string):curv,curv.pial"""
+        if subject and hemi and surface and curv:
+            #If using FreeSurfer, SUBJECTS_DIR is (most likely) set and accurate
+            subj_dir = os.environ["SUBJECTS_DIR"]
+            surface_path = pjoin(subj_dir,subject,"surf",".".join([hemi,surface]))
+            if not os.path.exists(surface_path):
+                raise IOError("%s doesn't exist"%surface_path)
+            self.load_geometry(surface_path)
+            curv_path = pjoin(subj_dir,subject,"surf",".".join([hemi,curv]))
+            if not os.path.exists(curv_path):
+                raise IOError("%s doesn't exist"%curv_path)
+            self.load_curvature(curv_path)
+            
+
     def load_geometry(self, filepath):
         """Load in a Freesurfer surface mesh in triangular format."""
         with open(filepath, "rb") as fobj:
