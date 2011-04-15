@@ -1,9 +1,12 @@
 import os
 import numpy as np
 import gzip
+from os.path import join as pjoin
 try:
     import enthought.mayavi.mlab as mlab
+    use_mlab = True
 except ImportError:
+    use_mlab = False
     print "Not using EPD environment; display won't work"
 
 class Surface(object):

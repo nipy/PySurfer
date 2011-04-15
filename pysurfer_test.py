@@ -5,17 +5,18 @@ from os.path import join as pjoin
 from enthought.mayavi import mlab
 sys.path.append("/cluster/kuperberg/SemPrMM/scripts/PySurfer")
 import pysurfer as ps
+reload(ps)
 import random
 
-mlab.options.offscreen = True
+mlab.options.offscreen = False
 
-f = mlab.figure(random.randint(0,1000), bgcolor=(.93,.90,.734), size=(800,800))
+f = mlab.figure(random.randint(0,1000), bgcolor=(253./256,246./256,227./256), size=(800,800))
 mlab.clf()
-f.scene.disable_render = True
+f.scene.disable_render = False
 
 data_dir = os.environ["SUBJECTS_DIR"]
 
-sub = "ya24"
+sub = "ya26"
 hemi = "lh"
 sur = "inflated"
 
@@ -25,7 +26,7 @@ surf = ps.Surface(subject=sub, hemi=hemi,surface=sur)
 #surf.load_geometry(pjoin(data_dir, subject, "surf", "%s.%s"%(hemi,surface)))
 #surf.load_curvature(pjoin(data_dir, subject, "surf", "%s.curv"%hemi))
 surface_mesh = surf.get_mesh()
-brain = mlab.pipeline.surface(surface_mesh, colormap="bone", vmin=-.5, vmax=1.5)
+brain = mlab.pipeline.surface(surface_mesh, colormap="Greys", vmin=-.5, vmax=1.5)
 #bar = mlab.scalarbar()
 #bar.reverse_lut =True
 #bar.visible=False
@@ -44,12 +45,14 @@ brain = mlab.pipeline.surface(surface_mesh, colormap="bone", vmin=-.5, vmax=1.5)
 #bar = mlab.scalarbar(stats_surf)
 
 
-print "Writing snapshots"
-mlab.view(180,90)
-for view in ["lat", "post", "med", "ant"]:
-    mlab.draw()
-    mlab.savefig("test-%s.png"%view)
-    f.scene.camera.azimuth(90)
+#print "Writing snapshots"
+#mlab.view(180,0)
+for i in range(180):
+    mlab.view(180,i)
+# for view in ["lat", "post", "med", "ant"]:
+#     mlab.draw()
+#     mlab.savefig("test-%s.png"%view)
+#     f.scene.camera.azimuth(90)
 """
 mlab.savefig("test-lat.png")
 mlab.view(270,90)
@@ -59,4 +62,4 @@ mlab.savefig("test-med.png")
 mlab.view(90,90)
 mlab.savefig("test-ant.png")
 """
-mlab.close(all=True)
+#mlab.close(all=True)
