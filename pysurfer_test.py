@@ -3,9 +3,7 @@ import os
 import sys
 from os.path import join as pjoin
 from enthought.mayavi import mlab
-sys.path.append("/cluster/kuperberg/SemPrMM/scripts/PySurfer")
 import pysurfer as ps
-reload(ps)
 import random
 
 mlab.options.offscreen = False
