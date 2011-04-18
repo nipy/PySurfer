@@ -47,8 +47,8 @@ brain = mlab.pipeline.surface(surface_mesh, colormap="Greys", vmin=-.5, vmax=1.5
 
 #print "Writing snapshots"
 #mlab.view(180,0)
-for i in range(180):
-    mlab.view(180,i)
+for i in range(360):
+    mlab.view(i,90)
 # for view in ["lat", "post", "med", "ant"]:
 #     mlab.draw()
 #     mlab.savefig("test-%s.png"%view)
