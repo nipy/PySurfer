@@ -1,1 +1,1 @@
-from base import Surface, Brain
+from base import Surface, FSBrain
