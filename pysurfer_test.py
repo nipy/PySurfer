@@ -1,34 +1,41 @@
 #! /usr/bin/env python
 import os
-import sys
 from os.path import join as pjoin
-from enthought.mayavi import mlab
+import numpy as np
 import pysurfer as ps
-import random
-
-mlab.options.offscreen = False
-
-f = mlab.figure(random.randint(0,1000), bgcolor=(253./256,246./256,227./256), size=(800,800))
-mlab.clf()
-f.scene.disable_render = False
 
 data_dir = os.environ["SUBJECTS_DIR"]
 
-sub = "ya26"
+sub = "fsaverage"
+# sub = "ya26"
 hemi = "lh"
 sur = "inflated"
 
 
-surf = ps.Surface(subject=sub, hemi=hemi,surface=sur)
-#print "Loading geometry"
-#surf.load_geometry(pjoin(data_dir, subject, "surf", "%s.%s"%(hemi,surface)))
-#surf.load_curvature(pjoin(data_dir, subject, "surf", "%s.curv"%hemi))
-surface_mesh = surf.get_mesh()
-brain = mlab.pipeline.surface(surface_mesh, colormap="Greys", vmin=-.5, vmax=1.5)
+surf = ps.Surface(subject=sub, hemi=hemi, surface=sur)
+surf.load_label(pjoin(os.environ['SUBJECTS_DIR'], sub, 'label',
+                      'lh.BA1.label'))
+
+# # Test apply affine
+# mtx = np.random.randn(3, 4)
+# surf.apply_xfm(mtx)
+
+###############################################################################
+# View 3D
+
+from enthought.mayavi import mlab
+mlab.options.offscreen = False
+
+f = mlab.figure(bgcolor=(253. / 256, 246. / 256, 227. / 256), size=(800, 800))
+mlab.clf()
+f.scene.disable_render = False
+
+mesh = surf.get_mesh()
+brain = mlab.pipeline.surface(mesh, colormap="Greys", vmin=-.5, vmax=1.5)
+
 #bar = mlab.scalarbar()
 #bar.reverse_lut =True
 #bar.visible=False
-
 
 # stats = ps.Surface()
 # print "Loading statistic overlay"
@@ -46,10 +53,10 @@ brain = mlab.pipeline.surface(surface_mesh, colormap="Greys", vmin=-.5, vmax=1.5
 #print "Writing snapshots"
 #mlab.view(180,0)
 for i in range(360):
-    mlab.view(i,90)
+    mlab.view(i, 90)
 # for view in ["lat", "post", "med", "ant"]:
 #     mlab.draw()
-#     mlab.savefig("test-%s.png"%view)
+#     mlab.savefig("test-%s.png" % view)
 #     f.scene.camera.azimuth(90)
 """
 mlab.savefig("test-lat.png")
