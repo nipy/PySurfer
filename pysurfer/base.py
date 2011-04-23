@@ -3,6 +3,7 @@ from os.path import join as pjoin
 import gzip
 import numpy as np
 import nibabel as nib
+from nibabel.spatialimages import ImageFileError
 from enthought.mayavi import mlab
 
 class Surface(object):
@@ -81,7 +82,7 @@ class Surface(object):
 
             return
 
-        except KeyError:
+        except ImageFileError:
             ext = os.path.splitext(filepath)[1]
             if ext == ".mgz":
                 openfile = gzip.open
