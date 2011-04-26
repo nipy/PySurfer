@@ -2,4 +2,4 @@
 import os
 import sys
 
-os.system('ipython -wthread pysurfer-load.py "%s"'%" ".join(sys.argv[1:]))
+os.system('ipython -wthread `which _pysurfer-load.py` "%s"'%" ".join(sys.argv[1:]))
