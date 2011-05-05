@@ -1,5 +1,5 @@
 import os
-import numpy as np
+from os.path import join as pjoin
 import gzip
 from os.path import join as pjoin
 try:
@@ -8,6 +8,9 @@ try:
 except ImportError:
     use_mlab = False
     print "Not using EPD environment; display won't work"
+import numpy as np
+import nibabel as nib
+from enthought.mayavi import mlab
 
 class Surface(object):
 
@@ -48,6 +51,7 @@ class Surface(object):
         self.x = self.vertex_coords[:,0]
         self.y = self.vertex_coords[:,1]
         self.z = self.vertex_coords[:,2]
+        self.geometry = [self.x, self.y, self.z, self.faces]
 
     def load_curvature(self, filepath):
         """Load in curavature values from the ?h.curv file."""
@@ -59,12 +63,15 @@ class Surface(object):
                 self.curv = np.fromfile(fobj, ">f4", vnum)
             else:
                 vnum = magic
-                fnum = fread3(fobj)
+                _ = fread3(fobj) # number of faces
                 self.curv = np.fromfile(fobj, ">i2", vnum)/100
             self.bin_curv = np.array(self.curv > 0, np.int)
             
     def load_annot(self, filepath):
         """Load in a Freesurfer annotation from a .annot file."""
+        # TODO: probably rewrite this, the matlab implementation is a big
+        # hassle anyway.  Also figure out if Mayavi allows you to work with
+        # a Freesurfer style LUT
         with open(filepath, "rb") as fobj:
             dt = ">i4"
             vnum = np.fromfile(fobj, dt, 1)[0]
@@ -79,25 +86,35 @@ class Surface(object):
             n_entries = np.fromfile(fobj, dt, 1)[0]
             self.ctab = np.zeros((n_entries, 5),np.int)
             length = np.fromfile(fobj, dt, 1)[0]
-            orig_tab = np.fromfile(fobj, "|S%d"%length, 1)[0]
+            _ = np.fromfile(fobj, "|S%d"%length, 1)[0] # Orig table path
             entries_to_read = np.fromfile(fobj, dt, 1)[0]
             for i in xrange(entries_to_read):
-                structure = np.fromfile(fobj, dt, 1)[0]
+                _ = np.fromfile(fobj, dt, 1)[0] # Structure
                 name_length = np.fromfile(fobj, dt, 1)[0]
-                struct_name = np.fromfile(fobj, "|S%d"%name_length, 1)[0]
+                _ = np.fromfile(fobj, "|S%d"%name_length, 1)[0] # Struct name
                 self.ctab[i,:4] = np.fromfile(fobj, dt, 4)
                 self.ctab[i,4] = (self.ctab[i,0] + self.ctab[i,1]*2**8 +
                                   self.ctab[i,2]*2**16 + self.ctab[i,3]*2**24)
 
     def load_scalar_data(self, filepath):
-        """Load in scalar data from an mg(h,z) image."""
-        ext = os.path.splitext(filepath)[1]
-        if ext == ".mgz":
-            openfile = gzip.open
-        elif ext == ".mgh":
-            openfile = open
-        else:
-            raise ValueError("Scalar file format must be .mgh or .mgz")
+        """Load in scalar data from an image."""
+        # TODO: break down into load_nibabel/core mgh reading routine
+        try:
+            data = nib.load(filepath).get_data()
+            nvtx = reduce(lambda x,y: x*y, data.shape[:3])
+            data = data.reshape((nvtx,), order="F")
+            self.scalar_data = data
+
+            return
+
+        except KeyError:
+            ext = os.path.splitext(filepath)[1]
+            if ext == ".mgz":
+                openfile = gzip.open
+            elif ext == ".mgh":
+                openfile = open
+            else:
+                raise ValueError("Scalar file format must be readable by Nibabl or .mg{hz} format")
         fobj = openfile(filepath, "rb")
         # We have to use np.fromstring here as gzip fileobjects don't work 
         # with np.fromfile; same goes for try/finally instead of with statement
@@ -147,9 +164,9 @@ class Surface(object):
         except AttributeError:
             self.labels = dict(name=label)
 
-
     def apply_xfm(self, mtx):
-        """Apply an affine transformation matrix to the x,y,z vectors."""
+        """Apply an affine transformation matrix to the x,y,z vectors.
+        TODO: Use Nipy function here"""
         mtx = np.asmatrix(mtx)
         for v in range(self.vnum):
             coords = np.matrix([self.x[v], self.y[v], self.z[v], 1]).T
@@ -158,18 +175,59 @@ class Surface(object):
             self.y[v] = coords[1]
             self.z[v] = coords[2]
 
-    def get_mesh(self, curv=True):
-        """Return an mlab pipeline mesh object""" 
-        if hasattr(self, "bin_curv") and curv:
-            curv_scalars = self.bin_curv
-        else:
-            curv_scalars=None
-        return mlab.pipeline.triangular_mesh_source(self.x, 
-                                                    self.y,
-                                                    self.z, 
-                                                    self.faces,
-                                                    scalars=curv_scalars)
 
+class FSBrain(object):
+    
+    def __init__(self, subject_id, hemi, surf):
+
+        # TODO COMMENT!
+        
+        self._f = mlab.figure(1, bgcolor=(.05,0,.1), size=(800,800))
+        mlab.clf()
+        self._f.scene.disable_render = True
+
+        self._geo = Surface()
+
+        self.subject_id = subject_id
+        self.hemi = hemi
+        self.surf = surf
+
+        subj_dir = os.environ["SUBJECTS_DIR"]
+        self._geo.load_geometry(pjoin(subj_dir, subject_id, "surf", "%s.%s"%(hemi, surf)))
+        self._geo.load_curvature(pjoin(subj_dir, subject_id, "surf", "%s.curv"%hemi))
+        self._geo_mesh = mlab.pipeline.triangular_mesh_source(*self._geo.geometry, 
+                                                              scalars=self._geo.bin_curv)
+        self._geo_surf = mlab.pipeline.surface(self._geo_mesh, colormap="bone", vmin=-.5, vmax=1.5)
+        curv_bar = mlab.scalarbar(self._geo_surf)
+        curv_bar.reverse_lut = True
+        curv_bar.visible = False
+        self._f.scene.disable_render = False
+
+    def add_overlay(self, overlay, min=2, max=5, colormap="YlOrRd"):
+
+        # TODO: add a decorator to handle methods that build up Mayavi pipelines without rendering
+        self._f.scene.disable_render = True
+        
+        ov = Surface()
+        if isinstance(overlay, str) and os.path.isfile(overlay):
+            ov.load_scalar_data(overlay)
+        else:
+            ov.scalar_data = overlay
+        mesh = mlab.pipeline.triangular_mesh_source(*self._geo.geometry,
+                                                    scalars=ov.scalar_data)
+        thresh = mlab.pipeline.threshold(mesh, low=min)
+        surf = mlab.pipeline.surface(thresh, colormap=colormap, vmin=min, vmax=max)
+        bar = mlab.scalarbar(surf)
+        bar.reverse_lut = True
+        
+        # This emulates TKSurfer fairly closely, but might be clumsy to
+        # actually build a python interface around?
+        try:
+            self.overlays.append(surf)
+        except AttributeError:
+            self.overlays = [surf]
+
+        self._f.scene.disable_render = False
 
 def fread3(fobj):
     """Docstring"""
