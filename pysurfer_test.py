@@ -14,17 +14,17 @@ f.scene.disable_render = False
 
 data_dir = os.environ["SUBJECTS_DIR"]
 
-sub = "ya26"
+sub = "fsaverage"
 hemi = "lh"
 sur = "inflated"
 
 
-surf = ps.Surface(subject=sub, hemi=hemi,surface=sur)
+surf = ps.FSBrain(sub, hemi,sur)
 #print "Loading geometry"
 #surf.load_geometry(pjoin(data_dir, subject, "surf", "%s.%s"%(hemi,surface)))
 #surf.load_curvature(pjoin(data_dir, subject, "surf", "%s.curv"%hemi))
-surface_mesh = surf.get_mesh()
-brain = mlab.pipeline.surface(surface_mesh, colormap="Greys", vmin=-.5, vmax=1.5)
+#surface_mesh = surf.get_mesh()
+#brain = mlab.pipeline.surface(surface_mesh, colormap="Greys", vmin=-.5, vmax=1.5)
 #bar = mlab.scalarbar()
 #bar.reverse_lut =True
 #bar.visible=False
