@@ -255,3 +255,16 @@ class Surface(object):
         TODO: Use Nipy function here"""
         self.coords = np.dot(np.c_[self.coords, np.ones(len(self.coords))],
                                      mtx.T)[:, :3]
+
+    def get_mesh(self):
+        """Get an mlab triangular mesh source"""
+        from enthought.mayavi import mlab
+        return mlab.pipeline.triangular_mesh_source(self.x, self.y, self.z,
+                                                    self.faces,
+                                                    scalars=self.bin_curv)
+
+    def get_surface(self):
+        """Get an mlab surface object"""
+        from enthought.mayavi import mlab
+        return mlab.pipeline.surface(self.geo_mesh(), colormap="bone",
+                                     vmin=-.5, vmax=1.5)
