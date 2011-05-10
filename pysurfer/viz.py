@@ -9,7 +9,8 @@ from .io import Surface
 
 
 class Brain(object):
-    
+    """Brain object for visualizing with mlab."""
+
     def __init__(self, subject_id, hemi, surf, curv=True):
         """Initialize a Brain object with Freesurfer-specific data.
 
@@ -22,9 +23,10 @@ class Brain(object):
         surf :  geometry name
             freesurfer surface mesh name (ie 'white', 'inflated', etc.)
         curv : boolean
-            if true, loads curv file and displays binary curvature (default: True)
+            if true, loads curv file and displays binary curvature
+            (default: True)
         overlay : filepath
-            path to overlay file 
+            path to overlay file
         """
         # Set the identifying info
         self.subject_id = subject_id
@@ -32,9 +34,9 @@ class Brain(object):
         self.surf = surf
 
         # Initialize an mlab figure
-        self._f = mlab.figure(np.random.randint(1,1000), 
-                              bgcolor=(12./256,0./256,25./256), 
-                              size=(800,800))
+        self._f = mlab.figure(np.random.randint(1, 1000),
+                              bgcolor=(12. / 256, 0. / 256, 25. / 256),
+                              size=(800, 800))
         mlab.clf()
         self._f.scene.disable_render = True
 
@@ -48,15 +50,16 @@ class Brain(object):
             curv_data = self._geo.bin_curv
         else:
             curv_data = None
-    
-        # mlab pipeline mesh for geomtery 
-        self._geo_mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y, self._geo.z,
-                                                              self._geo.faces,
-                                                              scalars=curv_data)
+
+        # mlab pipeline mesh for geomtery
+        self._geo_mesh = mlab.pipeline.triangular_mesh_source(
+                                        self._geo.x, self._geo.y, self._geo.z,
+                                        self._geo.faces, scalars=curv_data)
 
         # mlab surface for the geometry
         colormap, vmin, vmax, reverse = self.__get_geo_colors()
-        self._geo_surf = mlab.pipeline.surface(self._geo_mesh, colormap=colormap, vmin=vmin, vmax=vmax)
+        self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
+                                    colormap=colormap, vmin=vmin, vmax=vmax)
         if reverse:
             curv_bar = mlab.scalarbar(self._geo_surf)
             curv_bar.reverse_lut = True
@@ -64,7 +67,7 @@ class Brain(object):
 
         # Initialize the overlay dictionary
         self.overlays = dict()
-        
+
         # Turn disable render off so that it displays
         self._f.scene.disable_render = False
 
@@ -88,10 +91,10 @@ class Brain(object):
             if basename.endswith(".gz"):
                 basename = basename[:-3]
             name = os.path.splitext(basename)[0]
-        
+
         if name in self.overlays:
-            raise NameError(("Overlay with name %s already exists. "
-                             "Please provide a name for this overlay"%name))
+            raise NameError("Overlay with name %s already exists. "
+                            "Please provide a name for this overlay" % name)
 
         if not sign in ["abs", "pos", "neg"]:
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
@@ -111,7 +114,7 @@ class Brain(object):
             curv colormap maximum
         reverse : boolean
             boolean indicating whether the colormap should be reversed
-            
+
         """
         return "gray", -1., 2., True
 
@@ -125,4 +128,3 @@ class Overlay(object):
             self._pos = Surface(subject_id, hemi, surf)
         if sign in ["abs", "neg"]:
             self._neg = Surface(subject_id, hemi, surf)
-
