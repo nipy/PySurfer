@@ -3,7 +3,6 @@ import sys
 from os.path import join as pjoin
 
 import numpy as np
-from enthought.mayavi import mlab
 
 from .io import Surface
 
@@ -28,6 +27,8 @@ class Brain(object):
         overlay : filepath
             path to overlay file
         """
+        from enthought.mayavi import mlab
+
         # Set the identifying info
         self.subject_id = subject_id
         self.hemi = hemi
