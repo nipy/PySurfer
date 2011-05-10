@@ -1,6 +1,4 @@
 import os
-import sys
-from os.path import join as pjoin
 
 import numpy as np
 
@@ -104,7 +102,7 @@ class Brain(object):
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
 
         self._f.scene.disable_render = False
-        self.overlays[name] = Overlay(self._geo, filepath, range, sign) 
+        self.overlays[name] = Overlay(self._geo, filepath, range, sign)
         self._f.scene.disable_render = True
 
     def __get_geo_colors(self):
@@ -132,17 +130,20 @@ class Overlay(object):
     def __init__(self, geo, filepath, range, sign):
         """
         """
+        from enthought.mayavi import mlab
+
         if sign in ["abs", "pos"]:
             pos_stats = io.load_scalar_data(filepath)
             pos_mesh = mlab.pipeline.triangular_mesh_source(geo.x, geo.y, geo.z,
                                                             geo.faces,
                                                             scalars=pos_stats)
             pos_thresh = mlab.pipeline.threshold(pos_mesh, low=range[0])
-            pos_surf = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd", vmin=range[0], vmax=range[1])
-            pos_bar = mlab.colorbar(pos_surf)
-            pos_bar.reverse_lut=True
+            pos_surf = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
+                                             vmin=range[0], vmax=range[1])
+            pos_bar = mlab.scalarbar(pos_surf)
+            pos_bar.reverse_lut = True
             pos_bar.visible = False
-            
+
             self.pos = pos_surf
 
         if sign in ["abs", "neg"]:
@@ -150,10 +151,11 @@ class Overlay(object):
             neg_mesh = mlab.pipeline.triangular_mesh_source(geo.x, geo.y, geo.z,
                                                             geo.faces,
                                                             scalars=neg_stats)
-            neg_thresh = mlab.pipeline.threshold(neg_mesh, low=range[0])
-            neg_surf = mlab.pipeline.surface(neg_thresh, colormap="Blues", vmin=range[0], vmax=range[1])
-            neg_bar = mlab.colorbar(neg_surf)
-            neg_bar.reverse_lut=True
-            pos_bar.visibile = False
+            neg_thresh = mlab.pipeline.threshold(neg_mesh, up=-range[0])
+            neg_surf = mlab.pipeline.surface(neg_thresh, colormap="Blues",
+                                             vmin=-range[1], vmax=-range[0])
+            neg_bar = mlab.scalarbar(neg_surf)
+            neg_bar.reverse_lut = True
+            neg_bar.visible = False
 
             self.neg = neg_surf

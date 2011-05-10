@@ -75,7 +75,7 @@ def load_scalar_data(filepath):
     """Load in scalar data from an image."""
     try:
         scalar_data = nib.load(filepath).get_data()
-        scalar_data = scalar_data.ravel(order="F")
+        scalar_data = np.ravel(scalar_data, order="F")
         return scalar_data
 
     except ImageFileError:
