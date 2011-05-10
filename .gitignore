@@ -1,0 +1,17 @@
+*.pyc
+*.log
+*~
+.#*
+*.swp
+build
+
+dist/
+doc/_build/
+doc/build/
+doc/auto_examples/
+doc/modules/generated/
+pip-log.txt
+.coverage
+tags
+doc/coverages
+doc/samples
