@@ -26,6 +26,11 @@ class Brain(object):
         overlay : filepath
             path to overlay file 
         """
+        # Set the identifying info
+        self.subject_id = subject_id
+        self.hemi = hemi
+        self.surf = surf
+
         # Initialize an mlab figure
         self._f = mlab.figure(np.random.randint(1,1000), 
                               bgcolor=(12./256,0./256,25./256), 
@@ -34,7 +39,7 @@ class Brain(object):
         self._f.scene.disable_render = True
 
         # Initialize a Surface object as the geometry
-        self._geo = Surface(subject_id, hemi, surf, curv=True)
+        self._geo = Surface(subject_id, hemi, surf)
 
         # Load in the geometry and (maybe) curvature
         self._geo.load_geometry()
@@ -45,7 +50,8 @@ class Brain(object):
             curv_data = None
     
         # mlab pipeline mesh for geomtery 
-        self._geo_mesh = mlab.pipeline.triangular_mesh_source(*self._geo.geometry, 
+        self._geo_mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y, self._geo.z,
+                                                              self._geo.faces,
                                                               scalars=curv_data)
 
         # mlab surface for the geometry
@@ -63,27 +69,37 @@ class Brain(object):
         self._f.scene.disable_render = False
 
     def add_overlay(self, filepath, range, sign="abs", name=None):
-        """Add an overlay to the overlay dict."""
+        """Add an overlay to the overlay dict.
 
-        # If no name provided, get it from the filepath
+        Parameters
+        ----------
+        filepath : str
+            path to the overlay file (must be readable by Nibabel, or .mgh
+        range : (min, max)
+            threshold and saturation point for overlay display
+        sign : {'abs' | 'pos' | 'neg'}
+            whether positive, negative, or both values should be displayed
+        name : str
+            name for the overlay in the internal dictionary
+
+        """
         if name is None:
             basename = os.path.basename(filepath)
             if basename.endswith(".gz"):
                 basename = basename[:-3]
             name = os.path.splitext(basename)[0]
         
-        # Check whether an overlay with this name already exists and raise an exception if so
         if name in self.overlays:
             raise NameError(("Overlay with name %s already exists. "
                              "Please provide a name for this overlay"%name))
-        
 
+        if not sign in ["abs", "pos", "neg"]:
+            raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
 
-         
     def __get_geo_colors(self):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
 
-        XXX At the moment just return a default.  Get from the config eventually
+        At the moment just return a default.  Get from the config eventually
 
         Returns
         -------
@@ -94,11 +110,19 @@ class Brain(object):
         vmax : float
             curv colormap maximum
         reverse : boolean
-            boolean indicating whether the colormap should be reverse
+            boolean indicating whether the colormap should be reversed
             
         """
-        return "greys", -1., 2., False
+        return "gray", -1., 2., True
 
 
 class Overlay(object):
-    
+
+    def __init__(self, subject_id, hemi, surf, filepath, range, sign):
+        """
+        """
+        if sign in ["abs", "pos"]:
+            self._pos = Surface(subject_id, hemi, surf)
+        if sign in ["abs", "neg"]:
+            self._neg = Surface(subject_id, hemi, surf)
+
