@@ -4,7 +4,7 @@
 #                    Michael Waskom <mwaskom@mit.edu>
 #                    Scott Burns <sburns@nmr.mgh.harvard.edu>
 
-descr = """PySurfer: Python / FreeSurfer / Mavayi2 for brain imaging"""
+descr = """PySurfer: Python / FreeSurfer / Mayavi2 for brain imaging"""
 
 import os
 
