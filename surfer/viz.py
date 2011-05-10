@@ -5,6 +5,19 @@ import numpy as np
 from . import io
 from .io import Surface
 
+lh_viewdict = {'lat':(0,-90),
+                'med':(0,90),
+                'ant':(90,90),
+                'pos':(90,0),
+                'sup':(90,180),
+                'inf':(-90,180)}
+rh_viewdict = {'lat':(0,90),
+                'med':(0,-90),
+                'ant':(90,90),
+                'pos':(-90,-90),
+                'sup':(-90,0),
+                'inf':(90,0)}
+
 
 class Brain(object):
     """Brain object for visualizing with mlab."""
@@ -31,8 +44,12 @@ class Brain(object):
         # Set the identifying info
         self.subject_id = subject_id
         self.hemi = hemi
+        if self.hemi == 'lh':
+          self.viewdict = lh_viewdict
+        else:
+          self.viewdict = rh_viewdict
         self.surf = surf
-
+        
         # Initialize an mlab figure
         self._f = mlab.figure(np.random.randint(1, 1000),
                               bgcolor=(12. / 256, 0. / 256, 25. / 256),
@@ -70,6 +87,23 @@ class Brain(object):
 
         # Turn disable render off so that it displays
         self._f.scene.disable_render = False
+        
+        #make lateral view
+        self.show_view("lat")
+        
+    def show_view(self, view):
+        """Orient camera to display view
+        
+        Parameters
+        ----------
+        view : {'lat' | 'med' | 'ant' | 'pos' | 'sup' | 'inf'}
+              desired viewing angle
+        """
+        from enthought.mayavi import mlab
+
+        if not view in self.viewdict:
+            raise ValueError("Available views are %s " % " ".join(self.viewdict.keys()))
+        mlab.view(*self.viewdict[view])
 
     def add_overlay(self, filepath, range, sign="abs", name=None, visible=True):
         """Add an overlay to the overlay dict.
