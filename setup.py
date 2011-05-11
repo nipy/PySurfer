@@ -48,5 +48,7 @@ if __name__ == "__main__":
                      'Operating System :: POSIX',
                      'Operating System :: Unix',
                      'Operating System :: MacOS'
-                     ]
+                     ],
+         platforms='any',
+         packages=['surfer', 'surfer.tests'],
     )
