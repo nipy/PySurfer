@@ -28,3 +28,7 @@ b.save_image("%s_lat.png" % sub)
 b.save_imageset(sub, ['med', 'lat', 'ant', 'pos'], 'jpg')
 
 b.save_imageset(sub, ['foo'])
+
+#even rocky had a montage
+b.save_montage('fsaverage_h_montage.png', ['l', 'v', 'm'])
+b.save_montage('fsaverage_v_montage.png', ['l', 'v', 'm'], 'v')

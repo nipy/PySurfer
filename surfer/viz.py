@@ -9,8 +9,8 @@ from .io import Surface
 lh_viewdict = {'lateral': (0, -90),
                 'medial': (0, 90),
                 'anterior': (90, 90),
-                'posterior': (90, 0),
-                'dorsal': (90, 180),
+                'posterior': (90, -90),
+                'dorsal': (90, 0),
                 'ventral': (-90, 180)}
 rh_viewdict = {'lateral': (0, 90),
                 'medial': (0, -90),
@@ -112,7 +112,8 @@ class Brain(object):
             view = good_view[0]
         mlab.view(*self.viewdict[view])
 
-    def add_overlay(self, filepath, range, sign="abs", name=None, visible=True):
+    def add_overlay(self, filepath, range, sign="abs",
+                    name=None, visible=True):
         """Add an overlay to the overlay dict.
 
         Parameters
@@ -178,9 +179,11 @@ class Brain(object):
         """
         from enthought.mayavi import mlab
         ftype = fname[fname.rfind('.') + 1:]
-        good_ftypes = ['png', 'jpg', 'bmp', 'tiff', 'ps', 'eps', 'pdf', 'rib', 'oogl', 'iv', 'vrml', 'obj']
+        good_ftypes = ['png', 'jpg', 'bmp', 'tiff', 'ps',
+                        'eps', 'pdf', 'rib', 'oogl', 'iv', 'vrml', 'obj']
         if not ftype in good_ftypes:
-            raise ValueError("Supported image types are %s" % " ".join(good_ftypes))
+            raise ValueError("Supported image types are %s"
+                                % " ".join(good_ftypes))
         mlab.savefig(fname)
 
     def save_imageset(self, prefix, views, filetype='png'):
@@ -197,13 +200,19 @@ class Brain(object):
         filetype: string
             image type
 
+        Returns
+        -------
+        images_written: list
+            all filenames written
         """
         if isinstance(views, basestring):
             raise ValueError("Views must be a non-string sequence"
                              "Use show_view & save_image for a single view")
+        images_written = []
         for view in views:
             try:
                 fname = "%s_%s.%s" % (prefix, view, filetype)
+                images_written.append(fname)
                 self.show_view(view)
                 try:
                     self.save_image(fname)
@@ -211,6 +220,43 @@ class Brain(object):
                     print("Bad image type")
             except ValueError:
                 print("Skipping %s: not in view dict" % view)
+        return images_written
+
+    def save_montage(self, filename, order=['lat', 'ven', 'med'], shape='h'):
+        """Create a montage from a given order of images
+
+        Parameters
+        ----------
+        filename: string
+            path to final image
+        order: list
+            order of views to build montage
+        shape: {'h' | 'v'}
+
+        """
+        import Image
+        fnames = self.save_imageset("tmp", order)
+        images = map(Image.open, fnames)
+        if shape == 'h':
+            w = sum(i.size[0] for i in images)
+            h = max(i.size[1] for i in images)
+        else:
+            h = sum(i.size[1] for i in images)
+            w = max(i.size[0] for i in images)
+        new = Image.new("RGBA", (w, h))
+        x = 0
+        for i in images:
+            if shape == 'h':
+                pos = (x, 0)
+                x += i.size[0]
+            else:
+                pos = (0, x)
+                x += i.size[1]
+            new.paste(i, pos)
+        try:
+            new.save(filename)
+        except Exception:
+            print("Error saving %s" % filename)
 
 
 class Overlay(object):
@@ -222,9 +268,9 @@ class Overlay(object):
 
         scalar_data = io.read_scalar_data(filepath)
         if sign in ["abs", "pos"]:
-            pos_mesh = mlab.pipeline.triangular_mesh_source(geo.x, geo.y, geo.z,
-                                                            geo.faces,
-                                                            scalars=scalar_data)
+            pos_mesh = mlab.pipeline.triangular_mesh_source(geo.x, geo.y,
+                                                        geo.z, geo.faces,
+                                                        scalars=scalar_data)
             pos_thresh = mlab.pipeline.threshold(pos_mesh, low=range[0])
             pos_surf = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
                                              vmin=range[0], vmax=range[1])
@@ -235,9 +281,9 @@ class Overlay(object):
             self.pos = pos_surf
 
         if sign in ["abs", "neg"]:
-            neg_mesh = mlab.pipeline.triangular_mesh_source(geo.x, geo.y, geo.z,
-                                                            geo.faces,
-                                                            scalars=scalar_data)
+            neg_mesh = mlab.pipeline.triangular_mesh_source(geo.x, geo.y,
+                                                        geo.z, geo.faces,
+                                                        scalars=scalar_data)
             neg_thresh = mlab.pipeline.threshold(neg_mesh, up=-range[0])
             neg_surf = mlab.pipeline.surface(neg_thresh, colormap="Blues",
                                              vmin=-range[1], vmax=-range[0])
