@@ -6,18 +6,18 @@ import numpy as np
 from . import io
 from .io import Surface
 
-lh_viewdict = {'lat':(0,-90),
-                'med':(0,90),
-                'ant':(90,90),
-                'pos':(90,0),
-                'sup':(90,180),
-                'inf':(-90,180)}
-rh_viewdict = {'lat':(0,90),
-                'med':(0,-90),
-                'ant':(90,90),
-                'pos':(-90,-90),
-                'sup':(-90,0),
-                'inf':(90,0)}
+lh_viewdict = {'lateral': (0, -90),
+                'medial': (0, 90),
+                'anterior': (90, 90),
+                'posterior': (90, 0),
+                'dorsal': (90, 180),
+                'ventral': (-90, 180)}
+rh_viewdict = {'lateral': (0, 90),
+                'medial': (0, -90),
+                'anterior': (90, 90),
+                'posterior': (-90, -90),
+                'dorsal': (-90, 0),
+                'ventral': (90, 0)}
 
 
 class Brain(object):
@@ -46,11 +46,11 @@ class Brain(object):
         self.subject_id = subject_id
         self.hemi = hemi
         if self.hemi == 'lh':
-          self.viewdict = lh_viewdict
+            self.viewdict = lh_viewdict
         else:
-          self.viewdict = rh_viewdict
+            self.viewdict = rh_viewdict
         self.surf = surf
-        
+
         # Initialize an mlab figure
         self._f = mlab.figure(np.random.randint(1, 1000),
                               bgcolor=(12. / 256, 0. / 256, 25. / 256),
@@ -88,22 +88,24 @@ class Brain(object):
 
         # Turn disable render off so that it displays
         self._f.scene.disable_render = False
-        
+
         #make lateral view
         self.show_view("lat")
-        
+
     def show_view(self, view):
         """Orient camera to display view
-        
+
         Parameters
         ----------
-        view : {'lat' | 'med' | 'ant' | 'pos' | 'sup' | 'inf'}
+        view : {'lateral' | 'medial' | 'anterior' |
+                'posterior' | 'superior' | 'inferior'}
               desired viewing angle
         """
         from enthought.mayavi import mlab
 
         if not view in self.viewdict:
-            raise ValueError("Available views are %s " % " ".join(self.viewdict.keys()))
+            raise ValueError("Available views are %s " %
+                            " ".join(self.viewdict.keys()))
         mlab.view(*self.viewdict[view])
 
     def add_overlay(self, filepath, range, sign="abs", name=None, visible=True):
@@ -160,43 +162,44 @@ class Brain(object):
 
     def save_image(self, fname):
         """Save current view to disk
-    
-        Only mayavi image types are supported (png jpg bmp tiff ps eps pdf rib  oogl iv  vrml obj
-        
+
+        Only mayavi image types are supported:
+        (png jpg bmp tiff ps eps pdf rib  oogl iv  vrml obj
+
         Parameters
         ----------
         filename: string
             path to new image file
-            
+
         """
         from enthought.mayavi import mlab
-        ftype = fname[fname.rfind('.')+1:]
+        ftype = fname[fname.rfind('.') + 1:]
         good_ftypes = ['png', 'jpg', 'bmp', 'tiff', 'ps', 'eps', 'pdf', 'rib', 'oogl', 'iv', 'vrml', 'obj']
         if not ftype in good_ftypes:
             raise ValueError("Supported image types are %s" % " ".join(good_ftypes))
         mlab.savefig(fname)
-        
+
     def save_imageset(self, prefix, views, filetype='png'):
         """Convience wrapper for save_image
-        
+
         Files created are prefix+'_$view'+filetype
-        
+
         Parameters
         ----------
         prefix: string
             filename prefix for image to be created
-        views: list 
+        views: list
             desired views for images
         filetype: string
             image type
-            
+
         """
         if isinstance(views, basestring):
             raise ValueError("Views must be a non-string sequence"
                              "Use show_view & save_image for a single view")
         for view in views:
             try:
-                fname = "%s_%s.%s" % (prefix,view,filetype)
+                fname = "%s_%s.%s" % (prefix, view, filetype)
                 self.show_view(view)
                 try:
                     self.save_image(fname)
@@ -204,6 +207,7 @@ class Brain(object):
                     print("Bad image type")
             except ValueError:
                 print("Skipping %s: not in view dict" % view)
+
 
 class Overlay(object):
 

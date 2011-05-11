@@ -21,6 +21,6 @@ b.show_view('bar')
 b.show_view('lat')
 b.save_image("%s_lat.png" % sub)
 
-b.save_imageset(sub,['med','lat','ant','pos'],'jpg')
+b.save_imageset(sub, ['med', 'lat', 'ant', 'pos'], 'jpg')
 
-b.save_imageset(sub,['foo'])
+b.save_imageset(sub, ['foo'])
