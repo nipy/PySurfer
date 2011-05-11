@@ -71,7 +71,7 @@ def read_curvature(filepath):
     return curv
 
 
-def load_scalar_data(filepath):
+def read_scalar_data(filepath):
     """Load in scalar data from an image."""
     try:
         scalar_data = nib.load(filepath).get_data()
@@ -116,6 +116,8 @@ def load_scalar_data(filepath):
         scalar_data = np.fromstring(fobj.read(nbytes), typecode)
     finally:
         fobj.close()
+
+    return scalar_data
 
 
 def read_annot(filepath):
