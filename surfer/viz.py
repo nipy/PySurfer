@@ -137,7 +137,6 @@ class Brain(object):
 
         self._f.scene.disable_render = False
         self.overlays[name] = Overlay(self._geo, filepath, range, sign)
-        self._f.scene.disable_render = True
 
     def __get_geo_colors(self):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
