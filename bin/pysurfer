@@ -2,4 +2,6 @@
 import os
 import sys
 
-os.system('ipython -wthread `which _pysurfer-load.py` "%s"'%" ".join(sys.argv[1:]))
+path = os.path.split(__file__)[0]
+load_file = os.path.join(path, "_pysurfer-load.py")
+os.system('ipython -wthread ' + load_file + ' "%s"'%' '.join(sys.argv[1:]))
