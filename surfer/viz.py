@@ -1,4 +1,5 @@
 import os
+from os.path import join as pjoin
 
 import numpy as np
 
@@ -157,6 +158,52 @@ class Brain(object):
         """
         return "gray", -1., 2., True
 
+    def save_image(self, fname):
+        """Save current view to disk
+    
+        Only mayavi image types are supported (png jpg bmp tiff ps eps pdf rib  oogl iv  vrml obj
+        
+        Parameters
+        ----------
+        filename: string
+            path to new image file
+            
+        """
+        from enthought.mayavi import mlab
+        ftype = fname[fname.rfind('.')+1:]
+        good_ftypes = ['png', 'jpg', 'bmp', 'tiff', 'ps', 'eps', 'pdf', 'rib', 'oogl', 'iv', 'vrml', 'obj']
+        if not ftype in good_ftypes:
+            raise ValueError("Supported image types are %s" % " ".join(good_ftypes))
+        mlab.savefig(fname)
+        
+    def save_imageset(self, prefix, views, filetype='png'):
+        """Convience wrapper for save_image
+        
+        Files created are prefix+'_$view'+filetype
+        
+        Parameters
+        ----------
+        prefix: string
+            filename prefix for image to be created
+        views: list 
+            desired views for images
+        filetype: string
+            image type
+            
+        """
+        if isinstance(views, basestring):
+            raise ValueError("Views must be a non-string sequence"
+                             "Use show_view & save_image for a single view")
+        for view in views:
+            try:
+                fname = "%s_%s.%s" % (prefix,view,filetype)
+                self.show_view(view)
+                try:
+                    self.save_image(fname)
+                except ValueError:
+                    print("Bad image type")
+            except ValueError:
+                print("Skipping %s: not in view dict" % view)
 
 class Overlay(object):
 
