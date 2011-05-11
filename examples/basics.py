@@ -8,14 +8,18 @@ surf = 'inflated'
 b = sf.Brain(sub, hemi, surf)
 
 # show all views
-b.show_view('lat')
-b.show_view('med')
-b.show_view('ant')
-b.show_view('pos')
-b.show_view('sup')
-b.show_view('inf')
+b.show_view('lateral')
+b.show_view('m')
+b.show_view('anter')
+b.show_view('post')
+b.show_view('dor')
+b.show_view('ve')
 
-b.show_view('bar')
+
+try:
+    b.show_view('bar')
+except ValueError as ve:
+    print(ve)
 
 #save some images
 b.show_view('lat')

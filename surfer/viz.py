@@ -99,13 +99,17 @@ class Brain(object):
         ----------
         view : {'lateral' | 'medial' | 'anterior' |
                 'posterior' | 'superior' | 'inferior'}
-              desired viewing angle
+              desired viewing angle (can be leading substring of above list)
         """
         from enthought.mayavi import mlab
 
         if not view in self.viewdict:
-            raise ValueError("Available views are %s " %
-                            " ".join(self.viewdict.keys()))
+            good_view = [k for k in self.viewdict.keys()
+                        if view == k[:len(view)]]
+            if len(good_view) != 1:
+                raise ValueError("Available views are %s " %
+                                " ".join(self.viewdict.keys()))
+            view = good_view[0]
         mlab.view(*self.viewdict[view])
 
     def add_overlay(self, filepath, range, sign="abs", name=None, visible=True):
