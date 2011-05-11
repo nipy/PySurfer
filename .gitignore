@@ -15,3 +15,5 @@ pip-log.txt
 tags
 doc/coverages
 doc/samples
+*.png
+*.jpg
