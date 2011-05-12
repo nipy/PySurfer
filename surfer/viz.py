@@ -37,8 +37,6 @@ class Brain(object):
         curv : boolean
             if true, loads curv file and displays binary curvature
             (default: True)
-        overlay : filepath
-            path to overlay file
         """
         from enthought.mayavi import mlab
 
@@ -47,7 +45,7 @@ class Brain(object):
         self.hemi = hemi
         if self.hemi == 'lh':
             self.viewdict = lh_viewdict
-        else:
+        elif self.hemi == 'rh':
             self.viewdict = rh_viewdict
         self.surf = surf
 
@@ -66,22 +64,27 @@ class Brain(object):
         if curv:
             self._geo.load_curvature()
             curv_data = self._geo.bin_curv
+            meshargs = dict(scalars=curv_data)
         else:
             curv_data = None
+            meshargs = dict()
 
         # mlab pipeline mesh for geomtery
         self._geo_mesh = mlab.pipeline.triangular_mesh_source(
                                         self._geo.x, self._geo.y, self._geo.z,
-                                        self._geo.faces, scalars=curv_data)
+                                        self._geo.faces, **meshargs)
 
         # mlab surface for the geometry
-        colormap, vmin, vmax, reverse = self.__get_geo_colors()
-        self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
-                                    colormap=colormap, vmin=vmin, vmax=vmax)
-        if reverse:
-            curv_bar = mlab.scalarbar(self._geo_surf)
-            curv_bar.reverse_lut = True
-            curv_bar.visible = False
+        if curv:
+            colormap, vmin, vmax, reverse = self.__get_geo_colors()
+            self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
+                                        colormap=colormap, vmin=vmin, vmax=vmax)
+            if reverse:
+                curv_bar = mlab.scalarbar(self._geo_surf)
+                curv_bar.reverse_lut = True
+                curv_bar.visible = False
+        else:
+            self._geo_surf = mlab.pipeline.surface(self._geo_mesh, color=(.5,.5,.5))
 
         # Initialize the overlay dictionary
         self.overlays = dict()
@@ -89,7 +92,7 @@ class Brain(object):
         # Turn disable render off so that it displays
         self._f.scene.disable_render = False
 
-        #make lateral view
+        # Bring up the lateral view
         self.show_view("lat")
 
     def show_view(self, view):
