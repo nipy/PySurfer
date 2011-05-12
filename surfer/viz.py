@@ -1,5 +1,4 @@
 import os
-from os.path import join as pjoin
 
 import numpy as np
 
@@ -78,13 +77,14 @@ class Brain(object):
         if curv:
             colormap, vmin, vmax, reverse = self.__get_geo_colors()
             self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
-                                        colormap=colormap, vmin=vmin, vmax=vmax)
+                                colormap=colormap, vmin=vmin, vmax=vmax)
             if reverse:
                 curv_bar = mlab.scalarbar(self._geo_surf)
                 curv_bar.reverse_lut = True
                 curv_bar.visible = False
         else:
-            self._geo_surf = mlab.pipeline.surface(self._geo_mesh, color=(.5,.5,.5))
+            self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
+                                                   color=(.5, .5, .5))
 
         # Initialize the overlay dictionary
         self.overlays = dict()
@@ -101,19 +101,25 @@ class Brain(object):
         Parameters
         ----------
         view : {'lateral' | 'medial' | 'anterior' |
-                'posterior' | 'superior' | 'inferior'}
-              desired viewing angle (can be leading substring of above list)
+                'posterior' | 'superior' | 'inferior' | tuple}
+            brain surface to view, or tuple to pass to mlab.view()
         """
         from enthought.mayavi import mlab
 
-        if not view in self.viewdict:
-            good_view = [k for k in self.viewdict.keys()
-                        if view == k[:len(view)]]
-            if len(good_view) != 1:
-                raise ValueError("Available views are %s " %
-                                " ".join(self.viewdict.keys()))
-            view = good_view[0]
-        mlab.view(*self.viewdict[view])
+        if isinstance(view, str):
+            if not view in self.viewdict:
+                good_view = [k for k in self.viewdict.keys()
+                            if view == k[:len(view)]]
+                if len(good_view) != 1:
+                    raise ValueError("Available views are %s " %
+                        " ".join(["'%s'" % k for k in self.viewdict.keys()]))
+                view = good_view[0]
+            mlab.view(*self.viewdict[view])
+        elif isinstance(view, tuple):
+            mlab.view(*view)
+        else:
+            raise ValueError("View must be one of the preset view names "
+                             "or a tuple to be passed to mlab.view()")
 
     def add_overlay(self, filepath, range, sign="abs",
                     name=None, visible=True):
