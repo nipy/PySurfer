@@ -267,6 +267,8 @@ class Overlay(object):
         from enthought.mayavi import mlab
 
         scalar_data = io.read_scalar_data(filepath)
+        if scalar_data.dtype.byteorder == '>':
+            scalar_data.byteswap(True)  # byte swap inplace
         if sign in ["abs", "pos"]:
             pos_mesh = mlab.pipeline.triangular_mesh_source(geo.x, geo.y,
                                                         geo.z, geo.faces,
