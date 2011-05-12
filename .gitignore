@@ -17,3 +17,4 @@ doc/coverages
 doc/samples
 *.png
 *.jpg
+pysurfer.egg-info
