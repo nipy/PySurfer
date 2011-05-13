@@ -124,7 +124,7 @@ class Brain(object):
             raise ValueError("View must be one of the preset view names "
                              "or a tuple to be passed to mlab.view()")
 
-    def add_overlay(self, filepath, range, sign="abs",
+    def add_overlay(self, filepath, range=None, sign="abs",
                     name=None, visible=True):
         """Add an overlay to the overlay dict.
 
@@ -322,15 +322,49 @@ class Overlay(object):
         """
         from enthought.mayavi import mlab
 
+        if scalar_data.min() >= 0:
+            sign = "pos"
+        elif scalar_data.max() <= 0:
+            sign = "neg"
+
+        if range is None:
+            min = 2
+            if sign == "neg":
+                range_data = np.abs(scalar_data[np.where(scalar_data < 0)])
+            elif sign == "pos":
+                range_data = scalar_data[np.where(scalar_data > 0)]
+            else:
+                range_data = np.abs(scalar_data)
+            max = stats.scoreatpercentile(range_data, 98)
+        else:
+            min, max = range
+
+        # Byte swap inplace; due to mayavi bug
+        mlab_data = scalar_data.copy()
         if scalar_data.dtype.byteorder == '>':
-            scalar_data.byteswap(True)  # byte swap inplace; due to mayavi bug
+            mlab_data.byteswap(True)
+
         if sign in ["abs", "pos"]:
-            pos_mesh = mlab.pipeline.triangular_mesh_source(geo.x, geo.y,
-                                                        geo.z, geo.faces,
-                                                        scalars=scalar_data)
-            pos_thresh = mlab.pipeline.threshold(pos_mesh, low=range[0])
+            pos_mesh = mlab.pipeline.triangular_mesh_source(geo.x,
+                                                           geo.y,
+                                                           geo.z,
+                                                           geo.faces,
+                                                           scalars=mlab_data)
+
+            # Figure out the correct threshold to avoid TraitErrors
+            # This seems like not the cleanest way to do this
+            pos_data = scalar_data[np.where(scalar_data > 0)]
+            try:
+                pos_max = pos_data.max()
+            except ValueError:
+                pos_max = 0
+            if pos_max < min:
+                thresh_low = pos_max
+            else:
+                thresh_low = min
+            pos_thresh = mlab.pipeline.threshold(pos_mesh, low=thresh_low)
             pos_surf = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
-                                             vmin=range[0], vmax=range[1])
+                                             vmin=min, vmax=max)
             pos_bar = mlab.scalarbar(pos_surf)
             pos_bar.reverse_lut = True
             pos_bar.visible = False
@@ -338,13 +372,25 @@ class Overlay(object):
             self.pos = pos_surf
 
         if sign in ["abs", "neg"]:
-            neg_mesh = mlab.pipeline.triangular_mesh_source(geo.x, geo.y,
-                                                        geo.z, geo.faces,
-                                                        scalars=scalar_data)
-            neg_thresh = mlab.pipeline.threshold(neg_mesh, up=-range[0])
+            neg_mesh = mlab.pipeline.triangular_mesh_source(geo.x,
+                                                           geo.y,
+                                                           geo.z,
+                                                           geo.faces,
+                                                           scalars=mlab_data)
+
+            # Figure out the correct threshold to avoid TraitErrors
+            # This seems even less clean due to negative convolutedness
+            neg_data = scalar_data[np.where(scalar_data < 0)]
+            try:
+                neg_min = neg_data.min()
+            except ValueError:
+                neg_min = 0
+            if neg_min > -min:
+                thresh_up = neg_min
+            else:
+                thresh_up = -min
+            neg_thresh = mlab.pipeline.threshold(neg_mesh, up=thresh_up)
             neg_surf = mlab.pipeline.surface(neg_thresh, colormap="Blues",
-                                             vmin=-range[1], vmax=-range[0])
-            neg_bar = mlab.scalarbar(neg_surf)
-            neg_bar.visible = False
+                                             vmin=-max, vmax=-min)
 
             self.neg = neg_surf
