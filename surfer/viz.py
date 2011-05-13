@@ -1,6 +1,8 @@
 import os
+from os.path import join as pjoin
 
 import numpy as np
+from scipy import stats
 
 from . import io
 from .io import Surface
@@ -86,8 +88,9 @@ class Brain(object):
             self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                                    color=(.5, .5, .5))
 
-        # Initialize the overlay dictionary
+        # Initialize the overlay and morphometry dictionaries
         self.overlays = dict()
+        self.morphometry = dict()
 
         # Turn disable render off so that it displays
         self._f.scene.disable_render = False
@@ -152,8 +155,52 @@ class Brain(object):
         if not sign in ["abs", "pos", "neg"]:
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
 
+        self._f.scene.disable_render = True
+        scalar_data = io.read_scalar_data(filepath)
+        self.overlays[name] = Overlay(scalar_data, self._geo, range, sign)
         self._f.scene.disable_render = False
-        self.overlays[name] = Overlay(self._geo, filepath, range, sign)
+
+    def add_morpometry(self, measure, visible=True):
+        """Add a morphometry overlay to the image.
+
+        Parameters
+        ----------
+        measure : {'area' | 'curv' | 'jacobian_white' | 'sulc' | 'thickness'}
+            which measure to load
+        visible : boolean
+            whether the map should be visible upon load
+
+        """
+        from enthought.mayavi import mlab
+        surf_dir = pjoin(os.environ['SUBJECTS_DIR'], self.subject_id, 'surf')
+        morph_file = pjoin(surf_dir, '.'.join([self.hemi, measure]))
+        if not os.path.exists(morph_file):
+            raise ValueError(
+                'Could not find %s in subject directory' % morph_file)
+
+        cmap_dict = dict(area="pink",
+                         curv="RdBu",
+                         jacobian_white="pink",
+                         sulc="RdBu",
+                         thickness="pink")
+
+        self._f.scene.disable_render = True
+        morph_data = io.read_morph_data(morph_file)
+        min = stats.scoreatpercentile(morph_data, 2)
+        max = stats.scoreatpercentile(morph_data, 98)
+        if morph_data.dtype.byteorder == '>':
+            morph_data.byteswap(True)  # byte swap inplace; due to mayavi bug
+        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
+                                                    self._geo.y,
+                                                    self._geo.z,
+                                                    self._geo.faces,
+                                                    scalars=morph_data)
+        surf = mlab.pipeline.surface(mesh, colormap=cmap_dict[measure],
+                                     vmin=min, vmax=max,
+                                     name=measure)
+        bar = mlab.scalarbar(surf)
+        self.morphometry[measure] = surf
+        self._f.scene.disable_render = False
 
     def __get_geo_colors(self):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
@@ -270,14 +317,13 @@ class Brain(object):
 
 class Overlay(object):
 
-    def __init__(self, geo, filepath, range, sign):
+    def __init__(self, scalar_data, geo, range, sign):
         """
         """
         from enthought.mayavi import mlab
 
-        scalar_data = io.read_scalar_data(filepath)
         if scalar_data.dtype.byteorder == '>':
-            scalar_data.byteswap(True)  # byte swap inplace
+            scalar_data.byteswap(True)  # byte swap inplace; due to mayavi bug
         if sign in ["abs", "pos"]:
             pos_mesh = mlab.pipeline.triangular_mesh_source(geo.x, geo.y,
                                                         geo.z, geo.faces,
