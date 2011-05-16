@@ -45,18 +45,23 @@ def read_geometry(filepath):
     return coords, faces
 
 
-def read_curvature(filepath):
-    """Read a Freesurfer curvature file.
+def read_morph_data(filepath):
+    """Read a Freesurfer morphometry data file.
+
+    This function reads in what Freesurfer internally calls "curv" file types,
+    (e.g. ?h. curv, ?h.thickness), but as that has the potential to cause
+    confusion where "curv" also refers to the surface curvature values,
+    we refer to these files as "morphometry" files with PySurfer.
 
     Parameters
     ----------
     filepath : str
-        Path to curvature file
+        Path to morphometry file
 
     Returns
     -------
     curv : numpy array
-        Vector representation of surface curvature values
+        Vector representation of surface morpometry values
 
     """
     with open(filepath, "rb") as fobj:
@@ -86,7 +91,7 @@ def read_scalar_data(filepath):
             openfile = open
         else:
             raise ValueError("Scalar file format must be readable "
-                             "by Nibabl or .mg{hz} format")
+                             "by Nibabel or .mg{hz} format")
 
     fobj = openfile(filepath, "rb")
     # We have to use np.fromstring here as gzip fileobjects don't work
@@ -231,7 +236,7 @@ class Surface(object):
     def load_curvature(self):
         """Load in curavature values from the ?h.curv file."""
         curv_path = pjoin(self.data_path, "surf", "%s.curv" % self.hemi)
-        self.curv = read_curvature(curv_path)
+        self.curv = read_morph_data(curv_path)
         self.bin_curv = np.array(self.curv > 0, np.int)
 
     def load_label(self, name):
@@ -253,20 +258,6 @@ class Surface(object):
             self.labels = dict(name=label_array)
 
     def apply_xfm(self, mtx):
-        """Apply an affine transformation matrix to the x,y,z vectors.
-        TODO: Use Nipy function here"""
+        """Apply an affine transformation matrix to the x,y,z vectors."""
         self.coords = np.dot(np.c_[self.coords, np.ones(len(self.coords))],
                                      mtx.T)[:, :3]
-
-    def get_mesh(self):
-        """Get an mlab triangular mesh source"""
-        from enthought.mayavi import mlab
-        return mlab.pipeline.triangular_mesh_source(self.x, self.y, self.z,
-                                                    self.faces,
-                                                    scalars=self.bin_curv)
-
-    def get_surface(self):
-        """Get an mlab surface object"""
-        from enthought.mayavi import mlab
-        return mlab.pipeline.surface(self.geo_mesh(), colormap="bone",
-                                     vmin=-.5, vmax=1.5)
