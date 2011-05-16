@@ -287,6 +287,7 @@ class Brain(object):
         order: list
             order of views to build montage
         shape: {'h' | 'v'}
+            montage image shape
 
         """
         import Image
@@ -312,6 +313,8 @@ class Brain(object):
             new.save(filename)
         except Exception:
             print("Error saving %s" % filename)
+        for f in fnames:
+            os.remove(f)
 
     def __min_diff(self, beg, end):
         """Determine minimum "camera distance" between two views
