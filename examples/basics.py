@@ -1,34 +1,33 @@
-import surfer as sf
-
+from surfer import Brain
 
 sub = 'fsaverage'
 hemi = 'lh'
 surf = 'inflated'
 
-b = sf.Brain(sub, hemi, surf)
+brain = Brain(sub, hemi, surf)
 
 # show all views
-b.show_view('lateral')
-b.show_view('m')
-b.show_view('anter')
-b.show_view('post')
-b.show_view('dor')
-b.show_view('ve')
+brain.show_view('lateral')
+brain.show_view('m')
+brain.show_view('anter')
+brain.show_view('post')
+brain.show_view('dor')
+brain.show_view('ve')
 
 
 try:
-    b.show_view('bar')
+    brain.show_view('bar')
 except ValueError as ve:
     print(ve)
 
 #save some images
-b.show_view('lat')
-b.save_image("%s_lat.png" % sub)
+brain.show_view('lat')
+brain.save_image("%s_lat.png" % sub)
 
-b.save_imageset(sub, ['med', 'lat', 'ant', 'pos'], 'jpg')
+brain.save_imageset(sub, ['med', 'lat', 'ant', 'pos'], 'jpg')
 
-b.save_imageset(sub, ['foo'])
+brain.save_imageset(sub, ['foo'])
 
 #even rocky had a montage
-b.save_montage('fsaverage_h_montage.png', ['l', 'v', 'm'])
-b.save_montage('fsaverage_v_montage.png', ['l', 'v', 'm'], 'v')
+brain.save_montage('fsaverage_h_montage.png', ['l', 'v', 'm'])
+brain.save_montage('fsaverage_v_montage.png', ['l', 'v', 'm'], 'v')

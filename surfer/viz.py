@@ -7,10 +7,10 @@ from scipy import stats
 from . import io
 from .io import Surface
 
-lh_viewdict = {'lateral': (0, -90),
+lh_viewdict = {'lateral': (180, 90),
                 'medial': (0, 90),
                 'anterior': (90, 90),
-                'posterior': (90, -90),
+                'posterior': (-90, 90),
                 'dorsal': (90, 0),
                 'ventral': (-90, 180)}
 rh_viewdict = {'lateral': (0, 90),
@@ -111,13 +111,12 @@ class Brain(object):
 
         if isinstance(view, str):
             if not view in self.viewdict:
-                good_view = [k for k in self.viewdict.keys()
-                            if view == k[:len(view)]]
-                if len(good_view) != 1:
-                    raise ValueError("Available views are %s " %
-                        " ".join(["'%s'" % k for k in self.viewdict.keys()]))
-                view = good_view[0]
-            mlab.view(*self.viewdict[view])
+                try:
+                    view = self.__xfm_view(view)
+                    mlab.view(*self.viewdict[view])
+                except ValueError:
+                    print("Cannot display %s view. Must be preset view "
+                          "name or leading substring" % view)
         elif isinstance(view, tuple):
             mlab.view(*view)
         else:
@@ -313,6 +312,92 @@ class Brain(object):
             new.save(filename)
         except Exception:
             print("Error saving %s" % filename)
+
+    def __min_diff(self, beg, end):
+        """Determine minimum "camera distance" between two views
+
+        Parameters
+        ----------
+        beg: tuple
+            beginning camera view
+        end: tuple
+            ending camera view
+
+        Returns
+        -------
+        new_diff: np.array
+            shortest camera "path" between two views
+
+        """
+        d = np.array(end) - np.array(beg)
+        new_diff = []
+        for x in d:
+            if x > 180:
+                new_diff.append(x - 360)
+            elif x < -180:
+                new_diff.append(x + 360)
+            else:
+                new_diff.append(x)
+        return np.array(new_diff)
+
+    def animate(self, views, n=180):
+        """Animate a rotation
+
+        Parameters
+        ----------
+        views: sequence
+            views to animate through
+        n: int
+            number of steps to take in between
+        save_gif: bool
+            save the animation
+        fname: string
+            file to save gif image
+
+        """
+        import numpy as np
+        from enthought.mayavi import mlab
+        for i, v in enumerate(views):
+            try:
+                if isinstance(v, str):
+                    b = self.__xfm_view(v, 't')
+                end = views[i + 1]
+                if isinstance(end, str):
+                    e = self.__xfm_view(end, 't')
+                d = self.__min_diff(b, e)
+                dx = d / np.array((float(n)))
+                ov = np.array(mlab.view(*b)[:2])
+                for i in range(n):
+                    nv = ov + i * dx
+                    mlab.view(*nv)
+            except IndexError:
+                pass
+
+    def __xfm_view(self, view, out='s'):
+        """Normalize a given string to available view
+
+        Parameters
+        ----------
+        view: string
+            view which may match leading substring of available views
+
+        Returns
+        -------
+        good: string
+            matching view string
+        out: {'s' | 't'}
+            's' to return string, 't' to return tuple
+
+        """
+        if not view in self.viewdict:
+            good_view = [k for k in self.viewdict if view == k[:len(view)]]
+            if len(good_view) != 1:
+                raise ValueError("bad view")
+            view = good_view[0]
+        if out == 't':
+            return self.viewdict[view]
+        else:
+            return view
 
 
 class Overlay(object):
