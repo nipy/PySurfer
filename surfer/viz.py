@@ -26,7 +26,7 @@ rh_viewdict = {'lateral': (0, 90),
 class Brain(object):
     """Brain object for visualizing with mlab."""
 
-    def __init__(self, subject_id, hemi, surf, curv=True):
+    def __init__(self, subject_id, hemi, surf, curv=True, title=None):
         """Initialize a Brain object with Freesurfer-specific data.
 
         Parameters
@@ -54,7 +54,9 @@ class Brain(object):
 
         # Initialize an mlab figure
         bg_color_code, size = self.__get_scene_properties()
-        self._f = mlab.figure(np.random.randint(1, 1000),
+        if title is None:
+            title = subject_id
+        self._f = mlab.figure(title,
                               bgcolor=bg_color_code,
                               size=size)
         mlab.clf()
@@ -127,7 +129,7 @@ class Brain(object):
             raise ValueError("View must be one of the preset view names "
                              "or a tuple to be passed to mlab.view()")
 
-    def add_overlay(self, filepath, range=None, sign="abs",
+    def add_overlay(self, filepath, min=None, max=None, sign="abs",
                     name=None, visible=True):
         """Add an overlay to the overlay dict.
 
@@ -135,8 +137,10 @@ class Brain(object):
         ----------
         filepath : str
             path to the overlay file (must be readable by Nibabel, or .mgh
-        range : (min, max)
-            threshold and saturation point for overlay display
+        min : float
+            threshold for overlay display
+        max : float
+            saturation point for overlay display
         sign : {'abs' | 'pos' | 'neg'}
             whether positive, negative, or both values should be displayed
         name : str
@@ -164,11 +168,11 @@ class Brain(object):
         self._f.scene.disable_render = True
         scalar_data = io.read_scalar_data(filepath)
         view = mlab.view()
-        self.overlays[name] = Overlay(scalar_data, self._geo, range, sign)
+        self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign)
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_morpometry(self, measure, visible=True):
+    def add_morphometry(self, measure, visible=True):
         """Add a morphometry overlay to the image.
 
         Parameters
@@ -191,6 +195,7 @@ class Brain(object):
                          thickness="pink")
 
         self._f.scene.disable_render = True
+        view = mlab.view()
         morph_data = io.read_morph_data(morph_file)
         min = stats.scoreatpercentile(morph_data, 2)
         max = stats.scoreatpercentile(morph_data, 98)
@@ -209,6 +214,7 @@ class Brain(object):
         self.morphometry = dict(surface=surf,
                                 colorbar=bar,
                                 measure=measure)
+        mlab.view(*view)
         self._f.scene.disable_render = False
 
     def __get_scene_properties(self):
@@ -473,7 +479,7 @@ class Brain(object):
 
 class Overlay(object):
 
-    def __init__(self, scalar_data, geo, range, sign):
+    def __init__(self, scalar_data, geo, min, max, sign):
         """
         """
         from enthought.mayavi import mlab
@@ -492,7 +498,7 @@ class Overlay(object):
         else:
             range_data = np.abs(scalar_data)
 
-        if range is None:
+        if min is None:
             try:
                 min = config.getfloat("overlay", "min_thresh")
             except ValueError:
@@ -507,6 +513,7 @@ class Overlay(object):
                 "a float, 'robust_min', or 'actual_min', but it is %s. "
                 "I'm setting the overlay min to the config default of 2" % min)
 
+        if max is None:
             try:
                 max = config.getfloat("overlay", "max_thresh")
             except ValueError:
@@ -522,8 +529,6 @@ class Overlay(object):
                 "I'm setting the overlay min to the config default "
                 "of robust_max" % max)
 
-        else:
-            min, max = range
 
         # Clean up range_data since we don't need it and it might be big
         del range_data
