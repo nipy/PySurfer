@@ -1,11 +1,13 @@
 import os
 from os.path import join as pjoin
+from warnings import warn
 
 import numpy as np
 from scipy import stats
 
 from . import io
 from .io import Surface
+from .config import config
 
 lh_viewdict = {'lateral': (180, 90),
                 'medial': (0, 90),
@@ -51,9 +53,10 @@ class Brain(object):
         self.surf = surf
 
         # Initialize an mlab figure
+        bg_color_code, size = self.__get_scene_properties()
         self._f = mlab.figure(np.random.randint(1, 1000),
-                              bgcolor=(12. / 256, 0. / 256, 25. / 256),
-                              size=(800, 800))
+                              bgcolor=bg_color_code,
+                              size=size)
         mlab.clf()
         self._f.scene.disable_render = True
 
@@ -92,11 +95,12 @@ class Brain(object):
         self.overlays = dict()
         self.morphometry = dict()
 
+        # Bring up the lateral view
+        self.show_view(config.get("visual", "default_view"))
+        #self.show_view("lat")
+
         # Turn disable render off so that it displays
         self._f.scene.disable_render = False
-
-        # Bring up the lateral view
-        self.show_view("lat")
 
     def show_view(self, view):
         """Orient camera to display view
@@ -104,16 +108,17 @@ class Brain(object):
         Parameters
         ----------
         view : {'lateral' | 'medial' | 'anterior' |
-                'posterior' | 'superior' | 'inferior' | tuple}
+                'posterior' | 'dorsal' | 'ventral' | tuple}
             brain surface to view, or tuple to pass to mlab.view()
         """
         from enthought.mayavi import mlab
 
         if isinstance(view, str):
-            if not view in self.viewdict:
+            if view in self.viewdict:
+                mlab.view(*self.viewdict[view])
+            else:
                 try:
                     view = self.__xfm_view(view)
-                    mlab.view(*self.viewdict[view])
                 except ValueError:
                     print("Cannot display %s view. Must be preset view "
                           "name or leading substring" % view)
@@ -205,6 +210,23 @@ class Brain(object):
         bar = mlab.scalarbar(surf)
         self.morphometry[measure] = surf
         self._f.scene.disable_render = False
+
+    def __get_scene_properties(self):
+        """Get the background color and size from the config parser."""
+        bg_colors = dict(black=[0, 0, 0],
+                         white=[256, 256, 256],
+                         midnight=[12, 7, 32],
+                         slate=[112, 128, 144],
+                         sand=[245, 222, 179])
+
+        bg_color_name = config.get("visual", "background")
+        bg_color_code = bg_colors[bg_color_name]
+        bg_color_code = tuple(map(lambda x: float(x) / 256, bg_color_code))
+
+        size = config.getfloat("visual", "size")
+        size = (size, size)
+
+        return bg_color_code, size
 
     def __get_geo_colors(self):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
@@ -421,17 +443,48 @@ class Overlay(object):
             sign = "neg"
         self.sign = sign
 
+        # Get data with a range that will make sense for automatic thresholding
+        if sign == "neg":
+            range_data = np.abs(scalar_data[np.where(scalar_data < 0)])
+        elif sign == "pos":
+            range_data = scalar_data[np.where(scalar_data > 0)]
+        else:
+            range_data = np.abs(scalar_data)
+
         if range is None:
-            min = 2
-            if sign == "neg":
-                range_data = np.abs(scalar_data[np.where(scalar_data < 0)])
-            elif sign == "pos":
-                range_data = scalar_data[np.where(scalar_data > 0)]
-            else:
-                range_data = np.abs(scalar_data)
-            max = stats.scoreatpercentile(range_data, 98)
+            try:
+                min = config.getfloat("overlay", "min_thresh")
+            except ValueError:
+                min_str = config.get("overlay", "min_thresh")
+                if min_str == "robust_min":
+                    min = stats.scoreatpercentile(range_data, 2)
+                elif min_str == "actual_min":
+                    min = range_data.min()
+                else:
+                    min = 2.0
+                    warn("The 'min_thresh' value in your config value must be "
+                "a float, 'robust_min', or 'actual_min', but it is %s. "
+                "I'm setting the overlay min to the config default of 2" % min)
+            try:
+                max = config.getfloat("overlay", "max_thresh")
+            except ValueError:
+                min_str = config.get("overlay", "max_thresh")
+                if min_str == "robust_max":
+                    min = stats.scoreatpercentile(range_data, 98)
+                elif min_str == "actual_max":
+                    min = range_data.max()
+                else:
+                    max = stats.scoreatpercentile(range_data, 98)
+                    warn("The 'max_thresh' value in your config value must be "
+                "a float, 'robust_min', or 'actual_min', but it is %s. "
+                "I'm setting the overlay min to the config default "
+                "of robust_max" % max)
+
         else:
             min, max = range
+
+        # Clean up range_data since we don't need it and it might be big
+        del range_data
 
         # Byte swap inplace; due to mayavi bug
         mlab_data = scalar_data.copy()
