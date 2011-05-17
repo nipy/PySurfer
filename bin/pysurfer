@@ -1,7 +1,36 @@
 #! /usr/bin/env python
+"""
+This is the top-level command-line interface script for PySurfer.
+It accepts all of the relevant arguments, then turns around and calls
+IPython, executing _pysurfer-load.py with those arguments (which starts
+the visualization), and then drops the user into an IPython environment.
+
+"""
 import os
 import sys
+from surfer._commandline import parser
 
+# Parse the args so that --help exits back to the shell
+# instead of into IPython (this would be cleaner if I
+# could figure out whether that is possible to do
+# from with a script IPython is executing on startup
+if len(sys.argv) < 4:
+    parser.parse_args(["--help"])
+else:
+    parser.parse_args()
+
+# Make sure this is going to work before we have to
+# boot up mlab/IPython
+if len(sys.argv) > 3:
+    subjects_dir = os.environ['SUBJECTS_DIR']
+    surf_file = os.path.join(subjects_dir, "%s/surf/%s.%s" % tuple(sys.argv[1:4]))
+    if not os.path.exists(surf_file):
+        sys.exit("ERROR: Could not find %s" % surf_file)
+
+# Start IPython and execute the load script
 path = os.path.split(__file__)[0]
 load_file = os.path.join(path, "_pysurfer-load.py")
-os.system('ipython -wthread ' + load_file + ' "%s"'%' '.join(sys.argv[1:]))
+os.system('ipython -wthread ' +
+                   load_file +
+                   ' "%s"'
+                   % ' '.join(sys.argv[1:]))
