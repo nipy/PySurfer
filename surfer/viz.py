@@ -343,15 +343,34 @@ class Brain(object):
         for f in fnames:
             os.remove(f)
 
+    def __t2v(self, t):
+        """Transform tuple to view
+
+        Parameters
+        ----------
+        t: tuple
+            camera angle
+
+        Returns
+        -------
+        k: string
+            corresponding view
+
+        """
+        for k in self.viewdict:
+            if self.viewdict[k] == t:
+                return k
+        raise ValueError("Tuple not found in viewdict")
+
     def __min_diff(self, beg, end):
         """Determine minimum "camera distance" between two views
 
         Parameters
         ----------
-        beg: tuple
-            beginning camera view
-        end: tuple
-            ending camera view
+        beg: string
+            beginning anatomical view
+        end: string
+            ending anatomical view
 
         Returns
         -------
@@ -359,15 +378,23 @@ class Brain(object):
             shortest camera "path" between two views
 
         """
-        d = np.array(end) - np.array(beg)
-        new_diff = []
-        for x in d:
-            if x > 180:
-                new_diff.append(x - 360)
-            elif x < -180:
-                new_diff.append(x + 360)
+        if beg == end:
+            v = self.__xfm_view(beg)
+            if v in ['lateral', 'medial', 'anterior', 'posterior']:
+                new_diff = [360, 0]
             else:
-                new_diff.append(x)
+                new_diff[1] = [0, 360]
+        else:
+            gv = map(self.__xfm_view, [beg, end])
+            d = np.array(self.viewdict[gv[1]]) - np.array(self.viewdict[gv[0]])
+            new_diff = []
+            for x in d:
+                if x > 180:
+                    new_diff.append(x - 360)
+                elif x < -180:
+                    new_diff.append(x + 360)
+                else:
+                    new_diff.append(x)
         return np.array(new_diff)
 
     def animate(self, views, n=180):
@@ -390,13 +417,13 @@ class Brain(object):
         for i, v in enumerate(views):
             try:
                 if isinstance(v, str):
-                    b = self.__xfm_view(v, 't')
+                    b = self.__xfm_view(v)
                 end = views[i + 1]
                 if isinstance(end, str):
-                    e = self.__xfm_view(end, 't')
+                    e = self.__xfm_view(end)
                 d = self.__min_diff(b, e)
                 dx = d / np.array((float(n)))
-                ov = np.array(mlab.view(*b)[:2])
+                ov = np.array(mlab.view(*self.viewdict[b])[:2])
                 for i in range(n):
                     nv = ov + i * dx
                     mlab.view(*nv)
