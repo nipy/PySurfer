@@ -231,8 +231,6 @@ class Brain(object):
     def __get_geo_colors(self):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
 
-        At the moment just return a default.  Get from the config eventually
-
         Returns
         -------
         colormap : string
@@ -245,7 +243,23 @@ class Brain(object):
             boolean indicating whether the colormap should be reversed
 
         """
-        return "gray", -1., 2., True
+        colormap_map = dict(classic=("Greys", -1, 2, False),
+                            high_contrast=("Greys", -.1, 1.3, False),
+                            low_contrast=("Greys", -5, 5, False),
+                            bone=("bone", -.2, 2, True))
+
+        cortex_color = config.get("visual", "cortex")
+        try:
+            color_data = colormap_map[cortex_color]
+        except KeyError:
+            warn(""
+                 "The 'cortex' setting in your config file must be one of "
+                 "'classic', 'high_contrast', 'low_contrast', or 'bone', "
+                 "but your value is '%s'. I'm setting the cortex colormap "
+                 "to the 'classic' setting." % cortex_color)
+            color_data = colormap_map['classic']
+
+        return color_data
 
     def save_image(self, fname):
         """Save current view to disk
@@ -565,7 +579,7 @@ class Overlay(object):
             else:
                 thresh_up = -min
             neg_thresh = mlab.pipeline.threshold(neg_mesh, up=thresh_up)
-            neg_surf = mlab.pipeline.surface(neg_thresh, colormap="Blues",
+            neg_surf = mlab.pipeline.surface(neg_thresh, colormap="PuBu",
                                              vmin=-max, vmax=-min)
             neg_bar = mlab.scalarbar(neg_surf)
 
