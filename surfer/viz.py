@@ -465,14 +465,15 @@ class Overlay(object):
                     warn("The 'min_thresh' value in your config value must be "
                 "a float, 'robust_min', or 'actual_min', but it is %s. "
                 "I'm setting the overlay min to the config default of 2" % min)
+
             try:
                 max = config.getfloat("overlay", "max_thresh")
             except ValueError:
-                min_str = config.get("overlay", "max_thresh")
-                if min_str == "robust_max":
-                    min = stats.scoreatpercentile(range_data, 98)
-                elif min_str == "actual_max":
-                    min = range_data.max()
+                max_str = config.get("overlay", "max_thresh")
+                if max_str == "robust_max":
+                    max = stats.scoreatpercentile(range_data, 98)
+                elif max_str == "actual_max":
+                    max = range_data.max()
                 else:
                     max = stats.scoreatpercentile(range_data, 98)
                     warn("The 'max_thresh' value in your config value must be "
