@@ -141,14 +141,17 @@ class Brain(object):
             whether the overlay should be visible upon load
 
         """
+        from enthought.mayavi import mlab
         if name is None:
             basename = os.path.basename(filepath)
             if basename.endswith(".gz"):
                 basename = basename[:-3]
+            if basename.startswith("%s." % self.hemi):
+                basename = basename[3:]
             name = os.path.splitext(basename)[0]
 
         if name in self.overlays:
-            raise NameError("Overlay with name %s already exists. "
+            raise NameError("Overlay with name '%s' already exists. "
                             "Please provide a name for this overlay" % name)
 
         if not sign in ["abs", "pos", "neg"]:
@@ -156,7 +159,9 @@ class Brain(object):
 
         self._f.scene.disable_render = True
         scalar_data = io.read_scalar_data(filepath)
+        view = mlab.view()
         self.overlays[name] = Overlay(scalar_data, self._geo, range, sign)
+        mlab.view(*view)
         self._f.scene.disable_render = False
 
     def add_morpometry(self, measure, visible=True):
@@ -414,6 +419,7 @@ class Overlay(object):
             sign = "pos"
         elif scalar_data.max() <= 0:
             sign = "neg"
+        self.sign = sign
 
         if range is None:
             min = 2
@@ -455,9 +461,9 @@ class Overlay(object):
                                              vmin=min, vmax=max)
             pos_bar = mlab.scalarbar(pos_surf)
             pos_bar.reverse_lut = True
-            pos_bar.visible = False
 
             self.pos = pos_surf
+            self.pos_bar = pos_bar
 
         if sign in ["abs", "neg"]:
             neg_mesh = mlab.pipeline.triangular_mesh_source(geo.x,
@@ -480,5 +486,27 @@ class Overlay(object):
             neg_thresh = mlab.pipeline.threshold(neg_mesh, up=thresh_up)
             neg_surf = mlab.pipeline.surface(neg_thresh, colormap="Blues",
                                              vmin=-max, vmax=-min)
+            neg_bar = mlab.scalarbar(neg_surf)
 
             self.neg = neg_surf
+            self.neg_bar = neg_bar
+
+        self.__format_colorbar()
+
+    def toggle_visibility(self):
+
+        if self.sign in ["pos", "abs"]:
+            self.pos.visible = not self.pos.visible
+            self.pos_bar.visible = False
+        if self.sign in ["neg", "abs"]:
+            self.neg.visible = not self.neg.visible
+            self.neg_bar.visible = False
+
+    def __format_colorbar(self):
+
+        if self.sign in ["abs", "neg"]:
+            self.neg_bar.scalar_bar_representation.position = (0.05, 0.01)
+            self.neg_bar.scalar_bar_representation.position2 = (0.42, 0.09)
+        if self.sign in ["abs", "pos"]:
+            self.pos_bar.scalar_bar_representation.position = (0.53, 0.01)
+            self.pos_bar.scalar_bar_representation.position2 = (0.42, 0.09)
