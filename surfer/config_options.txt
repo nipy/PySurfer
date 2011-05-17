@@ -1,0 +1,34 @@
+Placeholder for config options until online docs are up and running.
+May 17, 2011
+
+Visual:
+background:
+    - black
+    - white
+    - slate
+    - midnight
+    - sand
+
+size:
+    - any float
+    - default: 800
+
+cortex:
+    - classic
+    - high_contrast
+    - low_contrast
+    - bone
+    ?
+
+min_thresh:
+    - any float
+    - robust_min
+    - actual_min
+
+max_thresh:
+    - any float
+    - robust_max
+    - actual_max
+
+default_view:
+    - any view string
