@@ -91,9 +91,8 @@ class Brain(object):
             self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                                    color=(.5, .5, .5))
 
-        # Initialize the overlay and morphometry dictionaries
+        # Initialize the overlay dictionaries
         self.overlays = dict()
-        self.morphometry = dict()
 
         # Bring up the lateral view
         self.show_view(config.get("visual", "default_view"))
@@ -176,8 +175,6 @@ class Brain(object):
         ----------
         measure : {'area' | 'curv' | 'jacobian_white' | 'sulc' | 'thickness'}
             which measure to load
-        visible : boolean
-            whether the map should be visible upon load
 
         """
         from enthought.mayavi import mlab
@@ -208,7 +205,10 @@ class Brain(object):
                                      vmin=min, vmax=max,
                                      name=measure)
         bar = mlab.scalarbar(surf)
-        self.morphometry[measure] = surf
+        bar.scalar_bar_representation.position2 = .8, 0.09
+        self.morphometry = dict(surface=surf,
+                                colorbar=bar,
+                                measure=measure)
         self._f.scene.disable_render = False
 
     def __get_scene_properties(self):
