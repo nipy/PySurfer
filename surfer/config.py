@@ -1,4 +1,5 @@
-import ConfigParser, os
+import ConfigParser
+import os
 from StringIO import StringIO
 
 homedir = os.environ['HOME']
@@ -17,4 +18,3 @@ max_thresh = robust_max
 config = ConfigParser.ConfigParser()
 config.readfp(default_cfg)
 config.read([os.path.expanduser('~/.surfer.cfg'), 'surfer.cfg'])
-

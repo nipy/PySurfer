@@ -29,7 +29,7 @@ brain.save_imageset(sub, ['med', 'lat', 'ant', 'pos'], 'jpg')
 # mlab.view() is exposed
 brain.show_view({'distance': 375})
 # with great power comes great responsibility
-brain.show_view({'azimuth':20, 'elevation': 30}, roll=20)
+brain.show_view({'azimuth': 20, 'elevation': 30}, roll=20)
 
 #even rocky had a montage
 brain.save_montage('fsaverage_h_montage.png', ['l', 'v', 'm'])
