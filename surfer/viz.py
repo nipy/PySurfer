@@ -9,18 +9,18 @@ from . import io
 from .io import Surface
 from .config import config
 
-lh_viewdict = {'lateral': (180, 90),
-                'medial': (0, 90),
-                'anterior': (90, 90),
-                'posterior': (-90, 90),
-                'dorsal': (90, 0),
-                'ventral': (-90, 180)}
-rh_viewdict = {'lateral': (0, 90),
-                'medial': (0, -90),
-                'anterior': (90, 90),
-                'posterior': (-90, -90),
-                'dorsal': (-90, 0),
-                'ventral': (90, 0)}
+lh_viewdict = {'lateral': {'v':(180, 90), 'r':90},
+                'medial': {'v':(0, 90), 'r': -90},
+                'anterior': {'v':(90, 90), 'r':180},
+                'posterior': {'v':(-90, 90), 'r': 0},
+                'dorsal': {'v':(180, 0), 'r':90},
+                'ventral': {'v':(180, 180), 'r':90}}
+rh_viewdict = {'lateral': {'v':(180, -90), 'r':-90},
+                'medial': {'v':(0, -90), 'r':90},
+                'anterior': {'v':(-90, -90), 'r':180},
+                'posterior': {'v':(90, -90), 'r':0},
+                'dorsal': {'v':(180, 0), 'r':90},
+                'ventral': {'v':(180, 180), 'r':90}}
 
 
 class Brain(object):
@@ -103,31 +103,36 @@ class Brain(object):
         # Turn disable render off so that it displays
         self._f.scene.disable_render = False
 
-    def show_view(self, view):
+    def show_view(self, view=None, roll=None):
         """Orient camera to display view
 
         Parameters
         ----------
         view : {'lateral' | 'medial' | 'anterior' |
-                'posterior' | 'dorsal' | 'ventral' | tuple}
-            brain surface to view, or tuple to pass to mlab.view()
+                'posterior' | 'dorsal' | 'ventral' | dict}
+            brain surface to view or kwargs to pass to mlab.view()
+
+        Returns
+        -------
+        camera settings: tuple
+            tuple returned from mlab.view and current camera roll
+
         """
         from enthought.mayavi import mlab
 
-        if isinstance(view, str):
-            if view in self.viewdict:
-                mlab.view(*self.viewdict[view])
-            else:
-                try:
-                    view = self.__xfm_view(view)
-                except ValueError:
+        if isinstance(view, basestring):
+            try:
+                vd = self.__xfm_view(view, 'd')
+                mlab.view(*vd['v'])
+                mlab.roll(vd['r'])
+            except ValueError:
                     print("Cannot display %s view. Must be preset view "
                           "name or leading substring" % view)
-        elif isinstance(view, tuple):
-            mlab.view(*view)
-        else:
-            raise ValueError("View must be one of the preset view names "
-                             "or a tuple to be passed to mlab.view()")
+        elif view:
+            mlab.view(**view)
+            if not roll is None:
+                mlab.roll(roll)
+        return (mlab.view(), mlab.roll())
 
     def add_overlay(self, filepath, min=None, max=None, sign="abs",
                     name=None, visible=True):
@@ -462,16 +467,16 @@ class Brain(object):
         -------
         good: string
             matching view string
-        out: {'s' | 't'}
-            's' to return string, 't' to return tuple
+        out: {'s' | 'd'}
+            's' to return string, 'd' to return dict
 
         """
         if not view in self.viewdict:
             good_view = [k for k in self.viewdict if view == k[:len(view)]]
             if len(good_view) != 1:
-                raise ValueError("bad view")
+                raise ValueError()
             view = good_view[0]
-        if out == 't':
+        if out == 'd':
             return self.viewdict[view]
         else:
             return view
