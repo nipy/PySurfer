@@ -1,5 +1,5 @@
 """
-This module defines the command-lin interface for PySurfer.
+This module defines the command-line interface for PySurfer.
 It is defined here instead of in either the top level or
 intermediate start-up scripts, as it is used in both.
 
@@ -9,7 +9,27 @@ interpreter session.
 """
 import argparse
 
-parser = argparse.ArgumentParser(prog='pysurfer')
+help_text = """
+PySurfer is a package for visualization and interaction with cortical
+surface representations of neuroimaging data from Freesurfer.
+
+The command-line program pysurfer is designed to largely replicate
+Freesufer's tksurfer command-line interface in the format and style
+of arguments it accepts, and, like tksurfer, invoking it will initialize
+a visualization in an external window and begin an IPython session in the
+terminal, through which the visualization can be manipulated.
+
+The visualization interface is exposed through methods on the `brain'
+variable that will exist in IPython namespace when the program finishes
+loading. Please see the PySurfer documentation for more information
+about how to interact with the Brain object.
+
+"""
+
+parser = argparse.ArgumentParser(prog='pysurfer',
+                  usage='%(prog)s subject_id hemisphere surface [options]',
+                  formatter_class=argparse.RawDescriptionHelpFormatter,
+                  description=help_text)
 parser.add_argument("subject_id",
                     help="subject id as in subjects dir")
 parser.add_argument("hemi", metavar="hemi", choices=["lh", "rh"],
@@ -19,7 +39,7 @@ parser.add_argument("surf",
 parser.add_argument("-no-curv", action="store_false", dest="curv",
                     help="do not display the binarized surface curvature")
 parser.add_argument("-morphometry", metavar="MEAS",
-                    help="load morphometry file (e.g. thickness, curvature")
+                    help="load morphometry file (e.g. thickness, curvature)")
 parser.add_argument("-overlay", metavar="FILE",
                     help="load scalar overlay file")
 parser.add_argument("-range", metavar=('MIN', 'MAX'), nargs=2,
