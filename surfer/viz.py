@@ -9,18 +9,18 @@ from . import io
 from .io import Surface
 from .config import config
 
-lh_viewdict = {'lateral': {'v':(180, 90), 'r':90},
-                'medial': {'v':(0, 90), 'r': -90},
-                'anterior': {'v':(90, 90), 'r':180},
-                'posterior': {'v':(-90, 90), 'r': 0},
-                'dorsal': {'v':(180, 0), 'r':90},
-                'ventral': {'v':(180, 180), 'r':90}}
-rh_viewdict = {'lateral': {'v':(180, -90), 'r':-90},
-                'medial': {'v':(0, -90), 'r':90},
-                'anterior': {'v':(-90, -90), 'r':180},
-                'posterior': {'v':(90, -90), 'r':0},
-                'dorsal': {'v':(180, 0), 'r':90},
-                'ventral': {'v':(180, 180), 'r':90}}
+lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
+                'medial': {'v': (0., 90.), 'r': 90.},
+                'anterior': {'v': (90., 90.), 'r': -180.},
+                'posterior': {'v': (270., 90.), 'r': 0.},
+                'dorsal': {'v': (180., 0.), 'r': 90.},
+                'ventral': {'v': (180., 180.), 'r': 90.}}
+rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
+                'medial': {'v': (0., -90.), 'r': 90.},
+                'anterior': {'v': (-90., -90.), 'r': 180.},
+                'posterior': {'v': (90., -90.), 'r': 0.},
+                'dorsal': {'v': (180., 0.), 'r': 90.},
+                'ventral': {'v': (180., 180.), 'r': 90.}}
 
 
 class Brain(object):
@@ -114,25 +114,49 @@ class Brain(object):
 
         Returns
         -------
-        camera settings: tuple
-            tuple returned from mlab.view and current camera roll
+        cv: tuple
+            tuple returned from mlab.view
+        cr: float
+            current camera roll
 
         """
-        from enthought.mayavi import mlab
-
         if isinstance(view, basestring):
             try:
                 vd = self.__xfm_view(view, 'd')
-                mlab.view(*vd['v'])
-                mlab.roll(vd['r'])
+                nv = dict({})
+                roll = vd['r']
+                nv['azimuth'] = vd['v'][0]
+                nv['elevation'] = vd['v'][1]
+                view = nv
             except ValueError:
                     print("Cannot display %s view. Must be preset view "
                           "name or leading substring" % view)
-        elif view:
-            mlab.view(**view)
-            if not roll is None:
-                mlab.roll(roll)
-        return (mlab.view(), mlab.roll())
+        cv, cr = self.__view(view, roll)
+        return (cv, cr)
+
+    def __view(self, viewargs=None, roll=None):
+        """Wrapper for mlab.view()
+
+        Parameters
+        ----------
+        viewargs: dict
+            mapping with keys corresponding to mlab.view args
+        roll: num
+            int or float to set camera roll
+
+        Returns
+        -------
+        camera settings: tuple
+            view settings, roll setting
+
+        """
+        from enthought.mayavi import mlab
+        if viewargs:
+            viewargs['reset_roll'] = True
+            mlab.view(**viewargs)
+        if not roll is None:
+            mlab.roll(roll)
+        return mlab.view(), mlab.roll()
 
     def add_overlay(self, filepath, min=None, max=None, sign="abs",
                     name=None, visible=True):
@@ -387,7 +411,7 @@ class Brain(object):
                 return k
         raise ValueError("Tuple not found in viewdict")
 
-    def __min_diff(self, beg, end):
+    def min_diff(self, beg, end):
         """Determine minimum "camera distance" between two views
 
         Parameters
@@ -399,28 +423,35 @@ class Brain(object):
 
         Returns
         -------
-        new_diff: np.array
-            shortest camera "path" between two views
+        diffs: tuple
+            (min view "distance", min roll "distance")
 
         """
         if beg == end:
             v = self.__xfm_view(beg)
             if v in ['lateral', 'medial', 'anterior', 'posterior']:
-                new_diff = [360, 0]
+                dv = [360, 0]
             else:
-                new_diff[1] = [0, 360]
+                dv = [180, 360]
+            dr = 0
         else:
-            gv = map(self.__xfm_view, [beg, end])
-            d = np.array(self.viewdict[gv[1]]) - np.array(self.viewdict[gv[0]])
-            new_diff = []
+            ge = self.__xfm_view(end, 'd')
+            gb = self.__xfm_view(beg, 'd')
+            ev = np.array(ge['v'])
+            bv = np.array(gb['v'])
+            d = ev - bv
+            er = np.array(ge['r'])
+            br = np.array(gb['r'])
+            dv = []
             for x in d:
-                if x > 180:
-                    new_diff.append(x - 360)
-                elif x < -180:
-                    new_diff.append(x + 360)
+                if x >= 180:
+                    dv.append(x - 360)
+                elif x <= -180:
+                    dv.append(x + 360)
                 else:
-                    new_diff.append(x)
-        return np.array(new_diff)
+                    dv.append(x)
+            dr = er - br
+        return (np.array(dv), dr)
 
     def animate(self, views, n=180):
         """Animate a rotation
@@ -438,20 +469,44 @@ class Brain(object):
 
         """
         import numpy as np
-        from enthought.mayavi import mlab
-        for i, v in enumerate(views):
+        #hack
+        gviews = map(self.__xfm_view, views)
+        for i, gv in enumerate(gviews[:]):
             try:
-                if isinstance(v, str):
-                    b = self.__xfm_view(v)
-                end = views[i + 1]
-                if isinstance(end, str):
-                    e = self.__xfm_view(end)
-                d = self.__min_diff(b, e)
-                dx = d / np.array((float(n)))
-                ov = np.array(mlab.view(*self.viewdict[b])[:2])
+                if gv == gviews[i + 1]:
+                    #we need to insert good views
+                    if gv == 'dorsal':
+                        for v in ['m', 'v', 'l']:
+                            gviews.insert(i+1, v)
+                    elif gv == 'ventral':
+                        for v in ['l', 'd', 'm']:
+                            gviews.insert(i+1, v)
+            except IndexError:
+                pass
+        #end hack
+        print(gviews)
+        for i, b in enumerate(gviews):
+            try:
+                if isinstance(b, str):
+                    beg = self.__xfm_view(b)
+                e = views[i + 1]
+                if isinstance(e, str):
+                    end = self.__xfm_view(e)
+                dv, dr = self.min_diff(beg, end)
+                dv /= np.array((float(n)))
+                dr /= np.array((float(n)))
+                bv, br = self.show_view(beg)
+                nv = dict({})
                 for i in range(n):
-                    nv = ov + i * dx
-                    mlab.view(*nv)
+                    nv['azimuth'] = bv[0] + float(i) * dv[0]
+                    nv['elevation'] = bv[1] + float(i) * dv[1]
+                    if (dv[1] and
+                        (beg in ['dorsal', 'ventral'] or
+                        end in ['dorsal', 'ventral'])):
+                        nr = br + float(i) * dr
+                    else:
+                        nr = None
+                    self.__view(nv, roll=nr)
             except IndexError:
                 pass
 
@@ -533,7 +588,6 @@ class Overlay(object):
                 "a float, 'robust_min', or 'actual_min', but it is %s. "
                 "I'm setting the overlay min to the config default "
                 "of robust_max" % max)
-
 
         # Clean up range_data since we don't need it and it might be big
         del range_data
