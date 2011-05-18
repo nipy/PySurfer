@@ -226,8 +226,10 @@ class Brain(object):
         self._f.scene.disable_render = True
         view = mlab.view()
         morph_data = io.read_morph_data(morph_file)
-        min = stats.scoreatpercentile(morph_data, 2)
-        max = stats.scoreatpercentile(morph_data, 98)
+        cortex = self._geo.load_label("cortex")
+        ctx_idx = np.where(cortex == 1)
+        min = stats.scoreatpercentile(morph_data[ctx_idx], 2)
+        max = stats.scoreatpercentile(morph_data[ctx_idx], 98)
         if morph_data.dtype.byteorder == '>':
             morph_data.byteswap(True)  # byte swap inplace; due to mayavi bug
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
