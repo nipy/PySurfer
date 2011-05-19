@@ -10,7 +10,7 @@ from .io import Surface
 from .config import config
 
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
-                'medial': {'v': (0., 90.), 'r': 90.},
+                'medial': {'v': (0., 90.), 'r': -90.},
                 'anterior': {'v': (90., 90.), 'r': -180.},
                 'posterior': {'v': (270., 90.), 'r': 0.},
                 'dorsal': {'v': (180., 0.), 'r': 90.},
@@ -429,7 +429,7 @@ class Brain(object):
 
     def min_diff(self, beg, end):
         """Determine minimum "camera distance" between two views
-
+        
         Parameters
         ----------
         beg: string
@@ -443,13 +443,25 @@ class Brain(object):
             (min view "distance", min roll "distance")
 
         """
+        beg = self.__xfm_view(beg)
+        end = self.__xfm_view(end)
         if beg == end:
-            v = self.__xfm_view(beg)
             if v in ['lateral', 'medial', 'anterior', 'posterior']:
-                dv = [360, 0]
+                dv = [360., 0.]
             else:
-                dv = [180, 360]
+                dv = [180., 360.]
             dr = 0
+        elif beg in ['dorsal', 'ventral'] or end in ['dorsal', 'ventral']:
+            #hard coding paths
+            lut = {'medial':{'dorsal': [180., 90.],
+                             'ventral': [-180., -90.]},
+                  'lateral':{'dorsal': [0., 90.],
+                             'ventral': [0., -90.]}}
+            try:
+                dv = lut[beg][end]
+                dr = 0.
+            except KeyError:
+                print("uh oh")
         else:
             ge = self.__xfm_view(end, 'd')
             gb = self.__xfm_view(beg, 'd')
@@ -469,7 +481,7 @@ class Brain(object):
             dr = er - br
         return (np.array(dv), dr)
 
-    def animate(self, views, n=180, save_movie=False, fname="movie.avi",
+    def animate(self, views, n=180., save_movie=False, fname="movie.avi",
                 use_cache=True):
         """Animate a rotation
 
@@ -477,7 +489,7 @@ class Brain(object):
         ----------
         views: sequence
             views to animate through
-        n: int
+        n: float
             number of steps to take in between
         save_gif: bool
             save the animation
@@ -514,12 +526,15 @@ class Brain(object):
                 if isinstance(e, str):
                     end = self.__xfm_view(e)
                 dv, dr = self.min_diff(beg, end)
-                dv /= np.array((float(n)))
-                dr /= np.array((float(n)))
-                bv, br = self.show_view(beg)
-                for i in range(n):
+                print(dv,dr)
+                dv /= np.array((n))
+                dr /= np.array((n))
+                self.show_view(beg)
+                for i in range(int(n)):
+                    self._f.scene.camera.orthogonalize_view_up()
                     self._f.scene.camera.azimuth(dv[0])
                     self._f.scene.camera.elevation(dv[1])
+                    self._f.scene.renderer.reset_camera_clipping_range()
                     self._f.scene.render()
                     if save_movie:
                         tmp_fname = pjoin(tmp_dir, "%d.png" % i)
@@ -541,6 +556,7 @@ class Brain(object):
                                 "-ofps %d" % fps,
                                 "-noskip",
                                 "-o %s" % fname])
+            #this should probably be Popen
             ret = os.system(enc_cmd)
             if ret:
                 print("\n\nError occured when exporting movie\n\n")
