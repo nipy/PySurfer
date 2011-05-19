@@ -16,7 +16,7 @@ There are five preset options for the color of the visualization
 background. They are "black", "white", "midnight", "sand", and
 "slate":
 
-image:: _staic/background_options.png
+.. image:: _static/background_options.png
 
 Changing the curvature color scheme
 ----------------------------------- 
@@ -29,7 +29,7 @@ command-line interface to turn this off). There are three preset
 themes for the curvature color scheme: "classic", "bone",
 "high_contrast", and "low_contrast":
 
-image:: _static/cortex_options.png
+.. image:: _static/cortex_options.png
 
 Note that, in each theme, the darker color signifies sulci.
 
@@ -56,11 +56,12 @@ If using the command-line interface, there are parameters for each
 of the above options. Regardless of method, the key names are
 ``background``, ``cortex``, and ``size``.
 
-For example::
+For example:
+
+.. sourcecode:: ipython
     
     In [1]: from surfer import Brain
-    In [2]: b = Brain('fsaverage', 'lh', 'inflated',
-                       config_opts={'cortex': 'bone'})
+    In [2]: b = Brain('fsaverage', 'lh', 'inflated', config_opts={'cortex':'bone'})
 
 or::
 

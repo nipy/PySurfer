@@ -29,7 +29,7 @@ Once the viewer window is open, there are two ways to manipulate the
 visualization. To see other angles, zoom in or out, and translate the
 brain, simply click and drag with your mouse. See the `Mayavi documentation
 <http://code.enthought.com/projects/mayavi/docs/development/html/mayavi/
-application.html#mouse-interaction>` for more information about using the 
+application.html#mouse-interaction>`_ for more information about using the 
 mouse and keyboard to interact with a Mayavi scence.
 
 When pysurfer finishes loading the visualization, it initializes an
