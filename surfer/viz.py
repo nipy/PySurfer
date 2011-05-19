@@ -26,7 +26,8 @@ rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
 class Brain(object):
     """Brain object for visualizing with mlab."""
 
-    def __init__(self, subject_id, hemi, surf, curv=True, title=None):
+    def __init__(self, subject_id, hemi, surf,
+                 curv=True, title=None, config_opts={}):
         """Initialize a Brain object with Freesurfer-specific data.
 
         Parameters
@@ -40,6 +41,10 @@ class Brain(object):
         curv : boolean
             if true, loads curv file and displays binary curvature
             (default: True)
+        title : str
+            title for the mayavi figure
+        config_opts : dict
+            options to override visual options in config file
         """
         from enthought.mayavi import mlab
 
@@ -53,7 +58,7 @@ class Brain(object):
         self.surf = surf
 
         # Initialize an mlab figure
-        bg_color_code, size = self.__get_scene_properties()
+        bg_color_code, size = self.__get_scene_properties(config_opts)
         if title is None:
             title = subject_id
         self._f = mlab.figure(title,
@@ -82,7 +87,7 @@ class Brain(object):
 
         # mlab surface for the geometry
         if curv:
-            colormap, vmin, vmax, reverse = self.__get_geo_colors()
+            colormap, vmin, vmax, reverse = self.__get_geo_colors(config_opts)
             self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                 colormap=colormap, vmin=vmin, vmax=vmax)
             if reverse:
@@ -248,25 +253,50 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def __get_scene_properties(self):
-        """Get the background color and size from the config parser."""
+    def __get_scene_properties(self, config_opts):
+        """Get the background color and size from the config parser.
+
+        Parameters
+        ----------
+        config_opts : dict
+            dictionary of config file "visual" options
+
+        Returns
+        -------
+        bg_color_code : (float, float, float)
+            RBG code for background color
+        size : (float, float)
+            viewer window size
+
+        """
         bg_colors = dict(black=[0, 0, 0],
                          white=[256, 256, 256],
                          midnight=[12, 7, 32],
                          slate=[112, 128, 144],
                          sand=[245, 222, 179])
 
-        bg_color_name = config.get("visual", "background")
+        try:
+            bg_color_name = config_opts['background']
+        except KeyError:
+            bg_color_name = config.get("visual", "background")
         bg_color_code = bg_colors[bg_color_name]
         bg_color_code = tuple(map(lambda x: float(x) / 256, bg_color_code))
 
-        size = config.getfloat("visual", "size")
+        try:
+            size = config_opts['size']
+        except KeyError:
+            size = config.getfloat("visual", "size")
         size = (size, size)
 
         return bg_color_code, size
 
-    def __get_geo_colors(self):
+    def __get_geo_colors(self, config_opts):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
+
+        Parameters
+        ----------
+        config_opts : dict
+            dictionary of config file "visual" options
 
         Returns
         -------
@@ -285,7 +315,10 @@ class Brain(object):
                             low_contrast=("Greys", -5, 5, False),
                             bone=("bone", -.2, 2, True))
 
-        cortex_color = config.get("visual", "cortex")
+        try:
+            cortex_color = config_opts['cortex']
+        except KeyError:
+            cortex_color = config.get("visual", "cortex")
         try:
             color_data = colormap_map[cortex_color]
         except KeyError:
