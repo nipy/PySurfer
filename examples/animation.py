@@ -15,6 +15,10 @@ brain.animate(['l', 'p', 'm', 'a', 'p', 'm', 'l'], 45)
 # full turns
 brain.animate(["m"] * 3)
 
+#movies
+brain.animate(['l', 'l'], save_movie=True, fname='output.avi')
+
+
 #work, look weird at the end
 brain.animate(['l', 'd'])
 brain.animate(['l', 'v'])
