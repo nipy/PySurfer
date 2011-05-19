@@ -1,10 +1,16 @@
-.. PySurfer documentation master file, created by
-   sphinx-quickstart on Thu May 12 12:45:43 2011.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Introduction
+============
 
-Welcome to PySurfer's documentation!
-====================================
+PySurfer is a Python based program for visualization and interaction
+with cortical surface representations of neuroimaging data from
+`Freesurfer <http://surfer.nmr.mgh.harvard.edu/>`. It extends
+`Mayavi's <http://code.enthought.com/projects/mayavi/>` powerful
+visualization engine with a high-level interface for working with
+MRI and MEG data.
+
+PySurfer offers both a command-line interface designed to broadly
+replicate Freesurfer's Tksurfer program as well as a Python library
+for writing scripts to efficiently explore complex datasets. 
 
 Contents:
 
