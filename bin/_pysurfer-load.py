@@ -12,8 +12,14 @@ from surfer._commandline import parser
 
 args = parser.parse_args(sys.argv[1].split())
 
+# Get a dict of config override options
+confkeys = ["size", "background", "cortex"]
+argdict = args.__dict__
+config_opts = dict([(k, v) for k, v in argdict.items() if k in confkeys and v])
+
 # Load  up the figure and underlying brain object
-b = Brain(args.subject_id, args.hemi, args.surf, args.curv, args.title)
+b = Brain(args.subject_id, args.hemi, args.surf, args.curv,
+          args.title, config_opts=config_opts)
 
 # Maybe load some morphometry
 if args.morphometry is not None:
