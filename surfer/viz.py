@@ -273,6 +273,7 @@ class Brain(object):
                          white=[256, 256, 256],
                          midnight=[12, 7, 32],
                          slate=[112, 128, 144],
+                         charcoal=[59, 69, 79],
                          sand=[245, 222, 179])
 
         try:
