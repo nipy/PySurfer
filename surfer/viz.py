@@ -520,6 +520,7 @@ class Brain(object):
                 for i in range(n):
                     self._f.scene.camera.azimuth(dv[0])
                     self._f.scene.camera.elevation(dv[1])
+                    self._f.scene.renderer.reset_camera_clipping_range()
                     self._f.scene.render()
                     if save_movie:
                         tmp_fname = pjoin(tmp_dir, "%d.png" % i)
