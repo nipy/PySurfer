@@ -494,10 +494,10 @@ class Brain(object):
                     #we need to insert good views
                     if gv == 'dorsal':
                         for v in ['m', 'v', 'l']:
-                            gviews.insert(i+1, v)
+                            gviews.insert(i + 1, v)
                     elif gv == 'ventral':
                         for v in ['l', 'd', 'm']:
-                            gviews.insert(i+1, v)
+                            gviews.insert(i + 1, v)
             except IndexError:
                 pass
         #end hack
@@ -517,13 +517,12 @@ class Brain(object):
                 dv /= np.array((float(n)))
                 dr /= np.array((float(n)))
                 bv, br = self.show_view(beg)
-                print(dv,dr)
                 for i in range(n):
                     self._f.scene.camera.azimuth(dv[0])
                     self._f.scene.camera.elevation(dv[1])
                     self._f.scene.render()
                     if save_movie:
-                        tmp_fname = pjoin(tmp_dir,"%d.png" % i)
+                        tmp_fname = pjoin(tmp_dir, "%d.png" % i)
                         if not (os.path.isfile(tmp_fname) and use_cache):
                             self.save_image(tmp_fname)
                         stills.append(tmp_fname)
@@ -546,7 +545,7 @@ class Brain(object):
             ret = os.system(enc_cmd)
             if ret:
                 print("\n\nError occured when exporting movie\n\n")
-        
+
     def __xfm_view(self, view, out='s'):
         """Normalize a given string to available view
 
