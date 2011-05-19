@@ -529,7 +529,6 @@ class Brain(object):
             except IndexError:
                 pass
         if save_movie:
-            from glob import glob
             mf_names = " ".join(["'mf://%s'" % still for still in stills])
             fps = 10
             # we'll probably want some config options here
