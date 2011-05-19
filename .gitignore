@@ -18,3 +18,4 @@ doc/samples
 *.png
 *.jpg
 pysurfer.egg-info
+*.avi

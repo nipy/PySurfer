@@ -394,25 +394,6 @@ class Brain(object):
         for f in fnames:
             os.remove(f)
 
-    def __t2v(self, t):
-        """Transform tuple to view
-
-        Parameters
-        ----------
-        t: tuple
-            camera angle
-
-        Returns
-        -------
-        k: string
-            corresponding view
-
-        """
-        for k in self.viewdict:
-            if self.viewdict[k] == t:
-                return k
-        raise ValueError("Tuple not found in viewdict")
-
     def min_diff(self, beg, end):
         """Determine minimum "camera distance" between two views
 
@@ -446,16 +427,17 @@ class Brain(object):
             br = np.array(gb['r'])
             dv = []
             for x in d:
-                if x >= 180:
+                if x > 180:
                     dv.append(x - 360)
-                elif x <= -180:
+                elif x < -180:
                     dv.append(x + 360)
                 else:
                     dv.append(x)
             dr = er - br
         return (np.array(dv), dr)
 
-    def animate(self, views, n=180):
+    def animate(self, views, n=180, save_movie=False, fname="movie.avi",
+                use_cache=True):
         """Animate a rotation
 
         Parameters
@@ -486,7 +468,11 @@ class Brain(object):
             except IndexError:
                 pass
         #end hack
-        print(gviews)
+        if save_movie:
+            stills = []
+            tmp_dir = "./.tmp"
+            if not os.path.isdir(tmp_dir):
+                os.mkdir(tmp_dir)
         for i, b in enumerate(gviews):
             try:
                 if isinstance(b, str):
@@ -498,20 +484,36 @@ class Brain(object):
                 dv /= np.array((float(n)))
                 dr /= np.array((float(n)))
                 bv, br = self.show_view(beg)
-                nv = dict({})
+                print(dv,dr)
                 for i in range(n):
-                    nv['azimuth'] = bv[0] + float(i) * dv[0]
-                    nv['elevation'] = bv[1] + float(i) * dv[1]
-                    if (dv[1] and
-                        (beg in ['dorsal', 'ventral'] or
-                        end in ['dorsal', 'ventral'])):
-                        nr = br + float(i) * dr
-                    else:
-                        nr = None
-                    self.__view(nv, roll=nr)
+                    self._f.scene.camera.azimuth(dv[0])
+                    self._f.scene.camera.elevation(dv[1])
+                    self._f.scene.render()
+                    if save_movie:
+                        tmp_fname = pjoin(tmp_dir,"%d.png" % i)
+                        if not (os.path.isfile(tmp_fname) and use_cache):
+                            self.save_image(tmp_fname)
+                        stills.append(tmp_fname)
             except IndexError:
                 pass
-
+        if save_movie:
+            from glob import glob
+            mf_names = " ".join(["'mf://%s'" % still for still in stills])
+            fps = 10
+            # we'll probably want some config options here
+            enc_cmd = " ".join(["mencoder",
+                                "-ovc lavc",
+                                "-mf fps=%d" % fps,
+                                "%s" % mf_names,
+                                "-of avi",
+                                "-lavcopts vcodec=mjpeg",
+                                "-ofps %d" % fps,
+                                "-noskip",
+                                "-o %s" % fname])
+            ret = os.system(enc_cmd)
+            if ret:
+                print("\n\nError occured when exporting movie\n\n")
+        
     def __xfm_view(self, view, out='s'):
         """Normalize a given string to available view
 
