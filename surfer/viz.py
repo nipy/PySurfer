@@ -4,6 +4,7 @@ from warnings import warn
 
 import numpy as np
 from scipy import stats
+from scipy import ndimage
 
 from . import io
 from .io import Surface
@@ -388,7 +389,8 @@ class Brain(object):
                 print("Skipping %s: not in view dict" % view)
         return images_written
 
-    def save_montage(self, filename, order=['lat', 'ven', 'med'], shape='h'):
+    def save_montage(self, filename, order=['lat', 'ven', 'med'], orientation='h',
+                     border_size=15):
         """Create a montage from a given order of images
 
         Parameters
@@ -397,14 +399,42 @@ class Brain(object):
             path to final image
         order: list
             order of views to build montage
-        shape: {'h' | 'v'}
-            montage image shape
-
+        orientation: {'h' | 'v'}
+            montage image orientation (horizontal of vertical alignment)
+        border_size: int
+            Size of image border (more or less space between images)
         """
+        assert orientation in ['h', 'v']
         import Image
         fnames = self.save_imageset("tmp", order)
         images = map(Image.open, fnames)
-        if shape == 'h':
+        # get bounding box for cropping
+        boxes = []
+        for im in images:
+            labels, n_labels = ndimage.label(np.array(im)[:,:,0])
+            s = ndimage.find_objects(labels, n_labels)[0]  # slice roi
+            # box = (left, top, width, height)
+            boxes.append([s[1].start - border_size, s[0].start - border_size,
+                          s[1].stop + border_size, s[0].stop + border_size])
+        if orientation == 'v':
+            min_left = min(box[0] for box in boxes)
+            max_width = max(box[2] for box in boxes)
+            for box in boxes:
+                box[0] = min_left
+                box[2] = max_width
+        else:
+            min_top = min(box[1] for box in boxes)
+            max_height = max(box[3] for box in boxes)
+            for box in boxes:
+                box[1] = min_top
+                box[3] = max_height
+        # crop images
+        cropped_images = []
+        for im, box in zip(images, boxes):
+            cropped_images.append(im.crop(box))
+        images = cropped_images
+        # Get full image size
+        if orientation == 'h':
             w = sum(i.size[0] for i in images)
             h = max(i.size[1] for i in images)
         else:
@@ -413,7 +443,7 @@ class Brain(object):
         new = Image.new("RGBA", (w, h))
         x = 0
         for i in images:
-            if shape == 'h':
+            if orientation == 'h':
                 pos = (x, 0)
                 x += i.size[0]
             else:
