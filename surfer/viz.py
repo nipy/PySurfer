@@ -217,12 +217,15 @@ class Brain(object):
 
         """
         from enthought.mayavi import mlab
+
+        # Find the source data
         surf_dir = pjoin(os.environ['SUBJECTS_DIR'], self.subject_id, 'surf')
         morph_file = pjoin(surf_dir, '.'.join([self.hemi, measure]))
         if not os.path.exists(morph_file):
             raise ValueError(
                 'Could not find %s in subject directory' % morph_file)
 
+        # Preset colormaps
         cmap_dict = dict(area="pink",
                          curv="RdBu",
                          jacobian_white="pink",
@@ -230,12 +233,27 @@ class Brain(object):
                          thickness="pink")
 
         self._f.scene.disable_render = True
+
+        # Maybe get rid of an old overlay
+        if hasattr(self, "morphometry"):
+            self.morphometry['surface'].remove()
+            self.morphometry['colorbar'].remove()
+
+        # Save the inital view
         view = mlab.view()
+
+        # Read in the morphometric data
         morph_data = io.read_morph_data(morph_file)
+
+        # Get a cortex mask for robust range
         cortex = self._geo.load_label("cortex")
         ctx_idx = np.where(cortex == 1)
+
+        # Get the robust range
         min = stats.scoreatpercentile(morph_data[ctx_idx], 2)
         max = stats.scoreatpercentile(morph_data[ctx_idx], 98)
+
+        # Set up the Mayavi pipeline
         if morph_data.dtype.byteorder == '>':
             morph_data.byteswap(True)  # byte swap inplace; due to mayavi bug
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
@@ -246,8 +264,12 @@ class Brain(object):
         surf = mlab.pipeline.surface(mesh, colormap=cmap_dict[measure],
                                      vmin=min, vmax=max,
                                      name=measure)
+
+        # Get the colorbar
         bar = mlab.scalarbar(surf)
         bar.scalar_bar_representation.position2 = .8, 0.09
+
+        # Fil in the morphometry dict
         self.morphometry = dict(surface=surf,
                                 colorbar=bar,
                                 measure=measure)
@@ -274,6 +296,7 @@ class Brain(object):
                          white=[256, 256, 256],
                          midnight=[12, 7, 32],
                          slate=[112, 128, 144],
+                         charcoal=[59, 69, 79],
                          sand=[245, 222, 179])
 
         try:
