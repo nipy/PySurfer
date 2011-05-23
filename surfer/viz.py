@@ -237,7 +237,7 @@ class Brain(object):
         # Maybe get rid of an old overlay
         if hasattr(self, "morphometry"):
             self.morphometry['surface'].remove()
-            self.morphometry['colorbar'].remove()
+            self.morphometry['colorbar'].visible = False
 
         # Save the inital view
         view = mlab.view()
