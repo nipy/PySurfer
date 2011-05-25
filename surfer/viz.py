@@ -128,7 +128,7 @@ class Brain(object):
         """
         if isinstance(view, basestring):
             try:
-                vd = self.__xfm_view(view, 'd')
+                vd = self.xfm_view(view, 'd')
                 nv = dict({})
                 roll = vd['r']
                 nv['azimuth'] = vd['v'][0]
@@ -496,8 +496,8 @@ class Brain(object):
             (min view "distance", min roll "distance")
 
         """
-        beg = self.__xfm_view(beg)
-        end = self.__xfm_view(end)
+        beg = self.xfm_view(beg)
+        end = self.xfm_view(end)
         if beg == end:
             if v in ['lateral', 'medial', 'anterior', 'posterior']:
                 dv = [360., 0.]
@@ -516,8 +516,8 @@ class Brain(object):
             except KeyError:
                 print("uh oh")
         else:
-            ge = self.__xfm_view(end, 'd')
-            gb = self.__xfm_view(beg, 'd')
+            ge = self.xfm_view(end, 'd')
+            gb = self.xfm_view(beg, 'd')
             ev = np.array(ge['v'])
             bv = np.array(gb['v'])
             d = ev - bv
@@ -552,7 +552,7 @@ class Brain(object):
         """
         import numpy as np
         #hack
-        gviews = map(self.__xfm_view, views)
+        gviews = map(self.xfm_view, views)
         for i, gv in enumerate(gviews[:]):
             try:
                 if gv == gviews[i + 1]:
@@ -574,10 +574,10 @@ class Brain(object):
         for i, b in enumerate(gviews):
             try:
                 if isinstance(b, str):
-                    beg = self.__xfm_view(b)
+                    beg = self.xfm_view(b)
                 e = views[i + 1]
                 if isinstance(e, str):
-                    end = self.__xfm_view(e)
+                    end = self.xfm_view(e)
                 dv, dr = self.min_diff(beg, end)
                 print(dv,dr)
                 dv /= np.array((n))
@@ -614,7 +614,7 @@ class Brain(object):
             if ret:
                 print("\n\nError occured when exporting movie\n\n")
 
-    def __xfm_view(self, view, out='s'):
+    def xfm_view(self, view, out='s'):
         """Normalize a given string to available view
 
         Parameters
