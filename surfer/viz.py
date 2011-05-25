@@ -535,7 +535,7 @@ class Brain(object):
         return (np.array(dv), dr)
 
     def animate(self, views, n=180., save_movie=False, fname="movie.avi",
-                use_cache=True):
+                use_cache=False):
         """Animate a rotation
 
         Parameters
@@ -569,6 +569,7 @@ class Brain(object):
         if save_movie:
             stills = []
             tmp_dir = "./.tmp"
+            tmp_fname = "%05d.png"
             if not os.path.isdir(tmp_dir):
                 os.mkdir(tmp_dir)
         for i, b in enumerate(gviews):
@@ -590,26 +591,23 @@ class Brain(object):
                     self._f.scene.renderer.reset_camera_clipping_range()
                     self._f.scene.render()
                     if save_movie:
-                        tmp_fname = pjoin(tmp_dir, "%d.png" % i)
+                        tmp_fname = pjoin(tmp_dir, tmp_fname % i)
                         if not (os.path.isfile(tmp_fname) and use_cache):
                             self.save_image(tmp_fname)
-                        stills.append(tmp_fname)
             except IndexError:
                 pass
         if save_movie:
-            mf_names = " ".join(["'mf://%s'" % still for still in stills])
             fps = 10
             # we'll probably want some config options here
             enc_cmd = " ".join(["mencoder",
                                 "-ovc lavc",
                                 "-mf fps=%d" % fps,
-                                "%s" % mf_names,
+                                "mf://%s" % pjoin(tmp_dir, tmp_fname),
                                 "-of avi",
                                 "-lavcopts vcodec=mjpeg",
                                 "-ofps %d" % fps,
                                 "-noskip",
                                 "-o %s" % fname])
-            #this should probably be Popen
             ret = os.system(enc_cmd)
             if ret:
                 print("\n\nError occured when exporting movie\n\n")
