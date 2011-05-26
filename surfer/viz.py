@@ -207,13 +207,15 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_annotation(self, annot):
+    def add_annotation(self, annot, contour=False):
         """Add an annotation file.
 
         Parameters
         ----------
         annot : str
             Either path to annotation file or annotation name
+        contour: bool
+            Show only contours of labels
 
         """
         from enthought.mayavi import mlab
@@ -250,6 +252,11 @@ class Brain(object):
                                                    self._geo.faces,
                                                    scalars=ids)
         surf = mlab.pipeline.surface(mesh, name=annot)
+
+        if contour:
+            surf.enable_contours = True
+            surf.actor.property.line_width = 5
+            surf.contour.number_of_contours = len(cmap)
 
         # Set the color table
         surf.module_manager.scalar_lut_manager.lut.table = cmap
