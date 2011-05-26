@@ -207,6 +207,36 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
+    def add_annotation(self, filepath, name=None):
+        """Add an annotation file.
+
+        Parameters
+        ----------
+        filepath : str
+            path to the overlay file (must be readable by Nibabel, or .mgh
+        name : str
+            name for the overlay in the internal dictionary
+
+        """
+        from enthought.mayavi import mlab
+        if name is None:
+            basename = os.path.basename(filepath)
+            if basename.endswith(".gz"):
+                basename = basename[:-3]
+            if basename.startswith("%s." % self.hemi):
+                basename = basename[3:]
+            name = os.path.splitext(basename)[0]
+
+        self._f.scene.disable_render = True
+        labels, cmap = io.read_annot(filepath)
+        ulabels = np.sort(np.unique(labels))
+        labels = np.searchsorted(ulabels, labels)
+        view = mlab.view()
+        self.overlays[name] = Overlay(labels, self._geo, np.min(labels),
+                                                         np.max(labels), "pos")
+        mlab.view(*view)
+        self._f.scene.disable_render = False
+
     def add_morphometry(self, measure, visible=True):
         """Add a morphometry overlay to the image.
 

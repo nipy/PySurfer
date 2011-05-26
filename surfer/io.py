@@ -162,7 +162,7 @@ def read_annot(filepath):
         dt = ">i4"
         vnum = np.fromfile(fobj, dt, 1)[0]
         data = np.fromfile(fobj, dt, vnum * 2).reshape(vnum, 2)
-        annot = data[:, 1]
+        labels = data[:, 1]
         ctab_exists = np.fromfile(fobj, dt, 1)[0]
         if not ctab_exists:
             return
@@ -181,7 +181,7 @@ def read_annot(filepath):
             ctab[i, :4] = np.fromfile(fobj, dt, 4)
             ctab[i, 4] = (ctab[i, 0] + ctab[i, 1] * (2 ** 8) +
                             ctab[i, 2] * (2 ** 16) + ctab[i, 3] * (2 ** 24))
-    return ctab
+    return labels, ctab
 
 
 def read_label(filepath):
