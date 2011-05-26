@@ -40,6 +40,8 @@ parser.add_argument("-no-curv", action="store_false", dest="curv",
                     help="do not display the binarized surface curvature")
 parser.add_argument("-morphometry", metavar="MEAS",
                     help="load morphometry file (e.g. thickness, curvature)")
+parser.add_argument("-annotation", metavar="ANNOT",
+                    help="load annotation (by name or filepath")
 parser.add_argument("-overlay", metavar="FILE",
                     help="load scalar overlay file")
 parser.add_argument("-range", metavar=('MIN', 'MAX'), nargs=2,
