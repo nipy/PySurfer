@@ -154,10 +154,21 @@ def read_scalar_data(filepath):
 
 
 def read_annot(filepath):
-    """Load in a Freesurfer annotation from a .annot file."""
-    # TODO: probably rewrite this, the matlab implementation is a big
-    # hassle anyway.  Also figure out if Mayavi allows you to work with
-    # a Freesurfer style LUT
+    """Read in a Freesurfer annotation from a .annot file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to annotation file
+
+    Returns
+    -------
+    labels : n_vtx numpy array
+        Annotation id at each vertex
+    ctab : numpy array
+
+
+    """
     with open(filepath, "rb") as fobj:
         dt = ">i4"
         vnum = np.fromfile(fobj, dt, 1)[0]
@@ -181,6 +192,7 @@ def read_annot(filepath):
             ctab[i, :4] = np.fromfile(fobj, dt, 4)
             ctab[i, 4] = (ctab[i, 0] + ctab[i, 1] * (2 ** 8) +
                             ctab[i, 2] * (2 ** 16) + ctab[i, 3] * (2 ** 24))
+        ctab[:,3] = 255
     return labels, ctab
 
 

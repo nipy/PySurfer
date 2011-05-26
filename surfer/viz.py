@@ -207,33 +207,56 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_annotation(self, filepath, name=None):
+    def add_annotation(self, annot):
         """Add an annotation file.
 
         Parameters
         ----------
-        filepath : str
-            path to the overlay file (must be readable by Nibabel, or .mgh
-        name : str
-            name for the overlay in the internal dictionary
+        annot : str
+            Either path to annotation file or annotation name
 
         """
         from enthought.mayavi import mlab
-        if name is None:
-            basename = os.path.basename(filepath)
-            if basename.endswith(".gz"):
-                basename = basename[:-3]
-            if basename.startswith("%s." % self.hemi):
-                basename = basename[3:]
-            name = os.path.splitext(basename)[0]
-
         self._f.scene.disable_render = True
-        labels, cmap = io.read_annot(filepath)
-        ulabels = np.sort(np.unique(labels))
-        labels = np.searchsorted(ulabels, labels)
         view = mlab.view()
-        self.overlays[name] = Overlay(labels, self._geo, np.min(labels),
-                                                         np.max(labels), "pos")
+
+        # Figure out where the data is coming from
+        if os.path.isfile(annot):
+            filepath = annot
+            annot = os.path.basename(filepath).split('.')[1]
+        else:
+            filepath = pjoin(os.environ['SUBJECTS_DIR'],
+                             self.subject_id,
+                             'label',
+                             ".".join([self.hemi, annot, 'annot']))
+            if not os.path.exists(filepath):
+                raise ValueError('Annotation file %s does not exist'
+                                 % filepath)
+
+        # Read in the data
+        labels, cmap = io.read_annot(filepath)
+        ord = np.argsort(cmap[:, -1])
+        ids = ord[np.searchsorted(cmap[ord, -1], labels)]
+        cmap = cmap[:, :4]
+
+        # Maybe get rid of old overlay
+        if hasattr(self, "annot"):
+            self.annot['surface'].remove()
+
+        # Create an mlab surface to visualize the annot
+        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
+                                                   self._geo.y,
+                                                   self._geo.z,
+                                                   self._geo.faces,
+                                                   scalars=ids)
+        surf = mlab.pipeline.surface(mesh, name=annot)
+
+        # Set the color table
+        surf.module_manager.scalar_lut_manager.lut.table = cmap
+
+        # Set the brain attributes
+        self.annot = dict(surface=surf, name=annot)
+
         mlab.view(*view)
         self._f.scene.disable_render = False
 
