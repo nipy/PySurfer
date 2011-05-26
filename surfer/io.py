@@ -191,7 +191,7 @@ def read_annot(filepath):
             _ = np.fromfile(fobj, "|S%d" % name_length, 1)[0]  # Struct name
             ctab[i, :4] = np.fromfile(fobj, dt, 4)
             ctab[i, 4] = (ctab[i, 0] + ctab[i, 1] * (2 ** 8) +
-                            ctab[i, 2] * (2 ** 16) + ctab[i, 3] * (2 ** 24))
+                            ctab[i, 2] * (2 ** 16))
         ctab[:,3] = 255
     return labels, ctab
 

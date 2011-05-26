@@ -237,6 +237,8 @@ class Brain(object):
 
         # Read in the data
         labels, cmap = io.read_annot(filepath)
+        if np.any(labels == 0) and not np.any(cmap[:,-1] == 0):
+            cmap = np.vstack((cmap, np.zeros(5, int)))
         ord = np.argsort(cmap[:, -1])
         ids = ord[np.searchsorted(cmap[ord, -1], labels)]
         cmap = cmap[:, :4]
@@ -262,7 +264,7 @@ class Brain(object):
         surf.module_manager.scalar_lut_manager.lut.table = cmap
 
         # Set the brain attributes
-        self.annot = dict(surface=surf, name=annot)
+        self.annot = dict(surface=surf, name=annot, colormap=cmap)
 
         mlab.view(*view)
         self._f.scene.disable_render = False
