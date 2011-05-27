@@ -12,6 +12,12 @@ def _fread3(fobj):
     return (b1 << 16) + (b2 << 8) + b3
 
 
+def _fread3_many(fobj, n):
+    """Read 3-byte ints from an open binary file object."""
+    b1, b2, b3 = np.fromfile(fobj, ">u1", 3*n).reshape(-1, 3).astype(np.int).T
+    return (b1 << 16) + (b2 << 8) + b3
+
+
 def read_geometry(filepath):
     """Read a triangular format Freesurfer surface mesh.
 
@@ -29,17 +35,39 @@ def read_geometry(filepath):
     """
     with open(filepath, "rb") as fobj:
         magic = _fread3(fobj)
-        if magic == 16777215:
-            raise NotImplementedError("Quadrangle surface format reading "
-                                      "not implemented")
-        elif magic != 16777214:
+        if magic == 16777215:  # Quad file
+            nvert = _fread3(fobj)
+            nquad = _fread3(fobj)
+            coords = np.fromfile(fobj, ">i2", nvert*3).astype(np.float)
+            coords = coords.reshape(-1, 3) / 100.0
+            quads = _fread3_many(fobj, nquad*4)
+            quads = quads.reshape(nquad, 4)
+            #
+            #   Face splitting follows
+            #
+            faces = np.zeros((2*nquad, 3), dtype=np.int)
+            nface = 0
+            for quad in quads:
+                if (quad[0] % 2) == 0:
+                    faces[nface] = quad[0], quad[1], quad[3]
+                    nface += 1
+                    faces[nface] = quad[2], quad[3], quad[1]
+                    nface += 1
+                else:
+                    faces[nface] = quad[0], quad[1], quad[2]
+                    nface += 1
+                    faces[nface] = quad[0], quad[2], quad[3]
+                    nface += 1
+
+        elif magic == 16777214:  # Triangle file
+            create_stamp = fobj.readline()
+            _ = fobj.readline()
+            vnum = np.fromfile(fobj, ">i4", 1)[0]
+            fnum = np.fromfile(fobj, ">i4", 1)[0]
+            coords = np.fromfile(fobj, ">f4", vnum * 3).reshape(vnum, 3)
+            faces = np.fromfile(fobj, ">i4", fnum * 3).reshape(fnum, 3)
+        else:
             raise ValueError("File does not appear to be a Freesurfer surface")
-        create_stamp = fobj.readline()
-        _ = fobj.readline()
-        vnum = np.fromfile(fobj, ">i4", 1)[0]
-        fnum = np.fromfile(fobj, ">i4", 1)[0]
-        coords = np.fromfile(fobj, ">f4", vnum * 3).reshape(vnum, 3)
-        faces = np.fromfile(fobj, ">i4", fnum * 3).reshape(fnum, 3)
 
     coords = coords.astype(np.float)  # XXX: due to mayavi bug on mac 32bits
     return coords, faces
@@ -126,15 +154,26 @@ def read_scalar_data(filepath):
 
 
 def read_annot(filepath):
-    """Load in a Freesurfer annotation from a .annot file."""
-    # TODO: probably rewrite this, the matlab implementation is a big
-    # hassle anyway.  Also figure out if Mayavi allows you to work with
-    # a Freesurfer style LUT
+    """Read in a Freesurfer annotation from a .annot file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to annotation file
+
+    Returns
+    -------
+    labels : n_vtx numpy array
+        Annotation id at each vertex
+    ctab : numpy array
+
+
+    """
     with open(filepath, "rb") as fobj:
         dt = ">i4"
         vnum = np.fromfile(fobj, dt, 1)[0]
         data = np.fromfile(fobj, dt, vnum * 2).reshape(vnum, 2)
-        annot = data[:, 1]
+        labels = data[:, 1]
         ctab_exists = np.fromfile(fobj, dt, 1)[0]
         if not ctab_exists:
             return
@@ -152,8 +191,9 @@ def read_annot(filepath):
             _ = np.fromfile(fobj, "|S%d" % name_length, 1)[0]  # Struct name
             ctab[i, :4] = np.fromfile(fobj, dt, 4)
             ctab[i, 4] = (ctab[i, 0] + ctab[i, 1] * (2 ** 8) +
-                            ctab[i, 2] * (2 ** 16) + ctab[i, 3] * (2 ** 24))
-    return ctab
+                            ctab[i, 2] * (2 ** 16))
+        ctab[:,3] = 255
+    return labels, ctab
 
 
 def read_label(filepath):

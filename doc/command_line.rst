@@ -6,7 +6,7 @@ The command-line interface
 Introduction
 ------------
 
-The command-line program pysurfer is designed to largely replicate
+The command-line program ``pysurfer`` is designed to largely replicate
 Freesufer's tksurfer command-line interface in the format and style
 of arguments it accepts. Like tksurfer, invoking it will initialize
 a visualization in an external window and begin an IPython session in the
@@ -18,9 +18,9 @@ hemisphere, and the surface geometry to visualize::
 
     pysurfer fsaverage lh inflated
 
-This will open a viewing session that looks like this:
+which will open a viewing session that looks like this:
 
-..image: basic_session.png
+.. image:: _static/basic_session.png
 
 Manipulating the visualization
 ------------------------------
@@ -35,18 +35,19 @@ mouse and keyboard to interact with a Mayavi scence.
 When pysurfer finishes loading the visualization, it initializes an
 IPython session in terminal, which allows for a more comprehensive
 interaction with the scene. The IPython interactive namespace will 
-include a ``brain`` variable, is bound to the :class:`viz.Brain`
+include a ``brain`` variable, which is bound to the :class:`viz.Brain`
 object underlying the visualization. For convenience, the ``b`` variable
 is also mapped to this object. (As a reminder, you can always type
 ``whos`` in an IPython prompt to see the contents of the interactive
-namespace. See the :class:`viz.Brain` documentation for full information
+namespace.) See the :class:`viz.Brain` documentation for full information
 about how to control the visualization in this way.
 
 Other command-line options
 --------------------------
 
-As in Tksurfer, most aspects of the visualization can be initialized
+As in tksurfer, most aspects of the visualization can be initialized
 from the command-line. To get a full documentation of the command-line
 interface, simply type ``pysurfer`` at a terminal prompt and hit enter.
-Below, we will summarize some options.
+For convenience, this usage message is reproduced below.
 
+.. literalinclude:: pysurfer_usage.txt

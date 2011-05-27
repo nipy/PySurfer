@@ -13,8 +13,8 @@ Changing the display background
 -------------------------------
 
 There are five preset options for the color of the visualization
-background. They are "black", "white", "midnight", "sand", and
-"slate":
+background. They are ``black``, ``white``, ``charcoal``, ``midnight``,
+``slate``, and ``sand``:
 
 .. image:: _static/background_options.png
 
@@ -25,9 +25,9 @@ By default, a new :class:`Brain` instance displays the binarized
 cortical curvature values, so you can see which patches of cortex
 are gyri and which are sulci (pass ``curv=False`` to the
 :class:`Brain` constructor, or use the ``-no-curv`` switch in the
-command-line interface to turn this off). There are three preset
-themes for the curvature color scheme: "classic", "bone",
-"high_contrast", and "low_contrast":
+command-line interface to turn this off). There are four preset
+themes for the curvature color scheme: ``classic``, ``bone``,
+``high_contrast``, and ``low_contrast``:
 
 .. image:: _static/cortex_options.png
 

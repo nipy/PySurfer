@@ -11,6 +11,7 @@ if 'SUBJECTS_DIR' not in os.environ:
 
 subj_dir = os.environ["SUBJECTS_DIR"]
 subject_id = 'fsaverage'
+# subject_id = 'sample'
 data_path = pjoin(subj_dir, subject_id)
 
 
@@ -21,11 +22,17 @@ def test_geometry():
     assert_equal(0, faces.min())
     assert_equal(coords.shape[0], faces.max() + 1)
 
+    # Test quad with sphere
+    surf_path = pjoin(data_path, "surf", "%s.%s" % ("lh", "sphere.reg"))
+    coords, faces = io.read_geometry(surf_path)
+    assert_equal(0, faces.min())
+    assert_equal(coords.shape[0], faces.max() + 1)
 
-def test_curvature():
-    """Test IO of .curv"""
+
+def test_morph_data():
+    """Test IO of morphometry data file (eg. curvature)."""
     curv_path = pjoin(data_path, "surf", "%s.%s" % ("lh", "curv"))
-    curv = io.read_curvature(curv_path)
+    curv = io.read_morph_data(curv_path)
     assert -1.0 < curv.min() < 0
     assert 0 < curv.max() < 1.0
 

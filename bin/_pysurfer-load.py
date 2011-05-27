@@ -32,6 +32,10 @@ if args.overlay is not None:
 
     b.add_overlay(args.overlay, args.min, args.max, args.sign)
 
+# Maybe load an annot
+if args.annotation is not None:
+    b.add_annotation(args.annotation)
+
 # Also point brain at the Brain() object
 brain = b
 

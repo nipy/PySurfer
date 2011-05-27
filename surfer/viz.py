@@ -207,6 +207,68 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
+    def add_annotation(self, annot, contour=False):
+        """Add an annotation file.
+
+        Parameters
+        ----------
+        annot : str
+            Either path to annotation file or annotation name
+        contour: bool
+            Show only contours of labels
+
+        """
+        from enthought.mayavi import mlab
+        self._f.scene.disable_render = True
+        view = mlab.view()
+
+        # Figure out where the data is coming from
+        if os.path.isfile(annot):
+            filepath = annot
+            annot = os.path.basename(filepath).split('.')[1]
+        else:
+            filepath = pjoin(os.environ['SUBJECTS_DIR'],
+                             self.subject_id,
+                             'label',
+                             ".".join([self.hemi, annot, 'annot']))
+            if not os.path.exists(filepath):
+                raise ValueError('Annotation file %s does not exist'
+                                 % filepath)
+
+        # Read in the data
+        labels, cmap = io.read_annot(filepath)
+        if np.any(labels == 0) and not np.any(cmap[:,-1] == 0):
+            cmap = np.vstack((cmap, np.zeros(5, int)))
+        ord = np.argsort(cmap[:, -1])
+        ids = ord[np.searchsorted(cmap[ord, -1], labels)]
+        cmap = cmap[:, :4]
+
+        # Maybe get rid of old overlay
+        if hasattr(self, "annot"):
+            self.annot['surface'].remove()
+
+        # Create an mlab surface to visualize the annot
+        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
+                                                   self._geo.y,
+                                                   self._geo.z,
+                                                   self._geo.faces,
+                                                   scalars=ids)
+        surf = mlab.pipeline.surface(mesh, name=annot)
+
+        if contour:
+            surf.enable_contours = True
+            surf.actor.property.line_width = 5
+            surf.contour.number_of_contours = len(cmap)
+
+        # Set the color table
+        surf.module_manager.scalar_lut_manager.lut.table = cmap
+
+        # Set the brain attributes
+        self.annot = dict(surface=surf, name=annot, colormap=cmap)
+
+        mlab.view(*view)
+        self._f.scene.disable_render = False
+
     def add_morphometry(self, measure, visible=True):
         """Add a morphometry overlay to the image.
 

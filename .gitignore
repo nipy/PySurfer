@@ -10,6 +10,7 @@ doc/_build/
 doc/build/
 doc/auto_examples/
 doc/modules/generated/
+doc/pysurfer_usage.txt
 pip-log.txt
 .coverage
 tags
