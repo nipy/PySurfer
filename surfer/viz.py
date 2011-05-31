@@ -343,13 +343,15 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_morphometry(self, measure, visible=True):
+    def add_morphometry(self, measure, grayscale=False):
         """Add a morphometry overlay to the image.
 
         Parameters
         ----------
         measure : {'area' | 'curv' | 'jacobian_white' | 'sulc' | 'thickness'}
             which measure to load
+        grayscale : bool
+            whether to load the overlay with a grayscale colormap
 
         """
         from enthought.mayavi import mlab
@@ -397,7 +399,11 @@ class Brain(object):
                                                     self._geo.z,
                                                     self._geo.faces,
                                                     scalars=morph_data)
-        surf = mlab.pipeline.surface(mesh, colormap=cmap_dict[measure],
+        if grayscale:
+            colormap = "gray"
+        else:
+            colormap = cmap_dict[measure]
+        surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
                                      name=measure)
 
