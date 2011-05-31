@@ -42,8 +42,10 @@ parser.add_argument("-morphometry", metavar="MEAS",
                     help="load morphometry file (e.g. thickness, curvature)")
 parser.add_argument("-annotation", metavar="ANNOT",
                     help="load annotation (by name or filepath)")
+parser.add_argument("-label",
+                    help="load label (by name or filepath")
 parser.add_argument("-borders", action="store_true",
-                    help="only show annot borders (implied by loading other data)")
+                    help="only show labe/annot borders (implied by loading other data)")
 parser.add_argument("-overlay", metavar="FILE",
                     help="load scalar overlay file")
 parser.add_argument("-range", metavar=('MIN', 'MAX'), nargs=2,

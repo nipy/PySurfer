@@ -100,8 +100,9 @@ class Brain(object):
             self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                                    color=(.5, .5, .5))
 
-        # Initialize the overlay dictionaries
+        # Initialize the overlay and label dictionaries
         self.overlays = dict()
+        self.labels = dict()
 
         # Bring up the lateral view
         self.show_view(config.get("visual", "default_view"))
@@ -208,7 +209,7 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_annotation(self, annot, borders=False):
+    def add_annotation(self, annot, borders=True):
         """Add an annotation file.
 
         Parameters
@@ -216,7 +217,7 @@ class Brain(object):
         annot : str
             Either path to annotation file or annotation name
         borders : bool
-            Show only borders of labels
+            Show only borders of regions
 
         """
         from enthought.mayavi import mlab
@@ -261,7 +262,7 @@ class Brain(object):
         ids = ord[np.searchsorted(cmap[ord, -1], labels)]
         cmap = cmap[:, :4]
 
-        # Maybe get rid of old overlay
+        # Maybe get rid of old annot
         if hasattr(self, "annot"):
             self.annot['surface'].remove()
 
@@ -278,6 +279,66 @@ class Brain(object):
 
         # Set the brain attributes
         self.annot = dict(surface=surf, name=annot, colormap=cmap)
+
+        mlab.view(*view)
+        self._f.scene.disable_render = False
+
+    def add_label(self, label, borders=True, color=(76, 169, 117, 255)):
+        """Add an ROI label to the image.
+
+        Parameters
+        ----------
+        label : str
+            label filepath or name
+        borders : bool
+            show only label borders
+        color : (float, float, float, float)
+            RGBA color tuple
+
+        """
+        from enthought.mayavi import mlab
+        self._f.scene.disable_render = True
+        view = mlab.view()
+
+        # Figure out where the data is coming from
+        if os.path.isfile(label):
+            filepath = label
+            label_name = os.path.basename(filepath).split('.')[1]
+        else:
+            label_name = label
+            filepath = pjoin(os.environ['SUBJECTS_DIR'],
+                             self.subject_id,
+                             'label',
+                             ".".join([self.hemi, label_name, 'label']))
+            if not os.path.exists(filepath):
+                raise ValueError('Label file %s does not exist'
+                                 % filepath)
+
+        ids = (io.read_label(filepath),)
+        label = np.zeros(self._geo.coords.shape[0])
+        label[ids] = 1
+
+        if borders:
+            n_vertices = label.size
+            edges = utils.mesh_edges(self._geo.faces)
+            border_edges = label[edges.row] != label[edges.col]
+            show = np.zeros(n_vertices, dtype=np.int)
+            show[np.unique(edges.row[border_edges])] = 1
+            label *= show
+
+        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
+                                                   self._geo.y,
+                                                   self._geo.z,
+                                                   self._geo.faces,
+                                                   scalars=label)
+        surf = mlab.pipeline.surface(mesh, name=label_name)
+
+        if not isinstance(color, tuple) or len(color) != 4:
+            raise TypeError("'color' parameter must be a 4-tuple")
+        cmap = np.array([(0, 0, 0, 0,), color])
+        surf.module_manager.scalar_lut_manager.lut.table = cmap
+
+        self.labels[label_name] = surf
 
         mlab.view(*view)
         self._f.scene.disable_render = False

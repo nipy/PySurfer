@@ -105,7 +105,18 @@ def read_morph_data(filepath):
 
 
 def read_scalar_data(filepath):
-    """Load in scalar data from an image."""
+    """Load in scalar data from an image.
+
+    Parameters
+    ----------
+    filepath : str
+        path to scalar data file
+
+    Returns
+    -------
+    scalar_data : numpy array
+        flat numpy array of scalar data
+    """
     try:
         scalar_data = nib.load(filepath).get_data()
         scalar_data = np.ravel(scalar_data, order="F")
@@ -166,7 +177,7 @@ def read_annot(filepath):
     labels : n_vtx numpy array
         Annotation id at each vertex
     ctab : numpy array
-
+        RGBA + label id colortable array
 
     """
     with open(filepath, "rb") as fobj:
@@ -192,16 +203,22 @@ def read_annot(filepath):
             ctab[i, :4] = np.fromfile(fobj, dt, 4)
             ctab[i, 4] = (ctab[i, 0] + ctab[i, 1] * (2 ** 8) +
                             ctab[i, 2] * (2 ** 16))
-        ctab[:,3] = 255
+        ctab[:, 3] = 255
     return labels, ctab
 
 
 def read_label(filepath):
     """Load in a Freesurfer .label file.
 
-    Label files are just text files indicating the vertices included
-    in the label. Each Surface instance has a dictionary of labels, keyed
-    by the name (which is taken from the file name if not given as an argument.
+    Parameters
+    ----------
+    filepath : str
+        Path to label file
+
+    Returns
+    -------
+    label_array : numpy array
+        Array with indices of vertices included in label
 
     """
     label_array = np.loadtxt(filepath, dtype=np.int, skiprows=2, usecols=[0])
