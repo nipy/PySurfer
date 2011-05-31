@@ -34,7 +34,9 @@ if args.overlay is not None:
 
 # Maybe load an annot
 if args.annotation is not None:
-    b.add_annotation(args.annotation)
+    if not args.borders:
+        args.borders = any([args.overlay, args.morphometry])
+    b.add_annotation(args.annotation, args.borders)
 
 # Also point brain at the Brain() object
 brain = b
