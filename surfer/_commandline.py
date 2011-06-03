@@ -45,7 +45,7 @@ parser.add_argument("-annotation", metavar="ANNOT",
 parser.add_argument("-label",
                     help="load label (by name or filepath")
 parser.add_argument("-borders", action="store_true",
-                    help="only show labe/annot borders (implied by loading other data)")
+                    help="only show label/annot borders (implied by loading other data)")
 parser.add_argument("-overlay", metavar="FILE",
                     help="load scalar overlay file")
 parser.add_argument("-range", metavar=('MIN', 'MAX'), nargs=2,
