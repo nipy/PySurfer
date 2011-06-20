@@ -164,13 +164,16 @@ def read_scalar_data(filepath):
     return scalar_data
 
 
-def read_annot(filepath):
+def read_annot(filepath, orig_ids=False):
     """Read in a Freesurfer annotation from a .annot file.
 
     Parameters
     ----------
     filepath : str
         Path to annotation file
+    orig_ids : bool
+        Whether to return the vertex ids as stored in the annotation
+        file or the positional colortable ids
 
     Returns
     -------
@@ -203,7 +206,10 @@ def read_annot(filepath):
             ctab[i, :4] = np.fromfile(fobj, dt, 4)
             ctab[i, 4] = (ctab[i, 0] + ctab[i, 1] * (2 ** 8) +
                             ctab[i, 2] * (2 ** 16))
-        ctab[:, 3] = 255
+    ctab[:, 3] = 255
+    if not orig_ids:
+        ord = np.argsort(ctab[:, -1])
+        labels = ord[np.searchsorted(ctab[ord, -1], labels)]
     return labels, ctab
 
 
