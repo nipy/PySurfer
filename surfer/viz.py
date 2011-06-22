@@ -7,6 +7,7 @@ from scipy import stats
 from scipy import ndimage
 
 from . import io
+from . import utils
 from .io import Surface
 from .config import config
 
@@ -99,8 +100,10 @@ class Brain(object):
             self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                                    color=(.5, .5, .5))
 
-        # Initialize the overlay dictionaries
+        # Initialize the overlay and label dictionaries
         self.overlays = dict()
+        self.labels = dict()
+        self.foci = dict()
 
         # Bring up the lateral view
         self.show_view(config.get("visual", "default_view"))
@@ -207,15 +210,15 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_annotation(self, annot, contour=False):
+    def add_annotation(self, annot, borders=True):
         """Add an annotation file.
 
         Parameters
         ----------
         annot : str
             Either path to annotation file or annotation name
-        contour: bool
-            Show only contours of labels
+        borders : bool
+            Show only borders of regions
 
         """
         from enthought.mayavi import mlab
@@ -236,14 +239,31 @@ class Brain(object):
                                  % filepath)
 
         # Read in the data
-        labels, cmap = io.read_annot(filepath)
-        if np.any(labels == 0) and not np.any(cmap[:,-1] == 0):
+        labels, cmap = io.read_annot(filepath, orig_ids=True)
+
+        # Maybe zero-out the non-border vertices
+        if borders:
+            n_vertices = labels.size
+            edges = utils.mesh_edges(self._geo.faces)
+            border_edges = labels[edges.row] != labels[edges.col]
+            show = np.zeros(n_vertices, dtype=np.int)
+            show[np.unique(edges.row[border_edges])] = 1
+            labels *= show
+
+        # Handle null labels properly
+        # (tksurfer doesn't use the alpha channel, so sometimes this
+        # is set weirdly. For our purposes, it should always be 0.
+        # Unless this sometimes causes problems?
+        cmap[np.where(cmap[:, 4] == 0), 3] = 0
+        if np.any(labels == 0) and not np.any(cmap[:, -1] == 0):
             cmap = np.vstack((cmap, np.zeros(5, int)))
+
+        # Set label ids sensibly
         ord = np.argsort(cmap[:, -1])
         ids = ord[np.searchsorted(cmap[ord, -1], labels)]
         cmap = cmap[:, :4]
 
-        # Maybe get rid of old overlay
+        # Maybe get rid of old annot
         if hasattr(self, "annot"):
             self.annot['surface'].remove()
 
@@ -255,11 +275,6 @@ class Brain(object):
                                                    scalars=ids)
         surf = mlab.pipeline.surface(mesh, name=annot)
 
-        if contour:
-            surf.enable_contours = True
-            surf.actor.property.line_width = 5
-            surf.contour.number_of_contours = len(cmap)
-
         # Set the color table
         surf.module_manager.scalar_lut_manager.lut.table = cmap
 
@@ -269,13 +284,75 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_morphometry(self, measure, visible=True):
+    def add_label(self, label, borders=True, color=(76, 169, 117, 255)):
+        """Add an ROI label to the image.
+
+        Parameters
+        ----------
+        label : str
+            label filepath or name
+        borders : bool
+            show only label borders
+        color : (float, float, float, float)
+            RGBA color tuple
+
+        """
+        from enthought.mayavi import mlab
+        self._f.scene.disable_render = True
+        view = mlab.view()
+
+        # Figure out where the data is coming from
+        if os.path.isfile(label):
+            filepath = label
+            label_name = os.path.basename(filepath).split('.')[1]
+        else:
+            label_name = label
+            filepath = pjoin(os.environ['SUBJECTS_DIR'],
+                             self.subject_id,
+                             'label',
+                             ".".join([self.hemi, label_name, 'label']))
+            if not os.path.exists(filepath):
+                raise ValueError('Label file %s does not exist'
+                                 % filepath)
+
+        ids = (io.read_label(filepath),)
+        label = np.zeros(self._geo.coords.shape[0])
+        label[ids] = 1
+
+        if borders:
+            n_vertices = label.size
+            edges = utils.mesh_edges(self._geo.faces)
+            border_edges = label[edges.row] != label[edges.col]
+            show = np.zeros(n_vertices, dtype=np.int)
+            show[np.unique(edges.row[border_edges])] = 1
+            label *= show
+
+        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
+                                                   self._geo.y,
+                                                   self._geo.z,
+                                                   self._geo.faces,
+                                                   scalars=label)
+        surf = mlab.pipeline.surface(mesh, name=label_name)
+
+        if not isinstance(color, tuple) or len(color) != 4:
+            raise TypeError("'color' parameter must be a 4-tuple")
+        cmap = np.array([(0, 0, 0, 0,), color])
+        surf.module_manager.scalar_lut_manager.lut.table = cmap
+
+        self.labels[label_name] = surf
+
+        mlab.view(*view)
+        self._f.scene.disable_render = False
+
+    def add_morphometry(self, measure, grayscale=False):
         """Add a morphometry overlay to the image.
 
         Parameters
         ----------
         measure : {'area' | 'curv' | 'jacobian_white' | 'sulc' | 'thickness'}
             which measure to load
+        grayscale : bool
+            whether to load the overlay with a grayscale colormap
 
         """
         from enthought.mayavi import mlab
@@ -323,7 +400,11 @@ class Brain(object):
                                                     self._geo.z,
                                                     self._geo.faces,
                                                     scalars=morph_data)
-        surf = mlab.pipeline.surface(mesh, colormap=cmap_dict[measure],
+        if grayscale:
+            colormap = "gray"
+        else:
+            colormap = cmap_dict[measure]
+        surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
                                      name=measure)
 
@@ -335,6 +416,58 @@ class Brain(object):
         self.morphometry = dict(surface=surf,
                                 colorbar=bar,
                                 measure=measure)
+        mlab.view(*view)
+        self._f.scene.disable_render = False
+
+    def add_foci(self, coords, surface="white",
+                 scale_factor=5, color=(1, 1, 1), name=None):
+        """Add spherical foci, possibly mapping to displayed surf.
+
+        The foci spheres can be displayed at the coordinates given, or
+        mapped through a surface geometry. In other words, coordinates
+        from a volume-based analysis in MNI space can be displayed on an
+        inflated average surface by finding the closest vertex on the
+        white surface and mapping to that vertex on the inflated mesh.
+
+        Parameters
+        ----------
+        coords : n x 3 numpy array
+            x, y, z coordinates of foci in stereotaxic space
+        surface : Freesurfer surf or None
+            surface to map coordinates through, or None to use raw coords
+        scale_factor : int
+            controls the size of the foci spheres
+        color : 3-tuple
+            RGB color code for foci spheres
+        name : str
+            internal name to use
+
+        """
+        from enthought.mayavi import mlab
+
+        # Possibly map the foci coords through a surface
+        if surface is None:
+            foci_coords = np.atleast_2d(coords)
+        else:
+            foci_surf = io.Surface(self.subject_id, self.hemi, surface)
+            foci_surf.load_geometry()
+            foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
+            foci_coords = self._geo.coords[foci_vtxs]
+
+        # Get a unique name (maybe should take this approach elsewhere)
+        if name is None:
+            name = "foci_%d" % (len(self.foci) + 1)
+
+        # Create the visualization
+        self._f.scene.disable_render = True
+        view = mlab.view()
+        points = mlab.points3d(foci_coords[:, 0],
+                               foci_coords[:, 1],
+                               foci_coords[:, 2],
+                               np.ones(foci_coords.shape[0]),
+                               scale_factor=scale_factor,
+                               color=color, name=name)
+        self.foci[name] = points
         mlab.view(*view)
         self._f.scene.disable_render = False
 
