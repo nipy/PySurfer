@@ -1,5 +1,28 @@
 import numpy as np
 from scipy import sparse
+from scipy.spatial.distance import cdist
+
+
+def find_closest_vertices(surface_coords, point_coords):
+    """Return the vertices on a surface mesh closest to some given coordinates.
+
+    The distance metric used is Euclidian distance.
+
+    Parameters
+    ----------
+    surface_coords : numpy array
+        Array of coordinates on a surface mesh
+    point_coords : numpy array
+        Array of coordinates to map to vertices
+
+    Returns
+    -------
+    closest_vertices : numpy array
+        Array of mesh vertex ids
+
+    """
+    point_coords = np.atleast_2d(point_coords)
+    return np.argmin(cdist(surface_coords, point_coords), axis=0)
 
 
 def mesh_edges(faces):

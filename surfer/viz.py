@@ -103,6 +103,7 @@ class Brain(object):
         # Initialize the overlay and label dictionaries
         self.overlays = dict()
         self.labels = dict()
+        self.foci = dict()
 
         # Bring up the lateral view
         self.show_view(config.get("visual", "default_view"))
@@ -415,6 +416,58 @@ class Brain(object):
         self.morphometry = dict(surface=surf,
                                 colorbar=bar,
                                 measure=measure)
+        mlab.view(*view)
+        self._f.scene.disable_render = False
+
+    def add_foci(self, coords, surface="white",
+                 scale_factor=5, color=(1, 1, 1), name=None):
+        """Add spherical foci, possibly mapping to displayed surf.
+
+        The foci spheres can be displayed at the coordinates given, or
+        mapped through a surface geometry. In other words, coordinates
+        from a volume-based analysis in MNI space can be displayed on an
+        inflated average surface by finding the closest vertex on the
+        white surface and mapping to that vertex on the inflated mesh.
+
+        Parameters
+        ----------
+        coords : n x 3 numpy array
+            x, y, z coordinates of foci in stereotaxic space
+        surface : Freesurfer surf or None
+            surface to map coordinates through, or None to use raw coords
+        scale_factor : int
+            controls the size of the foci spheres
+        color : 3-tuple
+            RGB color code for foci spheres
+        name : str
+            internal name to use
+
+        """
+        from enthought.mayavi import mlab
+
+        # Possibly map the foci coords through a surface
+        if surface is None:
+            foci_coords = np.atleast_2d(coords)
+        else:
+            foci_surf = io.Surface(self.subject_id, self.hemi, surface)
+            foci_surf.load_geometry()
+            foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
+            foci_coords = self._geo.coords[foci_vtxs]
+
+        # Get a unique name (maybe should take this approach elsewhere)
+        if name is None:
+            name = "foci_%d" % (len(self.foci) + 1)
+
+        # Create the visualization
+        self._f.scene.disable_render = True
+        view = mlab.view()
+        points = mlab.points3d(foci_coords[:, 0],
+                               foci_coords[:, 1],
+                               foci_coords[:, 2],
+                               np.ones(foci_coords.shape[0]),
+                               scale_factor=scale_factor,
+                               color=color, name=name)
+        self.foci[name] = points
         mlab.view(*view)
         self._f.scene.disable_render = False
 
