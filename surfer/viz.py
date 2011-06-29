@@ -744,10 +744,10 @@ class Brain(object):
             try:
                 end = gviews[i + 1]
                 dv, dr = self.min_diff(beg, end)
-                dv /= np.array((n))
-                dr /= np.array((n))
+                dv /= np.array((n_steps))
+                dr /= np.array((n_steps))
                 self.show_view(beg)
-                for i in range(int(n)):
+                for i in range(int(n_steps)):
                     self._f.scene.camera.orthogonalize_view_up()
                     self._f.scene.camera.azimuth(dv[0])
                     self._f.scene.camera.elevation(dv[1])
