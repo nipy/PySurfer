@@ -14,7 +14,7 @@ def _fread3(fobj):
 
 def _fread3_many(fobj, n):
     """Read 3-byte ints from an open binary file object."""
-    b1, b2, b3 = np.fromfile(fobj, ">u1", 3*n).reshape(-1, 3).astype(np.int).T
+    b1, b2, b3 = np.fromfile(fobj, ">u1", 3 * n).reshape(-1, 3).astype(np.int).T
     return (b1 << 16) + (b2 << 8) + b3
 
 
@@ -38,14 +38,14 @@ def read_geometry(filepath):
         if magic == 16777215:  # Quad file
             nvert = _fread3(fobj)
             nquad = _fread3(fobj)
-            coords = np.fromfile(fobj, ">i2", nvert*3).astype(np.float)
+            coords = np.fromfile(fobj, ">i2", nvert * 3).astype(np.float)
             coords = coords.reshape(-1, 3) / 100.0
-            quads = _fread3_many(fobj, nquad*4)
+            quads = _fread3_many(fobj, nquad * 4)
             quads = quads.reshape(nquad, 4)
             #
             #   Face splitting follows
             #
-            faces = np.zeros((2*nquad, 3), dtype=np.int)
+            faces = np.zeros((2 * nquad, 3), dtype=np.int)
             nface = 0
             for quad in quads:
                 if (quad[0] % 2) == 0:

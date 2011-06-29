@@ -629,7 +629,7 @@ class Brain(object):
         # get bounding box for cropping
         boxes = []
         for im in images:
-            labels, n_labels = ndimage.label(np.array(im)[:,:,0])
+            labels, n_labels = ndimage.label(np.array(im)[:, :, 0])
             s = ndimage.find_objects(labels, n_labels)[0]  # slice roi
             # box = (left, top, width, height)
             boxes.append([s[1].start - border_size, s[0].start - border_size,
@@ -677,7 +677,7 @@ class Brain(object):
 
     def min_diff(self, beg, end):
         """Determine minimum "camera distance" between two views
-        
+
         Parameters
         ----------
         beg: string
@@ -694,22 +694,8 @@ class Brain(object):
         beg = self.xfm_view(beg)
         end = self.xfm_view(end)
         if beg == end:
-            if v in ['lateral', 'medial', 'anterior', 'posterior']:
-                dv = [360., 0.]
-            else:
-                dv = [180., 360.]
+            dv = [360., 0.]
             dr = 0
-        elif beg in ['dorsal', 'ventral'] or end in ['dorsal', 'ventral']:
-            #hard coding paths
-            lut = {'medial':{'dorsal': [180., 90.],
-                             'ventral': [-180., -90.]},
-                  'lateral':{'dorsal': [0., 90.],
-                             'ventral': [0., -90.]}}
-            try:
-                dv = lut[beg][end]
-                dr = 0.
-            except KeyError:
-                print("uh oh")
         else:
             ge = self.xfm_view(end, 'd')
             gb = self.xfm_view(beg, 'd')
@@ -733,6 +719,8 @@ class Brain(object):
                 use_cache=False):
         """Animate a rotation
 
+        Currently only rotations through the axial plane are allowed.
+
         Parameters
         ----------
         views: sequence
@@ -743,39 +731,24 @@ class Brain(object):
             save the animation
         fname: string
             file to save gif image
+        use_cache: bool
+            Use previously generated images in ./.tmp/
 
         """
         import numpy as np
-        #hack
         gviews = map(self.xfm_view, views)
-        for i, gv in enumerate(gviews[:]):
-            try:
-                if gv == gviews[i + 1]:
-                    #we need to insert good views
-                    if gv == 'dorsal':
-                        for v in ['m', 'v', 'l']:
-                            gviews.insert(i + 1, v)
-                    elif gv == 'ventral':
-                        for v in ['l', 'd', 'm']:
-                            gviews.insert(i + 1, v)
-            except IndexError:
-                pass
-        #end hack
+        if len([v for v in gviews if v in ('dorsal', 'ventral')]) > 0:
+            raise ValueError('Cannot animate through dorsal or ventral views.')
         if save_movie:
             stills = []
-            tmp_dir = "./.tmp"
-            tmp_fname = "%05d.png"
+            tmp_dir = './.tmp'
+            tmp_fname = pjoin(tmp_dir, '%05d.png')
             if not os.path.isdir(tmp_dir):
                 os.mkdir(tmp_dir)
-        for i, b in enumerate(gviews):
+        for i, beg in enumerate(gviews):
             try:
-                if isinstance(b, str):
-                    beg = self.xfm_view(b)
-                e = views[i + 1]
-                if isinstance(e, str):
-                    end = self.xfm_view(e)
+                end = gviews[i + 1]
                 dv, dr = self.min_diff(beg, end)
-                print(dv,dr)
                 dv /= np.array((n))
                 dr /= np.array((n))
                 self.show_view(beg)
@@ -786,9 +759,8 @@ class Brain(object):
                     self._f.scene.renderer.reset_camera_clipping_range()
                     self._f.scene.render()
                     if save_movie:
-                        tmp_fname = pjoin(tmp_dir, tmp_fname % i)
-                        if not (os.path.isfile(tmp_fname) and use_cache):
-                            self.save_image(tmp_fname)
+                        if not (os.path.isfile(tmp_fname % i) and use_cache):
+                            self.save_image(tmp_fname % i)
             except IndexError:
                 pass
         if save_movie:
@@ -797,7 +769,7 @@ class Brain(object):
             enc_cmd = " ".join(["mencoder",
                                 "-ovc lavc",
                                 "-mf fps=%d" % fps,
-                                "mf://%s" % pjoin(tmp_dir, tmp_fname),
+                                "mf://%s" % tmp_fname,
                                 "-of avi",
                                 "-lavcopts vcodec=mjpeg",
                                 "-ofps %d" % fps,

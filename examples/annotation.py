@@ -17,4 +17,3 @@ brain = viz.Brain(sub, hemi, surf)
 brain.add_annotation(annot_path, borders=True)
 # show all views
 brain.show_view('lateral')
-
