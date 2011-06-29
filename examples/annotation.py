@@ -1,6 +1,13 @@
+"""
+============================
+Vizualize an annotation file
+============================
+
+"""
+print __doc__
+
 import os
 from os.path import join as pjoin
-from surfer import io
 from surfer import viz
 
 subj_dir = os.environ["SUBJECTS_DIR"]

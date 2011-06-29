@@ -607,8 +607,8 @@ class Brain(object):
                 print("Skipping %s: not in view dict" % view)
         return images_written
 
-    def save_montage(self, filename, order=['lat', 'ven', 'med'], orientation='h',
-                     border_size=15):
+    def save_montage(self, filename, order=['lat', 'ven', 'med'],
+                     orientation='h', border_size=15):
         """Create a montage from a given order of images
 
         Parameters
@@ -715,8 +715,7 @@ class Brain(object):
             dr = er - br
         return (np.array(dv), dr)
 
-    def animate(self, views, n=180., save_movie=False, fname="movie.avi",
-                use_cache=False):
+    def animate(self, views, n_steps=180., fname=None, use_cache=False):
         """Animate a rotation
 
         Currently only rotations through the axial plane are allowed.
@@ -725,22 +724,18 @@ class Brain(object):
         ----------
         views: sequence
             views to animate through
-        n: float
+        n_steps: float
             number of steps to take in between
-        save_gif: bool
-            save the animation
         fname: string
-            file to save gif image
+            If not not None, it saves the animation as a movie.
+            fname can for example be "movie.avi"
         use_cache: bool
             Use previously generated images in ./.tmp/
-
         """
-        import numpy as np
         gviews = map(self.xfm_view, views)
         if len([v for v in gviews if v in ('dorsal', 'ventral')]) > 0:
             raise ValueError('Cannot animate through dorsal or ventral views.')
-        if save_movie:
-            stills = []
+        if fname is not None:
             tmp_dir = './.tmp'
             tmp_fname = pjoin(tmp_dir, '%05d.png')
             if not os.path.isdir(tmp_dir):
@@ -758,12 +753,12 @@ class Brain(object):
                     self._f.scene.camera.elevation(dv[1])
                     self._f.scene.renderer.reset_camera_clipping_range()
                     self._f.scene.render()
-                    if save_movie:
+                    if fname is not None:
                         if not (os.path.isfile(tmp_fname % i) and use_cache):
                             self.save_image(tmp_fname % i)
             except IndexError:
                 pass
-        if save_movie:
+        if fname is not None:
             fps = 10
             # we'll probably want some config options here
             enc_cmd = " ".join(["mencoder",
