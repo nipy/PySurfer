@@ -736,6 +736,8 @@ class Brain(object):
         if len([v for v in gviews if v in ('dorsal', 'ventral')]) > 0:
             raise ValueError('Cannot animate through dorsal or ventral views.')
         if fname is not None:
+            if not fname.endswith('.avi'):
+                raise ValueError('AVI is the only supported output format currently')
             tmp_dir = './.tmp'
             tmp_fname = pjoin(tmp_dir, '%05d.png')
             if not os.path.isdir(tmp_dir):
