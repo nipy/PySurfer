@@ -727,8 +727,8 @@ class Brain(object):
         n_steps: float
             number of steps to take in between
         fname: string
-            If not not None, it saves the animation as a movie.
-            fname can for example be "movie.avi"
+            If not None, it saves the animation as a movie.
+            fname should end in '.avi' as only the AVI format is supported
         use_cache: bool
             Use previously generated images in ./.tmp/
         """
