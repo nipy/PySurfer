@@ -419,7 +419,7 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_foci(self, coords, surface="white",
+    def add_foci(self, coords, coords_as_verts=False, map_surface=None,
                  scale_factor=5, color=(1, 1, 1), name=None):
         """Add spherical foci, possibly mapping to displayed surf.
 
@@ -431,9 +431,11 @@ class Brain(object):
 
         Parameters
         ----------
-        coords : n x 3 numpy array
-            x, y, z coordinates of foci in stereotaxic space
-        surface : Freesurfer surf or None
+        coords : numpy array
+            x, y, z coordinates in stereotaxic space or array of vertex ids
+        coords_as_verts : bool
+            whether the coords parameter should be interpreted as vertex ids
+        map_surface : Freesurfer surf or None
             surface to map coordinates through, or None to use raw coords
         scale_factor : int
             controls the size of the foci spheres
@@ -445,11 +447,16 @@ class Brain(object):
         """
         from enthought.mayavi import mlab
 
+        # Figure out how to interpret the first parameter
+        if coords_as_verts:
+            coords = self._geo.coords[coords]
+            map_surface = None
+
         # Possibly map the foci coords through a surface
-        if surface is None:
+        if map_surface is None:
             foci_coords = np.atleast_2d(coords)
         else:
-            foci_surf = io.Surface(self.subject_id, self.hemi, surface)
+            foci_surf = io.Surface(self.subject_id, self.hemi, map_surface)
             foci_surf.load_geometry()
             foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
             foci_coords = self._geo.coords[foci_vtxs]
@@ -470,6 +477,9 @@ class Brain(object):
         self.foci[name] = points
         mlab.view(*view)
         self._f.scene.disable_render = False
+
+    def add_contour_overlay(self, filepath, min=None, max=None,
+                            n_contours=7, contour_width=2)
 
     def __get_scene_properties(self, config_opts):
         """Get the background color and size from the config parser.
