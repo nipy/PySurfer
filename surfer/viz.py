@@ -542,8 +542,8 @@ class Brain(object):
 
         # Maybe get rid of an old overlay
         if hasattr(self, "contour"):
-            self.morphometry['surface'].remove()
-            self.morphometry['colorbar'].visible = False
+            self.contour['surface'].remove()
+            self.contour['colorbar'].visible = False
 
         # Deal with Mayavi bug
         if scalar_data.dtype.byteorder == '>':
@@ -563,7 +563,7 @@ class Brain(object):
         bar.scalar_bar_representation.position2 = .8, 0.09
 
         # Set up a dict attribute with pointers at important things
-        self.contour = dict(surfce=surf, colorbar=bar)
+        self.contour = dict(surface=surf, colorbar=bar)
         
         # Show the new overlay
         mlab.view(*view)
