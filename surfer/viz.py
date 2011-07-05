@@ -174,7 +174,7 @@ class Brain(object):
         Parameters
         ----------
         filepath : str
-            path to the overlay file (must be readable by Nibabel, or .mgh
+            path to the overlay file (must be readable by Nibabel, or .mgh)
         min : float
             threshold for overlay display
         max : float
@@ -479,7 +479,95 @@ class Brain(object):
         self._f.scene.disable_render = False
 
     def add_contour_overlay(self, filepath, min=None, max=None,
-                            n_contours=7, contour_width=2)
+                            n_contours=7, line_width=1.5):
+        """Add a topographic contour overlay.
+
+        Note: This visualization will look best when using the "low_contrast" 
+        cortical curvature colorscheme.
+
+        Parameters
+        ----------
+        filepath : str
+            path to the overlay file (must be readable by Nibabel, or .mgh)
+        min : float
+            threshold for overlay display
+        max : float
+            saturation point for overlay display
+        n_contours : int
+            number of contours to use in the display
+        line_width : float
+            width of contour lines
+
+        """
+        from enthought.mayavi import mlab
+
+        # Read the scalar data
+        scalar_data = io.read_scalar_data(filepath)
+
+        # TODO find a better place for this as it duplicates code in Overlay object
+        if min is None:
+            try:
+                min = config.getfloat("overlay", "min_thresh")
+            except ValueError:
+                min_str = config.get("overlay", "min_thresh")
+                if min_str == "robust_min":
+                    min = stats.scoreatpercentile(scalar_data, 2)
+                elif min_str == "actual_min":
+                    min = scalar_data.min()
+                else:
+                    min = 2.0
+                    warn("The 'min_thresh' value in your config value must be "
+                "a float, 'robust_min', or 'actual_min', but it is %s. "
+                "I'm setting the overlay min to the config default of 2" % min)
+
+        if max is None:
+            try:
+                max = config.getfloat("overlay", "max_thresh")
+            except ValueError:
+                max_str = config.get("overlay", "max_thresh")
+                if max_str == "robust_max":
+                    max = stats.scoreatpercentile(scalar_data, 98)
+                elif max_str == "actual_max":
+                    max = scalar_data.max()
+                else:
+                    max = stats.scoreatpercentile(scalar_data, 98)
+                    warn("The 'max_thresh' value in your config value must be "
+                "a float, 'robust_min', or 'actual_min', but it is %s. "
+                "I'm setting the overlay min to the config default "
+                "of robust_max" % max)
+
+        # Prep the viz
+        self._f.scene.disable_render = True
+        view = mlab.view()
+
+        # Maybe get rid of an old overlay
+        if hasattr(self, "contour"):
+            self.morphometry['surface'].remove()
+            self.morphometry['colorbar'].visible = False
+
+        # Deal with Mayavi bug
+        if scalar_data.dtype.byteorder == '>':
+            scalar_data.byteswap(True)
+
+        # Set up the pipeline
+        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y,
+                                                    self._geo.z, self._geo.faces,
+                                                    scalars=scalar_data)
+        thresh = mlab.pipeline.threshold(mesh, low=min)
+        surf = mlab.pipeline.contour_surface(thresh, contours=n_contours, 
+                                             line_width=line_width)
+
+        # Set the colorbar and range correctly
+        bar = mlab.scalarbar(surf)
+        bar.data_range = min, max
+        bar.scalar_bar_representation.position2 = .8, 0.09
+
+        # Set up a dict attribute with pointers at important things
+        self.contour = dict(surfce=surf, colorbar=bar)
+        
+        # Show the new overlay
+        mlab.view(*view)
+        self._f.scene.disable_render = False 
 
     def __get_scene_properties(self, config_opts):
         """Get the background color and size from the config parser.
