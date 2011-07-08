@@ -14,13 +14,13 @@ surf = 'inflated'
 
 brain = Brain(sub, hemi, surf)
 
-brain.animate(['l', 'a'])
+brain.animate(['l', 'po'])
 
 # control number of steps
 brain.animate(['l', 'm'], n_steps=30)
 
 # any path you can think of
-brain.animate(['l', 'p', 'm', 'a', 'p', 'a', 'l'], n_steps=45)
+brain.animate(['l', 'po', 'm', 'a', 'po', 'a', 'l'], n_steps=45)
 
 # full turns
 brain.animate(["m"] * 3)
@@ -29,4 +29,7 @@ brain.animate(["m"] * 3)
 brain.animate(['l', 'l'], n_steps=10, fname='simple_animation.avi')
 
 # however, rotating out of the axial plane is not allowed
-brain.animate(['l', 'd'])
+try:
+    brain.animate(['l', 'd'])
+except ValueError as e:
+    print e

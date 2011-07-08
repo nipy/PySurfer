@@ -16,14 +16,17 @@ lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
                 'anterior': {'v': (90., 90.), 'r': -180.},
                 'posterior': {'v': (270., 90.), 'r': 0.},
                 'dorsal': {'v': (180., 0.), 'r': 90.},
-                'ventral': {'v': (180., 180.), 'r': 90.}}
+                'ventral': {'v': (180., 180.), 'r': 90.},
+                'frontal': {'v': (120., 80.), 'r': 106.739},
+                'parietal': {'v': (-120., 60.), 'r': 49.106}}
 rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
                 'medial': {'v': (0., -90.), 'r': 90.},
                 'anterior': {'v': (-90., -90.), 'r': 180.},
                 'posterior': {'v': (90., -90.), 'r': 0.},
                 'dorsal': {'v': (180., 0.), 'r': 90.},
-                'ventral': {'v': (180., 180.), 'r': 90.}}
-
+                'ventral': {'v': (180., 180.), 'r': 90.},
+                'frontal': {'v': (60., 80.), 'r': -106.739},
+                'parietal': {'v': (-60., 60.), 'r': -49.106}}
 
 class Brain(object):
     """Brain object for visualizing with mlab."""
@@ -107,7 +110,6 @@ class Brain(object):
 
         # Bring up the lateral view
         self.show_view(config.get("visual", "default_view"))
-        #self.show_view("lat")
 
         # Turn disable render off so that it displays
         self._f.scene.disable_render = False
@@ -137,9 +139,9 @@ class Brain(object):
                 nv['azimuth'] = vd['v'][0]
                 nv['elevation'] = vd['v'][1]
                 view = nv
-            except ValueError:
-                    print("Cannot display %s view. Must be preset view "
-                          "name or leading substring" % view)
+            except ValueError as v:
+                    print(v)
+                    raise
         cv, cr = self.__view(view, roll)
         return (cv, cr)
 
@@ -775,13 +777,13 @@ class Brain(object):
 
     def min_diff(self, beg, end):
         """Determine minimum "camera distance" between two views
-
+                
         Parameters
         ----------
         beg: string
-            beginning anatomical view
+            origin anatomical view
         end: string
-            ending anatomical view
+            destination anatomical view
 
         Returns
         -------
@@ -795,22 +797,19 @@ class Brain(object):
             dv = [360., 0.]
             dr = 0
         else:
-            ge = self.xfm_view(end, 'd')
-            gb = self.xfm_view(beg, 'd')
-            ev = np.array(ge['v'])
-            bv = np.array(gb['v'])
-            d = ev - bv
-            er = np.array(ge['r'])
-            br = np.array(gb['r'])
+            end_d = self.xfm_view(end, 'd')
+            beg_d = self.xfm_view(beg, 'd')
             dv = []
-            for x in d:
-                if x > 180:
-                    dv.append(x - 360)
-                elif x < -180:
-                    dv.append(x + 360)
+            for b, e in zip(beg_d['v'], end_d['v']):
+                diff = e - b
+                # to minimize the rotation we need -180 <= diff <= 180
+                if diff > 180:
+                    dv.append(diff - 360)
+                elif diff < -180:
+                    dv.append(diff + 360)
                 else:
-                    dv.append(x)
-            dr = er - br
+                    dv.append(diff)
+            dr = np.array(end_d['r']) - np.array(beg_d['r'])
         return (np.array(dv), dr)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False):
@@ -831,11 +830,12 @@ class Brain(object):
             Use previously generated images in ./.tmp/
         """
         gviews = map(self.xfm_view, views)
-        if len([v for v in gviews if v in ('dorsal', 'ventral')]) > 0:
-            raise ValueError('Cannot animate through dorsal or ventral views.')
+        allowed = ('lateral', 'posterior', 'medial', 'anterior')
+        if not len([v for v in gviews if v in allowed]) == len(gviews):
+            raise ValueError('Animate through %s views.' % ' '.join(allowed))
         if fname is not None:
             if not fname.endswith('.avi'):
-                raise ValueError('AVI is the only supported output format currently')
+                raise ValueError('Can only output to AVI currently.')
             tmp_dir = './.tmp'
             tmp_fname = pjoin(tmp_dir, '%05d.png')
             if not os.path.isdir(tmp_dir):
@@ -892,15 +892,25 @@ class Brain(object):
         """
         if not view in self.viewdict:
             good_view = [k for k in self.viewdict if view == k[:len(view)]]
-            if len(good_view) != 1:
-                raise ValueError()
+            if len(good_view) == 0:
+                raise ValueError('No views exist with this substring')
+            if len(good_view) > 1:
+                raise ValueError("Multiple views exist with this substring."
+                                 "Try a longer substring")
             view = good_view[0]
         if out == 'd':
             return self.viewdict[view]
         else:
             return view
 
-
+    def close(self):
+        """Close the figure and cleanup data structure
+        
+        """
+        from enthought.mayavi import mlab
+        mlab.close(self._f)
+        #should we tear down other variables? 
+        
 class Overlay(object):
 
     def __init__(self, scalar_data, geo, min, max, sign):

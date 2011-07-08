@@ -22,6 +22,8 @@ brain.show_view('anter')
 brain.show_view('post')
 brain.show_view('dor')
 brain.show_view('ve')
+brain.show_view('frontal')
+brain.show_view('par')
 
 ###############################################################################
 # save some images
