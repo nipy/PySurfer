@@ -13,16 +13,16 @@ from .config import config
 
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
                 'medial': {'v': (0., 90.), 'r': -90.},
-                'anterior': {'v': (90., 90.), 'r': -180.},
-                'posterior': {'v': (270., 90.), 'r': 0.},
+                'rostral': {'v': (90., 90.), 'r': -180.},
+                'caudal': {'v': (270., 90.), 'r': 0.},
                 'dorsal': {'v': (180., 0.), 'r': 90.},
                 'ventral': {'v': (180., 180.), 'r': 90.},
                 'frontal': {'v': (120., 80.), 'r': 106.739},
                 'parietal': {'v': (-120., 60.), 'r': 49.106}}
 rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
                 'medial': {'v': (0., -90.), 'r': 90.},
-                'anterior': {'v': (-90., -90.), 'r': 180.},
-                'posterior': {'v': (90., -90.), 'r': 0.},
+                'rostral': {'v': (-90., -90.), 'r': 180.},
+                'caudal': {'v': (90., -90.), 'r': 0.},
                 'dorsal': {'v': (180., 0.), 'r': 90.},
                 'ventral': {'v': (180., 180.), 'r': 90.},
                 'frontal': {'v': (60., 80.), 'r': -106.739},
@@ -119,8 +119,8 @@ class Brain(object):
 
         Parameters
         ----------
-        view : {'lateral' | 'medial' | 'anterior' |
-                'posterior' | 'dorsal' | 'ventral' | dict}
+        view : {'lateral' | 'medial' | 'rostral' |
+                'caudal' | 'dorsal' | 'ventral' | dict}
             brain surface to view or kwargs to pass to mlab.view()
 
         Returns
@@ -830,7 +830,7 @@ class Brain(object):
             Use previously generated images in ./.tmp/
         """
         gviews = map(self.xfm_view, views)
-        allowed = ('lateral', 'posterior', 'medial', 'anterior')
+        allowed = ('lateral', 'caudal', 'medial', 'rostral')
         if not len([v for v in gviews if v in allowed]) == len(gviews):
             raise ValueError('Animate through %s views.' % ' '.join(allowed))
         if fname is not None:

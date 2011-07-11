@@ -14,13 +14,13 @@ surf = 'inflated'
 
 brain = Brain(sub, hemi, surf)
 
-brain.animate(['l', 'po'])
+brain.animate(['l', 'c'])
 
 # control number of steps
 brain.animate(['l', 'm'], n_steps=30)
 
 # any path you can think of
-brain.animate(['l', 'po', 'm', 'a', 'po', 'a', 'l'], n_steps=45)
+brain.animate(['l', 'c', 'm', 'r', 'c', 'r', 'l'], n_steps=45)
 
 # full turns
 brain.animate(["m"] * 3)

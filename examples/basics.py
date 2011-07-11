@@ -18,8 +18,8 @@ brain = Brain(sub, hemi, surf)
 # show all views
 brain.show_view('lateral')
 brain.show_view('m')
-brain.show_view('anter')
-brain.show_view('post')
+brain.show_view('rostral')
+brain.show_view('caudal')
 brain.show_view('dor')
 brain.show_view('ve')
 brain.show_view('frontal')
@@ -30,7 +30,7 @@ brain.show_view('par')
 brain.show_view('lat')
 brain.save_image("%s_lat.png" % sub)
 
-brain.save_imageset(sub, ['med', 'lat', 'ant', 'pos'], 'jpg')
+brain.save_imageset(sub, ['med', 'lat', 'ros', 'caud'], 'jpg')
 
 ###############################################################################
 # More advanced parameters
