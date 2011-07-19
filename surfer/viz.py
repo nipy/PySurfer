@@ -440,12 +440,15 @@ class Brain(object):
         morph_data = io.read_morph_data(morph_file)
 
         # Get a cortex mask for robust range
-        cortex = self._geo.load_label("cortex")
-        ctx_idx = np.where(cortex == 1)
+        self._geo.load_label("cortex")
+        ctx_idx = self._geo.labels["cortex"]
 
-        # Get the robust range
-        min = stats.scoreatpercentile(morph_data[ctx_idx], 2)
-        max = stats.scoreatpercentile(morph_data[ctx_idx], 98)
+        # Get the display range
+        if measure == "thickness":
+            min, max = 1, 4
+        else:
+            min = stats.scoreatpercentile(morph_data[ctx_idx], 2)
+            max = stats.scoreatpercentile(morph_data[ctx_idx], 98)
 
         # Set up the Mayavi pipeline
         if morph_data.dtype.byteorder == '>':
