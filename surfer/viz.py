@@ -28,6 +28,7 @@ rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
                 'frontal': {'v': (60., 80.), 'r': -106.739},
                 'parietal': {'v': (-60., 60.), 'r': -49.106}}
 
+
 class Brain(object):
     """Brain object for visualizing with mlab."""
 
@@ -199,8 +200,7 @@ class Brain(object):
             name = os.path.splitext(basename)[0]
 
         if name in self.overlays:
-            raise NameError("Overlay with name '%s' already exists. "
-                            "Please provide a name for this overlay" % name)
+            "%s%d" % (name, len(self.overlays) + 1)
 
         if not sign in ["abs", "pos", "neg"]:
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
@@ -209,6 +209,90 @@ class Brain(object):
         scalar_data = io.read_scalar_data(filepath)
         view = mlab.view()
         self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign)
+        mlab.view(*view)
+        self._f.scene.disable_render = False
+
+    def add_array_overlay(self, array, min=None, max=None,
+                          sign="abs", name=None):
+        """Add an overlay from a numpy array source.
+
+        The interface here is exactly the same as the add_overlay() method,
+        but it takes an array of values instead of a file path.  See the
+        add_array_data() method to display an array of data on the surface
+        without a threshold and with more control over the color map.
+
+        Parameters
+        ----------
+        array : numpy array
+            data array (nvtx vector)
+        min : float
+            threshold for overlay display
+        max : float
+            saturation point for overlay display
+        sign : {'abs' | 'pos' | 'neg'}
+            whether positive, negative, or both values should be displayed
+        name : str
+            name for the overlay in the internal dictionary
+
+        """
+        from enthought.mayavi import mlab
+        if name is None:
+            name = "overlay%d" % (len(self.overlays) + 1)
+
+        if not sign in ["abs", "pos", "neg"]:
+            raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
+
+        self._f.scene.disable_render = True
+        scalar_data = array
+        view = mlab.view()
+        self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign)
+        mlab.view(*view)
+        self._f.scene.disable_render = False
+
+    def add_array_data(self, array, min=None, max=None, colormap="blue-red"):
+        """Project data from a numpy array onto the surface.
+
+        Parameters
+        ----------
+        array : numpy array
+            data array (nvtx vector)
+        min : float
+            min value in colormap (uses real min if None)
+        max : float
+            max value in colormap (uses real max if None)
+        colormap : str
+            name of Mayavi colormap to use
+
+        """
+        from enthought.mayavi import mlab
+        self._f.scene.disable_render = True
+        view = mlab.view()
+
+        # Possibly remove old data
+        if hasattr(self, "array_data"):
+            self.array_data["surface"].remove()
+            self.array_data["colorbar"].remove()
+
+        if min is None:
+            min = array.min()
+        if max is None:
+            max = array.max()
+
+        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
+                                                    self._geo.y,
+                                                    self._geo.z,
+                                                    self._geo.faces,
+                                                    scalars=array)
+        surf = mlab.pipeline.surface(mesh, colormap=colormap,
+                                     vmin=min, vmax=max)
+
+        # Get the colorbar
+        bar = mlab.scalarbar(surf)
+        bar.scalar_bar_representation.position2 = .8, 0.09
+
+        # Fil in the morphometry dict
+        self.array_data = dict(surface=surf,
+                               colorbar=bar)
         mlab.view(*view)
         self._f.scene.disable_render = False
 
@@ -484,7 +568,7 @@ class Brain(object):
                             n_contours=7, line_width=1.5):
         """Add a topographic contour overlay.
 
-        Note: This visualization will look best when using the "low_contrast" 
+        Note: This visualization will look best when using the "low_contrast"
         cortical curvature colorscheme.
 
         Parameters
@@ -506,7 +590,7 @@ class Brain(object):
         # Read the scalar data
         scalar_data = io.read_scalar_data(filepath)
 
-        # TODO find a better place for this as it duplicates code in Overlay object
+        #TODO find a better place for this; duplicates code in Overlay object
         if min is None:
             try:
                 min = config.getfloat("overlay", "min_thresh")
@@ -553,10 +637,10 @@ class Brain(object):
 
         # Set up the pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y,
-                                                    self._geo.z, self._geo.faces,
-                                                    scalars=scalar_data)
+                                                  self._geo.z, self._geo.faces,
+                                                  scalars=scalar_data)
         thresh = mlab.pipeline.threshold(mesh, low=min)
-        surf = mlab.pipeline.contour_surface(thresh, contours=n_contours, 
+        surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
                                              line_width=line_width)
 
         # Set the colorbar and range correctly
@@ -566,10 +650,10 @@ class Brain(object):
 
         # Set up a dict attribute with pointers at important things
         self.contour = dict(surface=surf, colorbar=bar)
-        
+
         # Show the new overlay
         mlab.view(*view)
-        self._f.scene.disable_render = False 
+        self._f.scene.disable_render = False
 
     def __get_scene_properties(self, config_opts):
         """Get the background color and size from the config parser.
@@ -776,8 +860,8 @@ class Brain(object):
             os.remove(f)
 
     def min_diff(self, beg, end):
-        """Determine minimum "camera distance" between two views
-                
+        """Determine minimum "camera distance" between two views.
+
         Parameters
         ----------
         beg: string
@@ -813,7 +897,7 @@ class Brain(object):
         return (np.array(dv), dr)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False):
-        """Animate a rotation
+        """Animate a rotation.
 
         Currently only rotations through the axial plane are allowed.
 
@@ -904,13 +988,12 @@ class Brain(object):
             return view
 
     def close(self):
-        """Close the figure and cleanup data structure
-        
-        """
+        """Close the figure and cleanup data structure."""
         from enthought.mayavi import mlab
         mlab.close(self._f)
-        #should we tear down other variables? 
-        
+        #should we tear down other variables?
+
+
 class Overlay(object):
 
     def __init__(self, scalar_data, geo, min, max, sign):
