@@ -318,7 +318,7 @@ class Surface(object):
         try:
             self.labels[name] = label_array
         except AttributeError:
-            self.labels = dict(name=label_array)
+            self.labels = {name: label_array}
 
     def apply_xfm(self, mtx):
         """Apply an affine transformation matrix to the x,y,z vectors."""
