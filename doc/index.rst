@@ -12,10 +12,10 @@ PySurfer offers both a command-line interface designed to broadly
 replicate Freesurfer's Tksurfer program as well as a Python library
 for writing scripts to efficiently explore complex datasets. 
 
-Contents:
-
 .. toctree::
    :maxdepth: 2
+
+   auto_examples/index.rst
 
 Indices and tables
 ==================
