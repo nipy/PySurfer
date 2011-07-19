@@ -37,7 +37,7 @@ clean:
 	-rm -rf $(BUILDDIR)/*
 
 html:
-	pysurfer --help > pysurfer_usage.txt
+	../bin/pysurfer --help > documentation/pysurfer_usage.txt
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
