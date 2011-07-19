@@ -170,14 +170,14 @@ class Brain(object):
             mlab.roll(roll)
         return mlab.view(), mlab.roll()
 
-    def add_overlay(self, filepath, min=None, max=None, sign="abs",
+    def add_overlay(self, source, min=None, max=None, sign="abs",
                     name=None, visible=True):
-        """Add an overlay to the overlay dict.
+        """Add an overlay to the overlay dict from a file or array.
 
         Parameters
         ----------
-        filepath : str
-            path to the overlay file (must be readable by Nibabel, or .mgh)
+        src : str or numpy array
+            path to the overlay file or numpy array with data
         min : float
             threshold for overlay display
         max : float
@@ -191,13 +191,19 @@ class Brain(object):
 
         """
         from enthought.mayavi import mlab
-        if name is None:
-            basename = os.path.basename(filepath)
-            if basename.endswith(".gz"):
-                basename = basename[:-3]
-            if basename.startswith("%s." % self.hemi):
-                basename = basename[3:]
-            name = os.path.splitext(basename)[0]
+        # If source is a string, try to load a file
+        if isinstance(source, basestring):
+            if name is None:
+                basename = os.path.basename(source)
+                if basename.endswith(".gz"):
+                    basename = basename[:-3]
+                if basename.startswith("%s." % self.hemi):
+                    basename = basename[3:]
+                name = os.path.splitext(basename)[0]
+            scalar_data = io.read_scalar_data(source)
+        else:
+            # Can't think of a good way to check that this will work nicely
+            scalar_data = source
 
         if name in self.overlays:
             "%s%d" % (name, len(self.overlays) + 1)
@@ -206,51 +212,13 @@ class Brain(object):
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
 
         self._f.scene.disable_render = True
-        scalar_data = io.read_scalar_data(filepath)
         view = mlab.view()
         self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign)
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_array_overlay(self, array, min=None, max=None,
-                          sign="abs", name=None):
-        """Add an overlay from a numpy array source.
-
-        The interface here is exactly the same as the add_overlay() method,
-        but it takes an array of values instead of a file path.  See the
-        add_array_data() method to display an array of data on the surface
-        without a threshold and with more control over the color map.
-
-        Parameters
-        ----------
-        array : numpy array
-            data array (nvtx vector)
-        min : float
-            threshold for overlay display
-        max : float
-            saturation point for overlay display
-        sign : {'abs' | 'pos' | 'neg'}
-            whether positive, negative, or both values should be displayed
-        name : str
-            name for the overlay in the internal dictionary
-
-        """
-        from enthought.mayavi import mlab
-        if name is None:
-            name = "overlay%d" % (len(self.overlays) + 1)
-
-        if not sign in ["abs", "pos", "neg"]:
-            raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
-
-        self._f.scene.disable_render = True
-        scalar_data = array
-        view = mlab.view()
-        self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign)
-        mlab.view(*view)
-        self._f.scene.disable_render = False
-
-    def add_array_data(self, array, min=None, max=None, colormap="blue-red"):
-        """Project data from a numpy array onto the surface.
+    def add_data(self, array, min=None, max=None, colormap="blue-red"):
+        """Display data from a numpy array on the surface.
 
         Parameters
         ----------
@@ -269,15 +237,16 @@ class Brain(object):
         view = mlab.view()
 
         # Possibly remove old data
-        if hasattr(self, "array_data"):
-            self.array_data["surface"].remove()
-            self.array_data["colorbar"].remove()
+        if hasattr(self, "data"):
+            self.data["surface"].remove()
+            self.data["colorbar"].remove()
 
         if min is None:
             min = array.min()
         if max is None:
             max = array.max()
 
+        # Set up the visualization pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
                                                     self._geo.z,
@@ -290,9 +259,8 @@ class Brain(object):
         bar = mlab.scalarbar(surf)
         bar.scalar_bar_representation.position2 = .8, 0.09
 
-        # Fil in the morphometry dict
-        self.array_data = dict(surface=surf,
-                               colorbar=bar)
+        # Fil in the data dict
+        self.data = dict(surface=surf, colorbar=bar)
         mlab.view(*view)
         self._f.scene.disable_render = False
 
