@@ -120,8 +120,9 @@ class Brain(object):
 
         Parameters
         ----------
-        view : {'lateral' | 'medial' | 'rostral' |
-                'caudal' | 'dorsal' | 'ventral' | dict}
+        view : {'lateral' | 'medial' | 'rostral' | 'caudal' |
+                'dorsal' | 'ventral' | 'frontal' | 'parietal' |
+                dict}
             brain surface to view or kwargs to pass to mlab.view()
 
         Returns
