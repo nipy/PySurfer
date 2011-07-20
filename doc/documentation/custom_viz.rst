@@ -16,7 +16,7 @@ There are five preset options for the color of the visualization
 background. They are ``black``, ``white``, ``charcoal``, ``midnight``,
 ``slate``, and ``sand``:
 
-.. image:: _static/background_options.png
+.. image:: ../_static/background_options.png
 
 Changing the curvature color scheme
 ----------------------------------- 
@@ -29,7 +29,7 @@ command-line interface to turn this off). There are four preset
 themes for the curvature color scheme: ``classic``, ``bone``,
 ``high_contrast``, and ``low_contrast``:
 
-.. image:: _static/cortex_options.png
+.. image:: ../_static/cortex_options.png
 
 Note that, in each theme, the darker color signifies sulci.
 

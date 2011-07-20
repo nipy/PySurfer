@@ -20,7 +20,7 @@ hemisphere, and the surface geometry to visualize::
 
 which will open a viewing session that looks like this:
 
-.. image:: _static/basic_session.png
+.. image:: ../_static/basic_session.png
 
 Manipulating the visualization
 ------------------------------
