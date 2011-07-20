@@ -1090,6 +1090,15 @@ class Overlay(object):
             self.neg.visible = not self.neg.visible
             self.neg_bar.visible = False
 
+    def remove(self):
+
+        if self.sign in ["pos", "abs"]:
+            self.pos.remove()
+            self.pos_bar.visible = False
+        if self.sign in ["neg", "abs"]:
+            self.neg.remove()
+            self.neg_bar.visible = False
+
     def __format_colorbar(self):
 
         if self.sign in ["abs", "neg"]:
