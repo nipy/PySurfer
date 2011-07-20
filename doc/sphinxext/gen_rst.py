@@ -80,6 +80,8 @@ def generate_example_rst(app):
     """
     root_dir = os.path.join(app.builder.srcdir, 'auto_examples')
     example_dir = os.path.abspath(app.builder.srcdir +  '/../' + 'examples')
+    doc_data_link = os.path.join(root_dir, 'data')
+    example_data_dir = os.path.join(example_dir, 'data')
     try:
         plot_gallery = eval(app.builder.config.plot_gallery)
     except TypeError:
@@ -88,6 +90,8 @@ def generate_example_rst(app):
         os.makedirs(example_dir)
     if not os.path.exists(root_dir):
         os.makedirs(root_dir)
+    if not os.path.exists(doc_data_link):
+        os.symlink(example_data_dir, doc_data_link)
 
     # we create an index.rst with all examples
     fhindex = file(os.path.join(root_dir, 'index.rst'), 'w')
