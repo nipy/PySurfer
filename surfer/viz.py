@@ -478,7 +478,7 @@ class Brain(object):
         self._f.scene.disable_render = False
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
-                 scale_factor=5, color=(1, 1, 1), name=None):
+                 scale_factor=1, color=(1, 1, 1), name=None):
         """Add spherical foci, possibly mapping to displayed surf.
 
         The foci spheres can be displayed at the coordinates given, or
@@ -530,7 +530,7 @@ class Brain(object):
                                foci_coords[:, 1],
                                foci_coords[:, 2],
                                np.ones(foci_coords.shape[0]),
-                               scale_factor=scale_factor,
+                               scale_factor=(5. * scale_factor),
                                color=color, name=name)
         self.foci[name] = points
         mlab.view(*view)
