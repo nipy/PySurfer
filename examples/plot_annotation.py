@@ -1,32 +1,34 @@
 """
-============================
-Vizualize an annotation file
-============================
+Using Annotation Files
+======================
+
+Display a Freesurfer cortical parcellation from an annotation file.
 
 """
 print __doc__
 
 import os
 from os.path import join as pjoin
-from surfer import viz
+from surfer import Brain
 
-###############################################################################
-# Look for files on drive
-subj_dir = os.environ["SUBJECTS_DIR"]
+
 subject_id = 'fsaverage'
-
-sub = 'fsaverage'
 hemi = 'lh'
-surf = 'inflated'
+surface = 'inflated'
 
-data_path = pjoin(subj_dir, subject_id)
-annot_path = pjoin(data_path, "label", "%s.aparc.annot" % "lh")
+# Bring up the visualization
+brain = Brain(subject_id, hemi, surface)
 
-###############################################################################
-# Visualize
-brain = viz.Brain(sub, hemi, surf)
-brain.add_annotation(annot_path, borders=True)
+# Display the 'aparc' parcellation borders.
+# To use annotations that live in your subject's
+# label directory, just use the annot name.
+brain.add_annotation("aparc")
 
-###############################################################################
-# show all views
-brain.show_view('lateral')
+# You can also display the regions with "filled in" colors
+brain.add_annotation("aparc", borders=False)
+
+# You may also provide a full path to an annotation file 
+# at an arbitray location on the disc.
+subjects_dir = os.environ["SUBJECTS_DIR"]
+annot_path = pjoin(subjects_dir, subject_id, "label", "lh.aparc.annot")
+brain.add_annotation(annot_path)

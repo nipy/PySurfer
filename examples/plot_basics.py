@@ -1,19 +1,16 @@
 """
-=======================
-Basics of vizualization
-=======================
+Basic Visualization
+===================
+
+Initialize a basic visualization session.
 
 """
 print __doc__
 
 from surfer import Brain
 
-sub = 'fsaverage'
+subject_id = 'fsaverage'
 hemi = 'lh'
-surf = 'inflated'
+surface = 'inflated'
 
-brain = Brain(sub, hemi, surf)
-
-###############################################################################
-# show all views
-brain.show_view('lateral')
+brain = Brain(subject_id, hemi, surface)
