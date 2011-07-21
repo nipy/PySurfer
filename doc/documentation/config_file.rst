@@ -1,7 +1,7 @@
 .. _config_file:
 
-The PySurfer Config File
-========================
+The Config File
+===============
 
 There are several aspects of how PySurfer looks and behaves that you may
 wish to customize but do not want to have to alter every time you
