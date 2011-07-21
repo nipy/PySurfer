@@ -136,14 +136,11 @@ class Brain(object):
         if isinstance(view, basestring):
             try:
                 vd = self.xfm_view(view, 'd')
-                nv = dict({})
+                view = dict(azimuth=vd['v'][0], elevation=vd['v'][1])
                 roll = vd['r']
-                nv['azimuth'] = vd['v'][0]
-                nv['elevation'] = vd['v'][1]
-                view = nv
             except ValueError as v:
-                    print(v)
-                    raise
+                print(v)
+                raise
         cv, cr = self.__view(view, roll)
         return (cv, cr)
 

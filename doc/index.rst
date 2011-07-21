@@ -16,11 +16,18 @@ for writing scripts to efficiently explore complex datasets.
    :maxdepth: 2
 
    auto_examples/index.rst
+   documentation/command_line.rst
+   documentation/config_file.rst
+   documentation/custom_viz.rst
 
-Indices and tables
-==================
+License
+-------
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+The PySurfer source code is available under the simplified BSD license.
 
+Authors
+-------
+
+Michael Waskom, MIT
+Alexandre Gramfort, Harvard Med. School MGH Martinos Center
+Scott Burns, Harvard Med. School MGH Martinos Center
