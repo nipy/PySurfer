@@ -67,4 +67,4 @@ or::
 
     pysurfer fsaverage lh inflated -background slate -size 400
 
-
+in your shell terminal.
