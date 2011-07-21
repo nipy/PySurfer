@@ -445,10 +445,9 @@ class Brain(object):
 
         # Get the display range
         if measure == "thickness":
-            min, max = 1, 4
+            min, max = (1, 4)
         else:
-            min = stats.scoreatpercentile(morph_data[ctx_idx], 2)
-            max = stats.scoreatpercentile(morph_data[ctx_idx], 98)
+            min, max = stats.describe(morph_data[ctx_idx])[1]
 
         # Set up the Mayavi pipeline
         if morph_data.dtype.byteorder == '>':
