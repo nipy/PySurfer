@@ -44,8 +44,3 @@ Now add the overlay again, but this time with set threshold
 and showing only the positive activations
 """
 brain.add_overlay(overlay_file, min=5, max=20, sign="pos")
-
-"""
-Rotate the brian to emphasize the parietal surface
-"""
-brain.show_view("parietal")
