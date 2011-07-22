@@ -12,13 +12,14 @@ PySurfer offers both a command-line interface designed to broadly
 replicate Freesurfer's Tksurfer program as well as a Python library
 for writing scripts to efficiently explore complex datasets. 
 
-.. toctree::
-   :maxdepth: 2
+Contents
+--------
 
-   auto_examples/index.rst
-   documentation/command_line.rst
-   documentation/config_file.rst
-   documentation/custom_viz.rst
+.. toctree::
+    :maxdepth: 2
+
+    auto_examples/index.rst
+    documentation/index.rst
 
 License
 -------
@@ -28,6 +29,8 @@ The PySurfer source code is available under the simplified BSD license.
 Authors
 -------
 
-Michael Waskom, MIT
+Michael Waskom, Stanford & MIT
+
 Alexandre Gramfort, Harvard Med. School MGH Martinos Center
+
 Scott Burns, Harvard Med. School MGH Martinos Center
