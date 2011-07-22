@@ -2,7 +2,7 @@
 Display a Conjunction Map
 =========================
 
-Show the overlay between two different activation maps.
+Show the overlap between two different activation maps.
 
 This is one of the most commonly asked questions about 
 Tksurfer on the Freesurfer mailing list. Below, we show
