@@ -30,7 +30,12 @@ if len(sys.argv) > 3:
 # Start IPython and execute the load script
 path = os.path.split(__file__)[0]
 load_file = os.path.join(path, "_pysurfer-load.py")
-os.system('ipython -wthread ' +
+import IPython
+if IPython.__version__ < '0.11':
+    flag = '-wthread'
+else:
+    flag = '--gui=wx'
+os.system('ipython %s'%flag +
                    load_file +
                    ' "%s"'
                    % ' '.join(sys.argv[1:]))
