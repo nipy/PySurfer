@@ -30,7 +30,7 @@ The PySurfer source code is available under the simplified BSD license
 Get the code and contribute
 ---------------------------
 
-https://github.com/mwaskom/PySurfer/
+https://github.com/PySurfer/PySurfer/
 
 Authors
 -------
