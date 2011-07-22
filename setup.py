@@ -14,10 +14,10 @@ DESCRIPTION = descr
 LONG_DESCRIPTION = descr
 MAINTAINER = 'Michael Waskom'
 MAINTAINER_EMAIL = 'mwaskom@mit.edu'
-URL = 'https://github.com/mwaskom/PySurfer'
+URL = 'https://github.com/PySurfer/PySurfer'
 LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/mwaskom/PySurfer'
-VERSION = '0.1.git'
+VERSION = '0.1'
 
 import setuptools  # we are using a setuptools namespace
 from numpy.distutils.core import setup
