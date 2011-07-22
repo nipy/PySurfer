@@ -49,7 +49,10 @@ brain = b
 
 # It's nice to have mlab in the namespace, but we'll import it
 # after the other stuff so getting usage is not interminable
-from enthought.mayavi import mlab
+try:
+    from enthought.mayavi import mlab
+except ImportError:
+    from mayavi import mlab
 
 # Now clean up the namespace a bit
 del parser, args

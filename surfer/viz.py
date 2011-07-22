@@ -52,7 +52,10 @@ class Brain(object):
         config_opts : dict
             options to override visual options in config file
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
 
         # Set the identifying info
         self.subject_id = subject_id
@@ -160,7 +163,11 @@ class Brain(object):
             view settings, roll setting
 
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
+
         if viewargs:
             viewargs['reset_roll'] = True
             mlab.view(**viewargs)
@@ -188,7 +195,11 @@ class Brain(object):
             whether the overlay should be visible upon load
 
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
+
         # If source is a string, try to load a file
         if isinstance(source, basestring):
             if name is None:
@@ -230,7 +241,11 @@ class Brain(object):
             name of Mayavi colormap to use
 
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
+
         self._f.scene.disable_render = True
         view = mlab.view()
 
@@ -273,7 +288,11 @@ class Brain(object):
             Show only borders of regions
 
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
+
         self._f.scene.disable_render = True
         view = mlab.view()
 
@@ -349,7 +368,11 @@ class Brain(object):
             RGBA color tuple
 
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
+
         self._f.scene.disable_render = True
         view = mlab.view()
 
@@ -407,7 +430,10 @@ class Brain(object):
             whether to load the overlay with a grayscale colormap
 
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
 
         # Find the source data
         surf_dir = pjoin(os.environ['SUBJECTS_DIR'], self.subject_id, 'surf')
@@ -499,7 +525,10 @@ class Brain(object):
             internal name to use
 
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
 
         # Figure out how to interpret the first parameter
         if coords_as_verts:
@@ -553,7 +582,10 @@ class Brain(object):
             width of contour lines
 
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
 
         # Read the scalar data
         scalar_data = io.read_scalar_data(filepath)
@@ -714,7 +746,11 @@ class Brain(object):
             path to new image file
 
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
+
         ftype = fname[fname.rfind('.') + 1:]
         good_ftypes = ['png', 'jpg', 'bmp', 'tiff', 'ps',
                         'eps', 'pdf', 'rib', 'oogl', 'iv', 'vrml', 'obj']
@@ -957,7 +993,11 @@ class Brain(object):
 
     def close(self):
         """Close the figure and cleanup data structure."""
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
+
         mlab.close(self._f)
         #should we tear down other variables?
 
@@ -967,7 +1007,10 @@ class Overlay(object):
     def __init__(self, scalar_data, geo, min, max, sign):
         """
         """
-        from enthought.mayavi import mlab
+        try:
+            from enthought.mayavi import mlab
+        except ImportError:
+            from mayavi import mlab
 
         if scalar_data.min() >= 0:
             sign = "pos"

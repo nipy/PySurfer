@@ -169,7 +169,10 @@ def generate_file_rst(fname, target_dir, src_dir, plot_gallery):
             import matplotlib.pyplot as plt
             plt.close('all')
             try:
-                from enthought.mayavi import mlab
+                try:
+                    from enthought.mayavi import mlab
+                except ImportError:
+                    from mayavi import mlab
                 mlab.close(all=True)
             except:
                 pass
@@ -183,7 +186,11 @@ def generate_file_rst(fname, target_dir, src_dir, plot_gallery):
                     plt.savefig(image_file)
 
                 try:
-                    from enthought.mayavi import mlab
+                    try:
+                        from enthought.mayavi import mlab
+                    except ImportError:
+                        from mayavi import mlab
+
                     e = mlab.get_engine()
                     if len(e.scenes) > 0:
                         mlab.savefig(image_file, size=(400, 400))
