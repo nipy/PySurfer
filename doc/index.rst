@@ -4,7 +4,7 @@ Introduction
 PySurfer is a Python based program for visualization and interaction
 with cortical surface representations of neuroimaging data from
 `Freesurfer <http://surfer.nmr.mgh.harvard.edu/>`_. It extends
-`Mayavi's <http://http://github.enthought.com/mayavi/mayavi/index.html>`_ powerful
+`Mayavi's <http://github.enthought.com/mayavi/mayavi/index.html>`_ powerful
 visualization engine with a high-level interface for working with
 MRI and MEG data.
 
