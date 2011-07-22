@@ -33,8 +33,8 @@ Visual
 
 *default_view*
     Which view should be shown at the beginning of a visualization
-    session. (Possible values: ``lateral``, ``medial``, ``anterior``,
-    ``posterior``, ``dorsal``, ``ventral``.)
+    session. (Possible values: ``lateral``, ``medial``, ``rostral``,
+    ``caudal``, ``dorsal``, ``ventral``, ``frontal``, ``parietal``.)
 
 
 Overlay

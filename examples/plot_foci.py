@@ -30,7 +30,6 @@ coordinate system. These might be peak activations from
 a volume based analysis.
 """
 coords = [[-36, 18, -3],
-          [--39, 17, 2],
           [-43, 25, 24],
           [-48, 26, -2]]
 
