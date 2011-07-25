@@ -16,7 +16,7 @@ To use PySurfer, you will need to have the following Python packages:
 
 * `numpy <http://numpy.scipy.org/>`_
 * `scipy <http://www.scipy.org/>`_
-* `ipython <http://ipython.scipy.org/>`_
+* `ipython <http://ipython.org/>`_
 * `nibabel <http://nipy.sourceforge.net/nibabel/>`_
 * `mayavi2 <http://github.enthought.com/mayavi/mayavi/index.html>`_
 * `PIL <http://www.pythonware.com/products/pil/>`_ (Python Image Library)
