@@ -53,9 +53,9 @@ class Brain(object):
             options to override visual options in config file
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         # Set the identifying info
         self.subject_id = subject_id
@@ -164,9 +164,9 @@ class Brain(object):
 
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         if viewargs:
             viewargs['reset_roll'] = True
@@ -196,9 +196,9 @@ class Brain(object):
 
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         # If source is a string, try to load a file
         if isinstance(source, basestring):
@@ -242,9 +242,9 @@ class Brain(object):
 
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         self._f.scene.disable_render = True
         view = mlab.view()
@@ -289,9 +289,9 @@ class Brain(object):
 
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         self._f.scene.disable_render = True
         view = mlab.view()
@@ -369,9 +369,9 @@ class Brain(object):
 
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         self._f.scene.disable_render = True
         view = mlab.view()
@@ -431,9 +431,9 @@ class Brain(object):
 
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         # Find the source data
         surf_dir = pjoin(os.environ['SUBJECTS_DIR'], self.subject_id, 'surf')
@@ -526,9 +526,9 @@ class Brain(object):
 
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         # Figure out how to interpret the first parameter
         if coords_as_verts:
@@ -583,9 +583,9 @@ class Brain(object):
 
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         # Read the scalar data
         scalar_data = io.read_scalar_data(filepath)
@@ -747,9 +747,9 @@ class Brain(object):
 
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         ftype = fname[fname.rfind('.') + 1:]
         good_ftypes = ['png', 'jpg', 'bmp', 'tiff', 'ps',
@@ -994,9 +994,9 @@ class Brain(object):
     def close(self):
         """Close the figure and cleanup data structure."""
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         mlab.close(self._f)
         #should we tear down other variables?
@@ -1008,9 +1008,9 @@ class Overlay(object):
         """
         """
         try:
-            from enthought.mayavi import mlab
-        except ImportError:
             from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
 
         if scalar_data.min() >= 0:
             sign = "pos"
