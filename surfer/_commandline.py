@@ -66,3 +66,5 @@ parser.add_argument("-cortex", metavar="COLOR",
                     help="colormap for binary cortex curvature")
 parser.add_argument("-title",
                     help="title to use for the figure")
+parser.add_argument("-gui", choices=["qt", "wx", "gtk"], default='wx',
+                    help="gui to use with IPython 0.11")
