@@ -14,7 +14,8 @@ def _fread3(fobj):
 
 def _fread3_many(fobj, n):
     """Read 3-byte ints from an open binary file object."""
-    b1, b2, b3 = np.fromfile(fobj, ">u1", 3 * n).reshape(-1, 3).astype(np.int).T
+    b1, b2, b3 = np.fromfile(fobj, ">u1", 3 * n).reshape(-1,
+                                                    3).astype(np.int).T
     return (b1 << 16) + (b2 << 8) + b3
 
 
@@ -190,27 +191,46 @@ def read_annot(filepath, orig_ids=False):
         labels = data[:, 1]
         ctab_exists = np.fromfile(fobj, dt, 1)[0]
         if not ctab_exists:
-            return
-        ctab_version = np.fromfile(fobj, dt, 1)[0]
-        if ctab_version != -2:
-            return
+            raise Exception('Color table not found in annotation file')
         n_entries = np.fromfile(fobj, dt, 1)[0]
-        ctab = np.zeros((n_entries, 5), np.int)
-        length = np.fromfile(fobj, dt, 1)[0]
-        _ = np.fromfile(fobj, "|S%d" % length, 1)[0]  # Orig table path
-        entries_to_read = np.fromfile(fobj, dt, 1)[0]
-        for i in xrange(entries_to_read):
-            _ = np.fromfile(fobj, dt, 1)[0]  # Structure
-            name_length = np.fromfile(fobj, dt, 1)[0]
-            _ = np.fromfile(fobj, "|S%d" % name_length, 1)[0]  # Struct name
-            ctab[i, :4] = np.fromfile(fobj, dt, 4)
-            ctab[i, 4] = (ctab[i, 0] + ctab[i, 1] * (2 ** 8) +
-                            ctab[i, 2] * (2 ** 16))
-    ctab[:, 3] = 255
+        if n_entries > 0:
+            length = np.fromfile(fobj, dt, 1)[0]
+            orig_tab = np.fromfile(fobj, '>c', length)
+            orig_tab = orig_tab[:-1]
+
+            names = list()
+            ctab = np.zeros((n_entries, 5), np.int)
+            for i in xrange(n_entries):
+                name_length = np.fromfile(fobj, dt, 1)[0]
+                name = np.fromfile(fobj, "|S%d" % name_length, 1)[0]
+                names.append(name)
+                ctab[i, :4] = np.fromfile(fobj, dt, 4)
+                ctab[i, 4] = (ctab[i, 0] + ctab[i, 1] * (2 ** 8) +
+                              ctab[i, 2] * (2 ** 16) +
+                              ctab[i, 3] * (2 ** 24))
+        else:
+            ctab_version = -n_entries
+            if ctab_version != 2:
+                raise Exception('Color table version not supported')
+            n_entries = np.fromfile(fobj, dt, 1)[0]
+            ctab = np.zeros((n_entries, 5), np.int)
+            length = np.fromfile(fobj, dt, 1)[0]
+            _ = np.fromfile(fobj, "|S%d" % length, 1)[0]  # Orig table path
+            entries_to_read = np.fromfile(fobj, dt, 1)[0]
+            names = list()
+            for i in xrange(entries_to_read):
+                _ = np.fromfile(fobj, dt, 1)[0]  # Structure
+                name_length = np.fromfile(fobj, dt, 1)[0]
+                name = np.fromfile(fobj, "|S%d" % name_length, 1)[0]
+                names.append(name)
+                ctab[i, :4] = np.fromfile(fobj, dt, 4)
+                ctab[i, 4] = (ctab[i, 0] + ctab[i, 1] * (2 ** 8) +
+                                ctab[i, 2] * (2 ** 16))
+        ctab[:, 3] = 255
     if not orig_ids:
         ord = np.argsort(ctab[:, -1])
         labels = ord[np.searchsorted(ctab[ord, -1], labels)]
-    return labels, ctab
+    return labels, ctab, names
 
 
 def read_label(filepath):

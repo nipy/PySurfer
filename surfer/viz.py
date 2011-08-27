@@ -310,7 +310,7 @@ class Brain(object):
                                  % filepath)
 
         # Read in the data
-        labels, cmap = io.read_annot(filepath, orig_ids=True)
+        labels, cmap, _ = io.read_annot(filepath, orig_ids=True)
 
         # Maybe zero-out the non-border vertices
         if borders:

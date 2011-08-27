@@ -39,10 +39,12 @@ def test_morph_data():
 
 def test_annot():
     """Test IO of .annot"""
-    annot_path = pjoin(data_path, "label", "%s.aparc.annot" % "lh")
-    annot = io.read_annot(annot_path)
-    print annot
-    # XXX : test something
+    annots = ['aparc', 'aparc.a2005s']
+    for a in annots:
+        annot_path = pjoin(data_path, "label", "%s.%s.annot" % ("lh", a))
+        labels, ctab, names = io.read_annot(annot_path)
+        assert labels.shape == (163842, )
+        assert ctab.shape == (len(names), 5)
 
 
 def test_label():

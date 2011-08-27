@@ -64,7 +64,7 @@ choosen vertices from within the superior temporal sulcus.
 First, we load in the Destrieux parcellation annotation file.
 """
 annot_path = op.join(subjects_dir, subject_id, "label/lh.aparc.a2009s.annot")
-ids, ctab = io.read_annot(annot_path)
+ids, ctab, names = io.read_annot(annot_path)
 
 """
 Then, find 10 random vertices within the STS.
