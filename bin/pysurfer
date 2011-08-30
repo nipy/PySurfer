@@ -17,7 +17,7 @@ from surfer._commandline import parser
 if len(sys.argv) < 4:
     parser.parse_args(["--help"])
 else:
-    parser.parse_args()
+    args = parser.parse_args()
 
 # Make sure this is going to work before we have to
 # boot up mlab/IPython
@@ -34,8 +34,8 @@ import IPython
 if IPython.__version__ < '0.11':
     flag = '-wthread'
 else:
-    flag = '--gui=wx'
-os.system('ipython %s'%flag +
+    flag = '--gui=%s'%args.gui
+os.system('ipython %s '%flag +
                    load_file +
                    ' "%s"'
                    % ' '.join(sys.argv[1:]))
