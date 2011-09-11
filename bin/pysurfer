@@ -23,7 +23,8 @@ else:
 # boot up mlab/IPython
 if len(sys.argv) > 3:
     subjects_dir = os.environ['SUBJECTS_DIR']
-    surf_file = os.path.join(subjects_dir, "%s/surf/%s.%s" % tuple(sys.argv[1:4]))
+    surf_file = os.path.join(subjects_dir,
+                             "%s/surf/%s.%s" % tuple(sys.argv[1:4]))
     if not os.path.exists(surf_file):
         sys.exit("ERROR: Could not find %s" % surf_file)
 
@@ -34,8 +35,5 @@ import IPython
 if IPython.__version__ < '0.11':
     flag = '-wthread'
 else:
-    flag = '--gui=%s'%args.gui
-os.system('ipython %s '%flag +
-                   load_file +
-                   ' "%s"'
-                   % ' '.join(sys.argv[1:]))
+    flag = '--gui=wx -i '
+os.system('ipython %s ' % flag + load_file + ' "%s"' % ' '.join(sys.argv[1:]))
