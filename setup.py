@@ -51,5 +51,5 @@ if __name__ == "__main__":
                      ],
          platforms='any',
          packages=['surfer', 'surfer.tests'],
-         scripts=['bin/pysurfer', 'bin/_pysurfer-load.py'],
+         scripts=['bin/pysurfer'],
     )
