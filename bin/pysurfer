@@ -39,10 +39,11 @@ if __name__ == '__main__':
         path = os.path.split(__file__)[0]
         load_file = __file__
         import IPython
-        flag = '--no-banner '
         if IPython.__version__ < '0.11':
+            flag = '-nobanner '
             flag += '-wthread'
         else:
+            flag = '--no-banner '
             flag += '--gui=wx -i '
         os.system('ipython %s ' % flag + load_file
                   + ' "%s"' % ' '.join(sys.argv[1:]))
