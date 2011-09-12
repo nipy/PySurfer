@@ -1,0 +1,24 @@
+Source: pysurfer
+Section: python
+Priority: extra
+Maintainer: NeuroDebian Team <team@neuro.debian.net>
+Uploaders: Michael Hanke <mih@debian.org>, Yaroslav Halchenko <debian@onerussian.com>
+Build-Depends: debhelper (>= 7.2.18), python-all, python-support (>= 0.6), python-numpy, help2man, python-argparse, python-setuptools, python-nibabel
+Standards-Version: 3.9.2
+Homepage: http://pysurfer.github.com
+Vcs-Browser: http://git.debian.org/?p=pkg-exppsy/pysurfer.git
+Vcs-Git: git://git.debian.org/git/pkg-exppsy/pysurfer.git
+
+Package: python-surfer
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}, python-numpy, python-scipy, python-nibabel, python-imaging, mayavi2, python-argparse, ipython
+XB-Python-Version: ${python:Versions}
+Description: visualize Freesurfer's data in Python
+ This is a Python package for visualization and interaction with cortical
+ surface representations of neuroimaging data from Freesurfer. It
+ extends Mayavi’s powerful visualization engine with a high-level interface for
+ working with MRI and MEG data.
+ .
+ PySurfer offers both a command-line interface designed to broadly replicate
+ Freesurfer’s Tksurfer program as well as a Python library for writing scripts
+ to efficiently explore complex datasets.
