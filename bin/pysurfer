@@ -14,7 +14,11 @@ if __name__ == '__main__':
         get_ipython
         is_ipython = True
     except NameError:
-        pass
+        try:  # for old iPython versions
+            _ip
+            is_ipython = True
+        except NameError:
+            pass
 
     # Make sure this is going to work before we have to
     # boot up mlab/IPython
@@ -45,12 +49,12 @@ if __name__ == '__main__':
         else:
             flag = '--no-banner '
             flag += '--gui=wx -i '
-        os.system('ipython %s ' % flag + load_file
-                  + ' "%s"' % ' '.join(sys.argv[1:]))
+        cmd = 'ipython %s ' % flag + __file__ + ' "%s"' % ' '.join(sys.argv[1:])
+        os.system(cmd)
     else:
-        from surfer import Brain
-
         args = parser.parse_args(sys.argv[1].split())
+
+        from surfer import Brain
 
         # Get a dict of config override options
         confkeys = ["size", "background", "cortex"]
