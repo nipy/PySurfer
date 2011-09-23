@@ -13,10 +13,10 @@ DISTNAME = 'pysurfer'
 DESCRIPTION = descr
 LONG_DESCRIPTION = descr
 MAINTAINER = 'Michael Waskom'
-MAINTAINER_EMAIL = 'mwaskom@mit.edu'
-URL = 'https://github.com/PySurfer/PySurfer'
+MAINTAINER_EMAIL = 'mwaskom@stanford.edu'
+URL = 'http://pysurfer.github.com'
 LICENSE = 'BSD (3-clause)'
-DOWNLOAD_URL = 'https://github.com/mwaskom/PySurfer'
+DOWNLOAD_URL = 'https://github.com/nipy/PySurfer'
 VERSION = '0.1'
 
 import setuptools  # we are using a setuptools namespace
