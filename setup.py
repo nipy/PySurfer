@@ -17,7 +17,7 @@ MAINTAINER_EMAIL = 'mwaskom@stanford.edu'
 URL = 'http://pysurfer.github.com'
 LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/nipy/PySurfer'
-VERSION = '0.1'
+VERSION = '0.2.git'
 
 import setuptools  # we are using a setuptools namespace
 from numpy.distutils.core import setup
