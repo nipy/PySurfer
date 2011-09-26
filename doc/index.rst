@@ -22,21 +22,33 @@ Contents
     auto_examples/index.rst
     documentation/index.rst
 
+Authors
+-------
+
+Michael Waskom, Stanford University
+
+Alexandre Gramfort, Harvard Med. School MGH Martinos Center
+
+Scott Burns, Harvard Med. School MGH Martinos Center
+
 License
 -------
 
 The PySurfer source code is available under the simplified BSD license
 
-Get the code and contribute
----------------------------
-
-https://github.com/PySurfer/PySurfer/
-
-Authors
+Support
 -------
 
-Michael Waskom, Stanford & MIT
+If you have problems installing the software or questions about usage,
+documentation or something else related to PySurfer, you can post to the NiPy
+mailing list. Please preface the subject line with "[PySurfer]".
 
-Alexandre Gramfort, Harvard Med. School MGH Martinos Center
+:Mailing list:  nipy-devel@neuroimaging.scipy.org [subscription_, archive_]
 
-Scott Burns, Harvard Med. School MGH Martinos Center
+.. _subscription: http://mail.scipy.org/mailman/listinfo/nipy-devel
+.. _archive: http://mail.scipy.org/pipermail/nipy-devel
+
+Contribute
+----------
+
+https://github.com/nipy/PySurfer/
