@@ -277,6 +277,16 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
+    def update_data(self, array):
+        """ Update already added data efficiently
+        """
+        self.data['surface'].mlab_source.scalars = array
+
+    def get_data_colormap(self):
+        """ Get the data colormap (LUT manager)
+        """
+        return self.data['surface'].module_manager.scalar_lut_manager
+
     def add_annotation(self, annot, borders=True):
         """Add an annotation file.
 
@@ -1146,3 +1156,299 @@ class Overlay(object):
         if self.sign in ["abs", "pos"]:
             self.pos_bar.scalar_bar_representation.position = (0.53, 0.01)
             self.pos_bar.scalar_bar_representation.position2 = (0.42, 0.09)
+
+
+from enthought.traits.api import HasTraits, Range, Int, Float, \
+                                 Bool, Enum, on_trait_change
+from enthought.traits.ui.api import View, Item, VSplit, HSplit, Group
+
+class TimeViewer(HasTraits):
+    min_time = Int(0)
+    max_time = Int(1E9)
+    current_time = Range(low='min_time', high='max_time', value=0)
+    #colormap: only update when user presses Enter
+    fmax    = Float(enter_set=True, auto_set=False)
+    fmid    = Float(enter_set=True, auto_set=False)
+    fthresh = Float(enter_set=True, auto_set=False)
+    transparent = Bool(False)
+    orientation = Enum('lateral', 'medial', 'rostral', 'caudal',
+                       'dorsal', 'ventral', 'frontal', 'parietal')
+
+    #GUI layout
+    view = View(VSplit(Item(name='current_time'),
+                       Group(HSplit(Item(name='fthresh'),
+                                    Item(name='fmid'),
+                                    Item(name='fmax'),
+                                    Item(name='transparent'),
+                                   ),
+                             label='Color scale',
+                             show_border = True
+                            ),
+                        Item(name='orientation')
+                      )
+                )
+
+    def __init__(self, brain, data, vertices, time=None, colormap='hot',
+                 time_label='t=%0.2f ms'):
+        """TimeViewer: show time data on Brain object(s).
+
+        Parameters
+        ----------
+        brain : Brain object (or list of Brain objects)
+            brain(s) to show the data on
+        data : 2D numpy array (or a list of 2D numpy arrays)
+            data array(s) to show on brains
+        vertices : 1D numpy array (or list of 1D numpy arrays)
+            array(s) with vertices for which the data array(s) are defined
+            len(vertices[i]) == data.shape[0]
+        time : 1D numpy array
+            time points len(time) == data.shape[1]
+            (default: None)
+        colormap : str
+            colormap to use
+            (default: 'hot')
+        time_label : str
+            format string for time label
+            (default: 't=%0.2f ms')
+        """
+        super(TimeViewer, self).__init__()
+
+        self._cmap_initialized = False
+        self._transp_state = self.transparent
+        self._data_added = False
+        self._no_update = True
+
+        if time == None:
+            self.num_timepoints = data[0].shape[1]
+            self.time = np.arange(self.num_timepoints)
+        else:
+            self.time = time
+            self.num_timepoints = len(time)
+
+        self.max_time = self.num_timepoints - 1
+
+        self.colormap = colormap
+        self.time_label = time_label
+
+        #check the inputs
+        self.brain, self.data, self.vertices = \
+            self._check_inputs(brain, data, vertices)
+
+        #create matrices to interpolate onto highres mesh
+        self._create_interpolation_matrices()
+
+        #initial drawing
+        self._update_data()
+
+        #enable updates through properties
+        self._no_update = False
+
+    def _check_inputs(self, brain, data, vertices):
+        """ Validate input arguments
+        """
+        #check that either all or none inputs are lists
+        if isinstance(data, list) and isinstance(brain, list) \
+           and isinstance(vertices, list):
+               if len(data) != len(brain) or len(brain) != len(vertices):
+                   raise ValueError('data, brain, and vertices lists must have '
+                                    'same length')
+        else:
+            if isinstance(data, list) or isinstance(brain, list) \
+                or isinstance(vertices, list):
+                    raise ValueError('either all or none of data, brain, and '
+                                     'vertices must be lists')
+            #make lists
+            data = [data]
+            brain = [brain]
+            vertices = [vertices]
+
+
+        for i in range(len(brain)):
+            #check types
+            if not isinstance(data[i], np.ndarray):
+                raise ValueError('data must be a numpy.ndarray')
+            if not isinstance(brain[i], Brain):
+                raise ValueError('brain must be a Brain object')
+            if not isinstance(vertices[i], np.ndarray):
+                raise ValueError('vertices must be a numpy.ndarray')
+
+            #check dimensions
+            if data[i].shape[1] != self.num_timepoints:
+                raise ValueError('data must have same number as columns as '
+                                 'timepoints')
+
+            if vertices[i].ndim != 1:
+                raise ValueError('vertices must be a 1D array')
+
+            if vertices[i].shape[0] != data[i].shape[0]:
+                raise ValueError('data and vertices have incompatible '
+                                 'dimensions')
+
+        return brain, data, vertices
+
+    def _create_interpolation_matrices(self, smooth=None):
+        """ Create interpolation matrices
+        """
+        from scipy import sparse
+
+        self.interp_mat = list()
+        for i in range(len(self.brain)):
+            tris = self.brain[i]._geo.faces
+            #n_lr_verts = self.data[i].shape[0]
+            e = _mesh_edges(tris)
+            e.data[e.data == 2] = 1
+            n_vertices = e.shape[0]
+            e = e + sparse.eye(n_vertices, n_vertices)
+            idx_use = self.vertices[i]
+            n_iter = 100  # max nb of smoothing iterations
+            e_chain = 1.0
+
+            for k in range(n_iter):
+                e_use = e[:, idx_use]
+
+                data1 = e_use * np.ones(len(idx_use))
+                idx_use = np.where(data1)[0]
+                scale_mat = sparse.dia_matrix((1/data1[idx_use], 0), \
+                                          shape=(len(idx_use), len(idx_use)))
+
+                e_chain =   scale_mat * e_use[idx_use, :] * e_chain
+                if len(idx_use) >= n_vertices:
+                    # stop when source space in filled with non-zeros
+                    break
+
+            print 'Created smoothing matrix for brain %d using %d steps' \
+                  % (i+1, k)
+            self.interp_mat.append(e_chain)
+
+    def _scale_colormap(self, table, fthresh, fmid, fmax):
+        """ Performs a linear interpolation of a colormap, such that fmid
+            corresponds to the color in the center of the colormap
+        """
+        if not (fthresh < fmid) and (fmid < fmax):
+            raise ValueError('Invalid colormap, we need fthresh<fmid<fmax')
+
+        table_new = table.copy()
+        n_colors  = table.shape[0]
+        n_colors2 = int(n_colors/2)
+
+        #index of fmid in new colorbar
+        fmid_idx = np.round(n_colors * ((fmid - fthresh) / (fmax - fthresh))) \
+                   - 1
+
+        for i in range(4):
+            part1 = np.interp(np.linspace(0, n_colors2-1, fmid_idx + 1),
+                              np.arange(n_colors),
+                              table[:, i])
+            table_new[:fmid_idx+1, i] = part1
+            part2 = np.interp(np.linspace(n_colors2, n_colors-1,
+                                          n_colors - fmid_idx - 1),
+                              np.arange(n_colors),
+                              table[:, i])
+            table_new[fmid_idx+1:, i] = part2
+
+        return table_new
+
+    @on_trait_change('orientation')
+    def _update_orientation(self):
+        print 'Orientation: ' + self.orientation
+        for brain in self.brain:
+            brain.show_view(view=self.orientation)
+
+    @on_trait_change('current_time')
+    def _update_data(self):
+        """ Update the data shown on the brian
+        """
+        print self.time_label % (self.time[self.current_time])
+
+        for i in range(len(self.brain)):
+            data= self.interp_mat[i] * self.data[i][:, self.current_time]
+
+            if not self._data_added:
+                data_min = np.min(self.data[i])
+                data_max = np.max(self.data[i])
+
+                self.brain[i].add_data(data, min=data_min, max=data_max,
+                                       colormap=self.colormap)
+
+                #update colormap values
+                self.fthresh = data_min
+                self.fmid = (data_max + data_min) / 2
+                self.fmax = data_max
+            else:
+                self.brain[i].update_data(data)
+
+        if not self._data_added:
+            self._data_added = True
+
+    @on_trait_change('fthresh, fmid, fmax, transparent')
+    def _update_colormap(self):
+        """ Update the colormap of each brain
+        """
+        if self._no_update:
+            return
+
+        print 'colormap: fthresh=%0.2e fmid=%0.2e fmax=%0.2e' \
+              % (self.fthresh, self.fmid, self.fmax)
+
+        if not self._cmap_initialized:
+            self._orig_cmap = list()
+            for brain in self.brain:
+                cmap = brain.get_data_colormap()
+                table = cmap.lut.table.to_array().copy()
+                self._orig_cmap.append(table)
+
+            self._cmap_initialized = True
+
+        for i in range(len(self.brain)):
+            table = self._orig_cmap[i].copy()
+            if self.transparent:
+                n_colors = table.shape[0]
+                n_colors2 = int(n_colors/2)
+                table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
+                table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
+
+            #scale the colormap
+            try:
+                table_new = self._scale_colormap(table,
+                                                 self.fthresh,
+                                                 self.fmid,
+                                                 self.fmax)
+            except ValueError as e:
+                print e.message
+                return
+
+            cmap = self.brain[i].get_data_colormap()
+            cmap.lut.table = table_new
+            cmap.data_range = np.array([self.fthresh, self.fmax])
+
+        # force redraw
+        self._update_data()
+
+
+def _mesh_edges(tris):
+    """Returns sparse matrix with edges as an adjacency matrix
+
+    Parameters
+    ----------
+    tris : array of shape [n_triangles x 3]
+        The triangles
+
+    Returns
+    -------
+    edges : sparse matrix
+        The adjacency matrix
+    """
+    from scipy import sparse
+
+    npoints = np.max(tris) + 1
+    ntris = len(tris)
+    a, b, c = tris.T
+    edges = sparse.coo_matrix((np.ones(ntris), (a, b)),
+                                            shape=(npoints, npoints))
+    edges = edges + sparse.coo_matrix((np.ones(ntris), (b, c)),
+                                            shape=(npoints, npoints))
+    edges = edges + sparse.coo_matrix((np.ones(ntris), (c, a)),
+                                            shape=(npoints, npoints))
+    edges = edges.tocsr()
+    edges = edges + edges.T
+    return edges
