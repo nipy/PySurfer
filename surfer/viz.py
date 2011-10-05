@@ -11,6 +11,18 @@ from . import utils
 from .io import Surface
 from .config import config
 
+try:
+    from traits.api import HasTraits, Range, Int, Float, \
+                           Bool, Enum, on_trait_change
+except ImportError:
+    from enthought.traits.api import HasTraits, Range, Int, Float, \
+                                     Bool, Enum, on_trait_change
+
+try:
+    from traits.ui.api import View, Item, VSplit, HSplit, Group
+except ImportError:
+    from enthought.traits.ui.api import View, Item, VSplit, HSplit, Group
+
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
                 'medial': {'v': (0., 90.), 'r': -90.},
                 'rostral': {'v': (90., 90.), 'r': -180.},
@@ -111,6 +123,7 @@ class Brain(object):
         self.overlays = dict()
         self.labels = dict()
         self.foci = dict()
+        self.texts = dict()
 
         # Bring up the lateral view
         self.show_view(config.get("visual", "default_view"))
@@ -665,6 +678,46 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
+    def add_text(self, x, y, text, name, color=(1, 1, 1), opacity=1.0):
+        """ Add a text to the visualization
+
+        Parameters
+        ----------
+        x : Float
+            x coordinate
+        y : Float
+            y coordinate
+        text : str
+            Text to add
+        name : str
+            Name of the text (text label can be updated using update_text())
+        color : Tuple
+            Color of the text. Default: (1, 1, 1)
+        opacity : Float
+            Opacity of the text. Default: 1.0
+        """
+        try:
+            from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+
+        text = mlab.text(x, y, text, figure=None, name=name,
+                         color=color, opacity=opacity)
+
+        self.texts[name] = text
+
+    def update_text(self, text, name):
+        """ Update text label
+
+        Parameters
+        ----------
+        text : str
+            New text for label
+        name : str
+            Name of text label
+        """
+        self.texts[name].text = text
+
     def __get_scene_properties(self, config_opts):
         """Get the background color and size from the config parser.
 
@@ -1158,13 +1211,9 @@ class Overlay(object):
             self.pos_bar.scalar_bar_representation.position2 = (0.42, 0.09)
 
 
-from enthought.traits.api import HasTraits, Range, Int, Float, \
-                                 Bool, Enum, on_trait_change
-from enthought.traits.ui.api import View, Item, VSplit, HSplit, Group
-
-
 class TimeViewer(HasTraits):
-    """XXX
+    """ TimeViewer object providing a GUI for visualizing time series, such
+        as M/EEG inverse solutions, on Brain object(s)
     """
     min_time = Int(0)
     max_time = Int(1E9)
@@ -1174,6 +1223,7 @@ class TimeViewer(HasTraits):
     fmid = Float(enter_set=True, auto_set=False)
     fthresh = Float(enter_set=True, auto_set=False)
     transparent = Bool(True)
+    smoothing_steps = Int(20, enter_set=True, auto_set=False)
     orientation = Enum('lateral', 'medial', 'rostral', 'caudal',
                        'dorsal', 'ventral', 'frontal', 'parietal')
 
@@ -1187,13 +1237,14 @@ class TimeViewer(HasTraits):
                              label='Color scale',
                              show_border=True
                             ),
+                        Item(name='smoothing_steps'),
                         Item(name='orientation')
                       )
                 )
 
     def __init__(self, brain, data, vertices, time=None, colormap='hot',
                  time_label='t=%0.2f ms'):
-        """TimeViewer: show time data on Brain object(s).
+        """Initialize TimeViewer
 
         Parameters
         ----------
@@ -1217,7 +1268,6 @@ class TimeViewer(HasTraits):
         super(TimeViewer, self).__init__()
 
         self._cmap_initialized = False
-        self._transp_state = self.transparent
         self._data_added = False
         self._no_update = True
 
@@ -1238,18 +1288,21 @@ class TimeViewer(HasTraits):
             self._check_inputs(brain, data, vertices)
 
         # create matrices to interpolate onto highres mesh
-        self._create_interpolation_matrices()
+        self._update_smoothing_matrices()
 
         # initial drawing
         self._update_data()
 
-        # enable updates through properties
+        # enable updates through Traits
         self._no_update = False
+
+        # initialize custom colormap
+        self._update_colormap()
 
     def _check_inputs(self, brain, data, vertices):
         """ Validate input arguments
         """
-        #check that either all or none inputs are lists
+        # check that either all or none inputs are lists
         if isinstance(data, list) and isinstance(brain, list) \
             and isinstance(vertices, list):
                 if len(data) != len(brain) or len(brain) != len(vertices):
@@ -1260,13 +1313,13 @@ class TimeViewer(HasTraits):
                 or isinstance(vertices, list):
                     raise ValueError('either all or none of data, brain, and '
                                      'vertices must be lists')
-            #make lists
+            # make lists
             data = [data]
             brain = [brain]
             vertices = [vertices]
 
         for i in range(len(brain)):
-            #check types
+            # check types
             if not isinstance(data[i], np.ndarray):
                 raise ValueError('data must be a numpy.ndarray')
             if not isinstance(brain[i], Brain):
@@ -1274,7 +1327,7 @@ class TimeViewer(HasTraits):
             if not isinstance(vertices[i], np.ndarray):
                 raise ValueError('vertices must be a numpy.ndarray')
 
-            #check dimensions
+            # check dimensions
             if data[i].shape[1] != self.num_timepoints:
                 raise ValueError('data must have same number as columns as '
                                  'timepoints')
@@ -1288,23 +1341,25 @@ class TimeViewer(HasTraits):
 
         return brain, data, vertices
 
-    def _create_interpolation_matrices(self, smooth=None):
-        """Create interpolation matrices"""
+    @on_trait_change('smoothing_steps')
+    def _update_smoothing_matrices(self, name=None, new=None):
+        """ Update smoothing matrices
+        """
         from scipy import sparse
+
+        if name != None:
+            print 'Updating smoothing matrices, be patient..'
 
         self.interp_mat = list()
         for i in range(len(self.brain)):
             tris = self.brain[i]._geo.faces
-            #n_lr_verts = self.data[i].shape[0]
-            e = _mesh_edges(tris)
+            e = utils.mesh_edges(tris)
             e.data[e.data == 2] = 1
             n_vertices = e.shape[0]
             e = e + sparse.eye(n_vertices, n_vertices)
             idx_use = self.vertices[i]
-            n_iter = 100  # max nb of smoothing iterations
-            e_chain = 1.0
-
-            for k in range(n_iter):
+            smooth_mat = 1.0
+            for k in range(self.smoothing_steps):
                 e_use = e[:, idx_use]
 
                 data1 = e_use * np.ones(len(idx_use))
@@ -1312,17 +1367,28 @@ class TimeViewer(HasTraits):
                 scale_mat = sparse.dia_matrix((1 / data1[idx_use], 0), \
                                           shape=(len(idx_use), len(idx_use)))
 
-                e_chain = scale_mat * e_use[idx_use, :] * e_chain
-                if len(idx_use) >= n_vertices:
-                    # stop when source space in filled with non-zeros
-                    break
+                smooth_mat = scale_mat * e_use[idx_use, :] * smooth_mat
 
-            print 'Created smoothing matrix for brain %d using %d steps' \
-                  % (i + 1, k)
-            self.interp_mat.append(e_chain)
+                print 'Smoothing matrix creation Brain %d, step %d/%d' % \
+                      (i + 1, k + 1, self.smoothing_steps)
+
+            # make sure the smooting matrix has the right number of rows
+            # and is in COO format
+            smooth_mat = smooth_mat.tocoo()
+            smooth_mat = sparse.coo_matrix((smooth_mat.data,
+                                           (idx_use[smooth_mat.row],
+                                           smooth_mat.col)),
+                                           shape=(n_vertices,
+                                                 len(self.vertices[i])))
+
+            self.interp_mat.append(smooth_mat)
+
+            # redraw if function was called due to Trait change
+            if name != None:
+                self._update_data()
 
     def _scale_colormap(self, table, fthresh, fmid, fmax):
-        """ Performs a linear interpolation of a colormap, such that fmid
+        """ Perform a linear interpolation of a colormap, such that fmid
             corresponds to the color in the center of the colormap
         """
         if not (fthresh < fmid) and (fmid < fmax):
@@ -1332,7 +1398,7 @@ class TimeViewer(HasTraits):
         n_colors = table.shape[0]
         n_colors2 = int(n_colors / 2)
 
-        #index of fmid in new colorbar
+        # index of fmid in new colorbar
         fmid_idx = np.round(n_colors * ((fmid - fthresh) / (fmax - fthresh))) \
                    - 1
 
@@ -1359,7 +1425,8 @@ class TimeViewer(HasTraits):
     def _update_data(self):
         """ Update the data shown on the brian
         """
-        print self.time_label % (self.time[self.current_time])
+        now = self.time_label % (self.time[self.current_time])
+        print now
 
         for i in range(len(self.brain)):
             data = self.interp_mat[i] * self.data[i][:, self.current_time]
@@ -1371,12 +1438,18 @@ class TimeViewer(HasTraits):
                 self.brain[i].add_data(data, min=data_min, max=data_max,
                                        colormap=self.colormap)
 
-                #update colormap values
+                # update colormap values
                 self.fthresh = data_min
                 self.fmid = (data_max + data_min) / 2
                 self.fmax = data_max
+
+                # add time text label
+                self.brain[i].add_text(0.05, 0.1, now, name='time')
             else:
                 self.brain[i].update_data(data)
+
+                # update the time label
+                self.brain[i].update_text(now, 'time')
 
         if not self._data_added:
             self._data_added = True
@@ -1408,7 +1481,7 @@ class TimeViewer(HasTraits):
                 table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
                 table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
 
-            #scale the colormap
+            # scale the colormap
             try:
                 table_new = self._scale_colormap(table,
                                                  self.fthresh,
@@ -1424,32 +1497,3 @@ class TimeViewer(HasTraits):
 
         # force redraw
         self._update_data()
-
-
-def _mesh_edges(tris):
-    """Returns sparse matrix with edges as an adjacency matrix
-
-    Parameters
-    ----------
-    tris : array of shape [n_triangles x 3]
-        The triangles
-
-    Returns
-    -------
-    edges : sparse matrix
-        The adjacency matrix
-    """
-    from scipy import sparse
-
-    npoints = np.max(tris) + 1
-    ntris = len(tris)
-    a, b, c = tris.T
-    edges = sparse.coo_matrix((np.ones(ntris), (a, b)),
-                                            shape=(npoints, npoints))
-    edges = edges + sparse.coo_matrix((np.ones(ntris), (b, c)),
-                                            shape=(npoints, npoints))
-    edges = edges + sparse.coo_matrix((np.ones(ntris), (c, a)),
-                                            shape=(npoints, npoints))
-    edges = edges.tocsr()
-    edges = edges + edges.T
-    return edges

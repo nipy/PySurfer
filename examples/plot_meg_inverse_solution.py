@@ -26,7 +26,8 @@ brain = Brain(subject_id, hemi, surface)
 """
 read MNE dSPM inverse solution
 """
-stc_fname = os.path.join('data', 'meg_source_estimate-' + hemi + '.stc')
+stc_fname = os.path.join('auto_examples', 'data',
+                         'meg_source_estimate-' + hemi + '.stc')
 stc = read_stc(stc_fname)
 
 """
@@ -57,6 +58,12 @@ create viewer
 viewer = TimeViewer(brain, data, vertices, time, colormap, time_label)
 
 """
-enable interactive configuration
+set minimum of colormap and time (index) to display
 """
-viewer.configure_traits()
+viewer.current_time = 8
+viewer.fthresh = 4
+
+"""
+uncomment this line to enable interactive configuration using GUI
+"""
+#viewer.configure_traits()
