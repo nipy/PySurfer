@@ -1,23 +1,22 @@
 """
-Plot MEG inverse soltuion computed using mne-python (http://martinos.org/mne)
-===========================
+Plot MEG inverse solution
+=========================
 
-Note: In order for this example to work you need mne-python installed
+Data were computed using mne-python (http://martinos.org/mne)
+
 """
-
 print __doc__
 
+import os
 import numpy as np
 
 from surfer import Brain, TimeViewer
-from mne.source_estimate import read_stc
+from surfer.io import read_stc
 
 """
 define subject, surface and hemisphere
 """
-subject_id = 'sample'
-surface    = 'inflated'
-hemi       = 'lh'
+subject_id, surface, hemi = 'fsaverage', 'inflated', 'lh'
 
 """
 create Brain object for visualization
@@ -27,7 +26,7 @@ brain = Brain(subject_id, hemi, surface)
 """
 read MNE dSPM inverse solution
 """
-stc_fname = './mne_dSPM_inverse-' + hemi + '.stc'
+stc_fname = os.path.join('data', 'meg_source_estimate-' + hemi + '.stc')
 stc = read_stc(stc_fname)
 
 """
@@ -40,17 +39,17 @@ vertices = stc['vertices']
 time points in milliseconds
 """
 time = 1000 * np.linspace(stc['tmin'],
-                          stc['tmin'] + data.shape[1]*stc['tstep'],
+                          stc['tmin'] + data.shape[1] * stc['tstep'],
                           data.shape[1])
 """
 colormap to use
 """
-colormap='hot'
+colormap = 'hot'
 
 """
 label for time annotation
 """
-time_label='time=%0.2f ms'
+time_label = 'time=%0.2f ms'
 
 """
 create viewer

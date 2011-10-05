@@ -1162,19 +1162,22 @@ from enthought.traits.api import HasTraits, Range, Int, Float, \
                                  Bool, Enum, on_trait_change
 from enthought.traits.ui.api import View, Item, VSplit, HSplit, Group
 
+
 class TimeViewer(HasTraits):
+    """XXX
+    """
     min_time = Int(0)
     max_time = Int(1E9)
     current_time = Range(low='min_time', high='max_time', value=0)
-    #colormap: only update when user presses Enter
-    fmax    = Float(enter_set=True, auto_set=False)
-    fmid    = Float(enter_set=True, auto_set=False)
+    # colormap: only update when user presses Enter
+    fmax = Float(enter_set=True, auto_set=False)
+    fmid = Float(enter_set=True, auto_set=False)
     fthresh = Float(enter_set=True, auto_set=False)
-    transparent = Bool(False)
+    transparent = Bool(True)
     orientation = Enum('lateral', 'medial', 'rostral', 'caudal',
                        'dorsal', 'ventral', 'frontal', 'parietal')
 
-    #GUI layout
+    # GUI layout
     view = View(VSplit(Item(name='current_time'),
                        Group(HSplit(Item(name='fthresh'),
                                     Item(name='fmid'),
@@ -1182,7 +1185,7 @@ class TimeViewer(HasTraits):
                                     Item(name='transparent'),
                                    ),
                              label='Color scale',
-                             show_border = True
+                             show_border=True
                             ),
                         Item(name='orientation')
                       )
@@ -1230,17 +1233,17 @@ class TimeViewer(HasTraits):
         self.colormap = colormap
         self.time_label = time_label
 
-        #check the inputs
+        # check the inputs
         self.brain, self.data, self.vertices = \
             self._check_inputs(brain, data, vertices)
 
-        #create matrices to interpolate onto highres mesh
+        # create matrices to interpolate onto highres mesh
         self._create_interpolation_matrices()
 
-        #initial drawing
+        # initial drawing
         self._update_data()
 
-        #enable updates through properties
+        # enable updates through properties
         self._no_update = False
 
     def _check_inputs(self, brain, data, vertices):
@@ -1248,10 +1251,10 @@ class TimeViewer(HasTraits):
         """
         #check that either all or none inputs are lists
         if isinstance(data, list) and isinstance(brain, list) \
-           and isinstance(vertices, list):
-               if len(data) != len(brain) or len(brain) != len(vertices):
-                   raise ValueError('data, brain, and vertices lists must have '
-                                    'same length')
+            and isinstance(vertices, list):
+                if len(data) != len(brain) or len(brain) != len(vertices):
+                    raise ValueError('data, brain, and vertices lists must '
+                                     'have same length')
         else:
             if isinstance(data, list) or isinstance(brain, list) \
                 or isinstance(vertices, list):
@@ -1261,7 +1264,6 @@ class TimeViewer(HasTraits):
             data = [data]
             brain = [brain]
             vertices = [vertices]
-
 
         for i in range(len(brain)):
             #check types
@@ -1287,8 +1289,7 @@ class TimeViewer(HasTraits):
         return brain, data, vertices
 
     def _create_interpolation_matrices(self, smooth=None):
-        """ Create interpolation matrices
-        """
+        """Create interpolation matrices"""
         from scipy import sparse
 
         self.interp_mat = list()
@@ -1308,16 +1309,16 @@ class TimeViewer(HasTraits):
 
                 data1 = e_use * np.ones(len(idx_use))
                 idx_use = np.where(data1)[0]
-                scale_mat = sparse.dia_matrix((1/data1[idx_use], 0), \
+                scale_mat = sparse.dia_matrix((1 / data1[idx_use], 0), \
                                           shape=(len(idx_use), len(idx_use)))
 
-                e_chain =   scale_mat * e_use[idx_use, :] * e_chain
+                e_chain = scale_mat * e_use[idx_use, :] * e_chain
                 if len(idx_use) >= n_vertices:
                     # stop when source space in filled with non-zeros
                     break
 
             print 'Created smoothing matrix for brain %d using %d steps' \
-                  % (i+1, k)
+                  % (i + 1, k)
             self.interp_mat.append(e_chain)
 
     def _scale_colormap(self, table, fthresh, fmid, fmax):
@@ -1328,23 +1329,23 @@ class TimeViewer(HasTraits):
             raise ValueError('Invalid colormap, we need fthresh<fmid<fmax')
 
         table_new = table.copy()
-        n_colors  = table.shape[0]
-        n_colors2 = int(n_colors/2)
+        n_colors = table.shape[0]
+        n_colors2 = int(n_colors / 2)
 
         #index of fmid in new colorbar
         fmid_idx = np.round(n_colors * ((fmid - fthresh) / (fmax - fthresh))) \
                    - 1
 
         for i in range(4):
-            part1 = np.interp(np.linspace(0, n_colors2-1, fmid_idx + 1),
+            part1 = np.interp(np.linspace(0, n_colors2 - 1, fmid_idx + 1),
                               np.arange(n_colors),
                               table[:, i])
-            table_new[:fmid_idx+1, i] = part1
-            part2 = np.interp(np.linspace(n_colors2, n_colors-1,
+            table_new[:fmid_idx + 1, i] = part1
+            part2 = np.interp(np.linspace(n_colors2, n_colors - 1,
                                           n_colors - fmid_idx - 1),
                               np.arange(n_colors),
                               table[:, i])
-            table_new[fmid_idx+1:, i] = part2
+            table_new[fmid_idx + 1:, i] = part2
 
         return table_new
 
@@ -1361,7 +1362,7 @@ class TimeViewer(HasTraits):
         print self.time_label % (self.time[self.current_time])
 
         for i in range(len(self.brain)):
-            data= self.interp_mat[i] * self.data[i][:, self.current_time]
+            data = self.interp_mat[i] * self.data[i][:, self.current_time]
 
             if not self._data_added:
                 data_min = np.min(self.data[i])
@@ -1403,7 +1404,7 @@ class TimeViewer(HasTraits):
             table = self._orig_cmap[i].copy()
             if self.transparent:
                 n_colors = table.shape[0]
-                n_colors2 = int(n_colors/2)
+                n_colors2 = int(n_colors / 2)
                 table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
                 table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
 
