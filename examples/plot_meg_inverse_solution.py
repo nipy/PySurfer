@@ -52,18 +52,17 @@ label for time annotation
 """
 time_label = 'time=%0.2f ms'
 
-"""
-create viewer
-"""
-viewer = TimeViewer(brain, data, vertices, time, colormap, time_label)
+
+brain.add_data(data, colormap=colormap, vertices=vertices, smoothing_steps=20,
+               time=time, time_label=time_label)
 
 """
-set minimum of colormap and time (index) to display
+scale colormap and set time (index) to display
 """
-viewer.current_time = 8
-viewer.fthresh = 4
+brain.set_data_time_index(8)
+brain.scale_data_colormap(4, 6, 13.5, True)
 
 """
-uncomment this line to enable interactive configuration using GUI
+uncomment this line to use the interactive TimeViewer GUI
 """
-#viewer.configure_traits()
+viewer = TimeViewer(brain)
