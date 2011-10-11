@@ -942,6 +942,11 @@ class Brain(object):
         if not (fmin < fmid) and (fmid < fmax):
             raise ValueError("Invalid colormap, we need fmin<fmid<fmax")
 
+        # Cast inputs to float to prevent integer division
+        fmin = float(fmin)
+        fmid = float(fmid)
+        fmax = float(fmax)
+
         print "colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e transparent=%d" \
               % (fmin, fmid, fmax, transparent)
 
