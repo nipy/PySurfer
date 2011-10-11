@@ -293,7 +293,7 @@ class Surface(object):
         self.surf = surf
 
         if 'SUBJECTS_DIR' not in os.environ:
-            raise ValueError('Test suite relies on the definition of the '
+            raise ValueError('pysurfer.Surface relies on the definition of the '
                              'SUBJECTS_DIR environment variable')
 
         subj_dir = os.environ["SUBJECTS_DIR"]
@@ -317,7 +317,7 @@ class Surface(object):
         return self.coords[:, 2]
 
     def load_curvature(self):
-        """Load in curavature values from the ?h.curv file."""
+        """Load in curvature values from the ?h.curv file."""
         curv_path = pjoin(self.data_path, "surf", "%s.curv" % self.hemi)
         self.curv = read_morph_data(curv_path)
         self.bin_curv = np.array(self.curv > 0, np.int)
