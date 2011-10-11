@@ -60,9 +60,9 @@ brain.add_data(data, colormap=colormap, vertices=vertices, smoothing_steps=20,
 scale colormap and set time (index) to display
 """
 brain.set_data_time_index(8)
-brain.scale_data_colormap(4, 6, 13.5, True)
+brain.scale_data_colormap(fmin=4, fmid=6, fmax=13.5, transparent=True)
 
 """
 uncomment this line to use the interactive TimeViewer GUI
 """
-#viewer = TimeViewer(brain)
+viewer = TimeViewer(brain)
