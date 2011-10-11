@@ -321,7 +321,9 @@ class Brain(object):
 
         # Fill in the data dict
         self.data = dict(surface=surf, colorbar=bar, orig_ctable=orig_ctable,
-                         array=array)
+                         array=array, smoothing_steps=smoothing_steps,
+                         fmin=min, fmid=(min+max)/2, fmax=max,
+                         transparent=False, time=0, time_idx=0)
         if vertices != None:
             self.data["vertices"] = vertices
             self.data["smooth_mat"] = smooth_mat
@@ -338,11 +340,6 @@ class Brain(object):
             self.add_text(0.05, 0.1, time_label % time[0], name="time_label")
 
         self._f.scene.disable_render = False
-
-    def update_data(self, array):
-        """ Update already added data efficiently
-        """
-        self.data['surface'].mlab_source.scalars = array
 
     def add_annotation(self, annot, borders=True):
         """Add an annotation file.
@@ -829,6 +826,43 @@ class Brain(object):
 
         return color_data
 
+    def get_data_properties(self):
+        """ Get properties of the data shown
+
+        Returns
+        -------
+        props : dict
+            Dictionary with data properties
+
+            props["fmin"] : minimum colormap
+            props["fmid"] : midpoint colormap
+            props["fmax"] : maximum colormap
+            props["transparent"] : lower part of colormap transparent?
+            props["time"] : time points
+            props["time_idx"] : current time index
+            props["smoothing_steps"] : number of smoothing steps
+        """
+        props = dict()
+        try:
+            props["fmin"] = self.data["fmin"]
+            props["fmid"] = self.data["fmid"]
+            props["fmax"] = self.data["fmax"]
+            props["transparent"] = self.data["transparent"]
+            props["time"] = self.data["time"]
+            props["time_idx"] = self.data["time_idx"]
+            props["smoothing_steps"] = self.data["smoothing_steps"]
+        except KeyError:
+            # The user has not added any data
+            props["fmin"] = 0
+            props["fmid"] = 0
+            props["fmax"] = 0
+            props["transparent"] = 0
+            props["time"] = 0
+            props["time_idx"] = 0
+            props["smoothing_steps"] = 0
+
+        return props
+
     def save_image(self, fname):
         """Save current view to disk
 
@@ -906,30 +940,30 @@ class Brain(object):
         """
 
         if not (fmin < fmid) and (fmid < fmax):
-            raise ValueError('Invalid colormap, we need fmin<fmid<fmax')
+            raise ValueError("Invalid colormap, we need fmin<fmid<fmax")
 
-        print 'colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e transparent=%d' \
+        print "colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e transparent=%d" \
               % (fmin, fmid, fmax, transparent)
 
-        # get the original colormap
-        table = self.data['orig_ctable'].copy()
+        # Get the original colormap
+        table = self.data["orig_ctable"].copy()
 
-        # add transparency if needed
+        # Add transparency if needed
         if  transparent:
             n_colors = table.shape[0]
             n_colors2 = int(n_colors / 2)
             table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
             table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
 
-        # scale the colormap
+        # Scale the colormap
         table_new = table.copy()
         n_colors = table.shape[0]
         n_colors2 = int(n_colors / 2)
 
-        # index of fmid in new colorbar
+        # Index of fmid in new colorbar
         fmid_idx = np.round(n_colors * ((fmid - fmin) / (fmax - fmin))) - 1
 
-        # go through channels
+        # Go through channels
         for i in range(4):
             part1 = np.interp(np.linspace(0, n_colors2 - 1, fmid_idx + 1),
                               np.arange(n_colors),
@@ -941,10 +975,16 @@ class Brain(object):
                               table[:, i])
             table_new[fmid_idx + 1:, i] = part2
 
-        # set the new colormap
-        cmap = self.data['surface'].module_manager.scalar_lut_manager
+        # Get the new colormap
+        cmap = self.data["surface"].module_manager.scalar_lut_manager
         cmap.lut.table = table_new
         cmap.data_range = np.array([fmin, fmax])
+
+        # Update the data properties
+        self.data["fmin"] = fmin
+        self.data["fmid"] = fmid
+        self.data["fmax"] = fmax
+        self.data["transparent"] = transparent
 
     def save_montage(self, filename, order=['lat', 'ven', 'med'],
                      orientation='h', border_size=15):
@@ -1038,16 +1078,16 @@ class Brain(object):
         self.update_text(self.data["time_label"] % self.data["time"][time_idx],
                          "time_label")
 
-    def set_data_smoothing_steps(self, steps):
+    def set_data_smoothing_steps(self, smoothing_steps):
         """ Set the number of smoothing steps
 
         Parameters
         ----------
-        steps : int
+        smoothing_steps : int
             Number of smoothing steps
         """
         smooth_mat = self._create_smoothing_matrix(self.data["vertices"],
-                                                   steps)
+                                                   smoothing_steps)
         self.data["smooth_mat"] = smooth_mat
   
         # Redraw
@@ -1059,6 +1099,9 @@ class Brain(object):
         plot_data = self.data["smooth_mat"] * plot_data
 
         self.data["surface"].mlab_source.scalars = plot_data
+
+        # Update data properties
+        self.data["smoothing_steps"] = smoothing_steps
 
     def update_text(self, text, name):
         """ Update text label
@@ -1211,11 +1254,16 @@ class Brain(object):
         #should we tear down other variables?
 
     def _create_smoothing_matrix(self, vertices, smoothing_steps):
-        """Update the data smoothing matrix. """
+        """Update the data smoothing matrix.
 
+        Parameters
+        ----------
+        smoothing_steps : int
+            number of smoothing steps
+        """
         from scipy import sparse
 
-        print 'Updating smoothing matrix, be patient..'
+        print "Updating smoothing matrix, be patient.."
 
         tris = self._geo.faces
         e = utils.mesh_edges(tris)
@@ -1234,10 +1282,10 @@ class Brain(object):
 
             smooth_mat = scale_mat * e_use[idx_use, :] * smooth_mat
 
-            print 'Smoothing matrix creation, step %d/%d' % \
+            print "Smoothing matrix creation, step %d/%d" % \
                   (k + 1, smoothing_steps)
 
-        # make sure the smooting matrix has the right number of rows
+        # Make sure the smooting matrix has the right number of rows
         # and is in COO format
         smooth_mat = smooth_mat.tocoo()
         smooth_mat = sparse.coo_matrix((smooth_mat.data,
@@ -1401,28 +1449,28 @@ class TimeViewer(HasTraits):
     """
     min_time = Int(0)
     max_time = Int(1E9)
-    current_time = Range(low='min_time', high='max_time', value=0)
+    current_time = Range(low="min_time", high="max_time", value=0)
     # colormap: only update when user presses Enter
     fmax = Float(enter_set=True, auto_set=False)
     fmid = Float(enter_set=True, auto_set=False)
     fmin = Float(enter_set=True, auto_set=False)
     transparent = Bool(True)
     smoothing_steps = Int(20, enter_set=True, auto_set=False)
-    orientation = Enum('lateral', 'medial', 'rostral', 'caudal',
-                       'dorsal', 'ventral', 'frontal', 'parietal')
+    orientation = Enum("lateral", "medial", "rostral", "caudal",
+                       "dorsal", "ventral", "frontal", "parietal")
 
     # GUI layout
-    view = View(VSplit(Item(name='current_time'),
-                       Group(HSplit(Item(name='fmin'),
-                                    Item(name='fmid'),
-                                    Item(name='fmax'),
-                                    Item(name='transparent'),
+    view = View(VSplit(Item(name="current_time"),
+                       Group(HSplit(Item(name="fmin"),
+                                    Item(name="fmid"),
+                                    Item(name="fmax"),
+                                    Item(name="transparent"),
                                    ),
-                             label='Color scale',
+                             label="Color scale",
                              show_border=True
                             ),
-                        Item(name='smoothing_steps'),
-                        Item(name='orientation')
+                        Item(name="smoothing_steps"),
+                        Item(name="orientation")
                       )
                 )
 
@@ -1436,15 +1484,25 @@ class TimeViewer(HasTraits):
         """
         super(TimeViewer, self).__init__()
 
-        self.max_time = len(brain.data["time"]) - 1
         self.brain = brain
+
+        # Initialize GUI with values from brain
+        props = brain.get_data_properties()
+
+        self._disable_updates = True
+        self.max_time = len(props["time"]) - 1
+        self.current_time = props["time_idx"]
+        self.fmin = props["fmin"]
+        self.fmid = props["fmid"]
+        self.fmax = props["fmax"]
+        self.transparent = props["transparent"]
+        self.smoothing_steps = props["smoothing_steps"]
+        self._disable_updates = False
 
         # Show GUI
         self.configure_traits()
 
-        self._disable_updates = False
-
-    @on_trait_change('smoothing_steps')
+    @on_trait_change("smoothing_steps")
     def set_smoothing_steps(self):
         """ Change number of smooting steps
         """
@@ -1453,7 +1511,7 @@ class TimeViewer(HasTraits):
 
         self.brain.set_data_smoothing_steps(self.smoothing_steps)
 
-    @on_trait_change('orientation')
+    @on_trait_change("orientation")
     def set_orientation(self):
         """ Set the orientation
         """
@@ -1462,7 +1520,7 @@ class TimeViewer(HasTraits):
 
         self.brain.show_view(view=self.orientation)
 
-    @on_trait_change('current_time')
+    @on_trait_change("current_time")
     def set_time_point(self):
         """ Set the time point shown
         """
@@ -1471,7 +1529,7 @@ class TimeViewer(HasTraits):
 
         self.brain.set_data_time_index(self.current_time)
 
-    @on_trait_change('fmin, fmid, fmax, transparent')
+    @on_trait_change("fmin, fmid, fmax, transparent")
     def scale_colormap(self):
         """ Scale the colormap
         """
