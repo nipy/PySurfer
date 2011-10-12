@@ -175,6 +175,51 @@ class Brain(object):
             mlab.roll(roll)
         return mlab.view(), mlab.roll()
 
+
+    def _read_scalar_data(self, source, name=None, cast=True):
+        """Load in scalar data from an image stored in a file or an array
+
+        Parameters
+        ----------
+        source : str or numpy array
+            path to scalar data file or a numpy array
+        name : str or None, optional
+            name for the overlay in the internal dictionary
+        cast : bool, optional
+            either to cast float data into 64bit datatype as a
+            workaround. cast=True can fix a rendering problem with
+            certain versions of Mayavi
+
+        Returns
+        -------
+        scalar_data : numpy array
+            flat numpy array of scalar data
+        name : str
+            if no name was provided, deduces the name if filename was given
+            as a source
+        """
+
+        # If source is a string, try to load a file
+        if isinstance(source, basestring):
+            if name is None:
+                basename = os.path.basename(source)
+                if basename.endswith(".gz"):
+                    basename = basename[:-3]
+                if basename.startswith("%s." % self.hemi):
+                    basename = basename[3:]
+                name = os.path.splitext(basename)[0]
+            scalar_data = io.read_scalar_data(source)
+        else:
+            # Can't think of a good way to check that this will work nicely
+            scalar_data = source
+
+        if cast:
+            if scalar_data.dtype.char == 'f' and scalar_data.dtype.itemsize < 8:
+                scalar_data = scalar_data.astype(np.float)
+
+        return scalar_data, name
+
+
     def add_overlay(self, source, min=None, max=None, sign="abs",
                     name=None, visible=True):
         """Add an overlay to the overlay dict from a file or array.
@@ -200,19 +245,7 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        # If source is a string, try to load a file
-        if isinstance(source, basestring):
-            if name is None:
-                basename = os.path.basename(source)
-                if basename.endswith(".gz"):
-                    basename = basename[:-3]
-                if basename.startswith("%s." % self.hemi):
-                    basename = basename[3:]
-                name = os.path.splitext(basename)[0]
-            scalar_data = io.read_scalar_data(source)
-        else:
-            # Can't think of a good way to check that this will work nicely
-            scalar_data = source
+        scalar_data, name = self._read_scalar_data(source, name)
 
         if name in self.overlays:
             "%s%d" % (name, len(self.overlays) + 1)
@@ -588,7 +621,7 @@ class Brain(object):
             from enthought.mayavi import mlab
 
         # Read the scalar data
-        scalar_data = io.read_scalar_data(filepath)
+        scalar_data, _ = self._read_scalar_data(filepath)
 
         #TODO find a better place for this; duplicates code in Overlay object
         if min is None:
