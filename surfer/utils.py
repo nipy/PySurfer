@@ -73,3 +73,57 @@ def mesh_edges(faces):
     edges = edges + edges.T
     edges = edges.tocoo()
     return edges
+
+
+def smoothing_matrix(vertices, adj_mat, smoothing_steps=20):
+    """Create a smoothing matrix which can be used to interpolate data defined
+       for a subset of vertices onto mesh with an adjancency matrix given by
+       adj_mat.
+
+    Parameters
+    ----------
+    vertices : 1d array
+        vertex indidices
+    adj_mat : sparse matrix
+        N x N adjacency matrix of the full mesh
+    smoothing_steps : int
+        number of smoothing steps (Default: 20)
+
+    Returns
+    -------
+    smooth_mat : sparse matrix
+        smoothing matrix with size N x len(vertices)
+    """
+    from scipy import sparse
+
+    print "Updating smoothing matrix, be patient.."
+
+    e = adj_mat.copy()
+    e.data[e.data == 2] = 1
+    n_vertices = e.shape[0]
+    e = e + sparse.eye(n_vertices, n_vertices)
+    idx_use = vertices
+    smooth_mat = 1.0
+    for k in range(smoothing_steps):
+        e_use = e[:, idx_use]
+
+        data1 = e_use * np.ones(len(idx_use))
+        idx_use = np.where(data1)[0]
+        scale_mat = sparse.dia_matrix((1 / data1[idx_use], 0), \
+                                  shape=(len(idx_use), len(idx_use)))
+
+        smooth_mat = scale_mat * e_use[idx_use, :] * smooth_mat
+
+        print "Smoothing matrix creation, step %d/%d" % \
+              (k + 1, smoothing_steps)
+
+    # Make sure the smooting matrix has the right number of rows
+    # and is in COO format
+    smooth_mat = smooth_mat.tocoo()
+    smooth_mat = sparse.coo_matrix((smooth_mat.data,
+                                   (idx_use[smooth_mat.row],
+                                   smooth_mat.col)),
+                                   shape=(n_vertices,
+                                         len(vertices)))
+
+    return smooth_mat
