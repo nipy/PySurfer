@@ -39,9 +39,9 @@ vertices = stc['vertices']
 """
 time points in milliseconds
 """
-time = 1000 * np.linspace(stc['tmin'],
-                          stc['tmin'] + data.shape[1] * stc['tstep'],
-                          data.shape[1])
+time = 1e3 * np.linspace(stc['tmin'],
+                         stc['tmin'] + data.shape[1] * stc['tstep'],
+                         data.shape[1])
 """
 colormap to use
 """
@@ -52,17 +52,16 @@ label for time annotation
 """
 time_label = 'time=%0.2f ms'
 
-
-brain.add_data(data, colormap=colormap, vertices=vertices, smoothing_steps=20,
+brain.add_data(data, colormap=colormap, vertices=vertices, smoothing_steps=10,
                time=time, time_label=time_label)
 
 """
 scale colormap and set time (index) to display
 """
-brain.set_data_time_index(8)
-brain.scale_data_colormap(4, 6, 13.5, True)
+brain.set_data_time_index(2)
+brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
 
 """
 uncomment this line to use the interactive TimeViewer GUI
 """
-#viewer = TimeViewer(brain)
+viewer = TimeViewer(brain)
