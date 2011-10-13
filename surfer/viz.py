@@ -67,12 +67,14 @@ class Brain(object):
         self.surf = surf
 
         # Initialize an mlab figure
-        bg_color_code, size = self.__get_scene_properties(config_opts)
+        fg_color_code, bg_color_code, size = \
+                                    self.__get_scene_properties(config_opts)
         if title is None:
             title = subject_id
         self._f = mlab.figure(title,
                               bgcolor=bg_color_code,
-                              size=size)
+                              size=size,
+                              fgcolor=fg_color_code)
         mlab.clf()
         self._f.scene.disable_render = True
 
@@ -175,6 +177,51 @@ class Brain(object):
             mlab.roll(roll)
         return mlab.view(), mlab.roll()
 
+
+    def _read_scalar_data(self, source, name=None, cast=True):
+        """Load in scalar data from an image stored in a file or an array
+
+        Parameters
+        ----------
+        source : str or numpy array
+            path to scalar data file or a numpy array
+        name : str or None, optional
+            name for the overlay in the internal dictionary
+        cast : bool, optional
+            either to cast float data into 64bit datatype as a
+            workaround. cast=True can fix a rendering problem with
+            certain versions of Mayavi
+
+        Returns
+        -------
+        scalar_data : numpy array
+            flat numpy array of scalar data
+        name : str
+            if no name was provided, deduces the name if filename was given
+            as a source
+        """
+
+        # If source is a string, try to load a file
+        if isinstance(source, basestring):
+            if name is None:
+                basename = os.path.basename(source)
+                if basename.endswith(".gz"):
+                    basename = basename[:-3]
+                if basename.startswith("%s." % self.hemi):
+                    basename = basename[3:]
+                name = os.path.splitext(basename)[0]
+            scalar_data = io.read_scalar_data(source)
+        else:
+            # Can't think of a good way to check that this will work nicely
+            scalar_data = source
+
+        if cast:
+            if scalar_data.dtype.char == 'f' and scalar_data.dtype.itemsize < 8:
+                scalar_data = scalar_data.astype(np.float)
+
+        return scalar_data, name
+
+
     def add_overlay(self, source, min=None, max=None, sign="abs",
                     name=None, visible=True):
         """Add an overlay to the overlay dict from a file or array.
@@ -200,19 +247,7 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        # If source is a string, try to load a file
-        if isinstance(source, basestring):
-            if name is None:
-                basename = os.path.basename(source)
-                if basename.endswith(".gz"):
-                    basename = basename[:-3]
-                if basename.startswith("%s." % self.hemi):
-                    basename = basename[3:]
-                name = os.path.splitext(basename)[0]
-            scalar_data = io.read_scalar_data(source)
-        else:
-            # Can't think of a good way to check that this will work nicely
-            scalar_data = source
+        scalar_data, name = self._read_scalar_data(source, name)
 
         if name in self.overlays:
             "%s%d" % (name, len(self.overlays) + 1)
@@ -588,7 +623,7 @@ class Brain(object):
             from enthought.mayavi import mlab
 
         # Read the scalar data
-        scalar_data = io.read_scalar_data(filepath)
+        scalar_data, _ = self._read_scalar_data(filepath)
 
         #TODO find a better place for this; duplicates code in Overlay object
         if min is None:
@@ -671,19 +706,26 @@ class Brain(object):
             viewer window size
 
         """
-        bg_colors = dict(black=[0, 0, 0],
-                         white=[256, 256, 256],
-                         midnight=[12, 7, 32],
-                         slate=[112, 128, 144],
-                         charcoal=[59, 69, 79],
-                         sand=[245, 222, 179])
+        colors = dict(black=[0, 0, 0],
+                      white=[256, 256, 256],
+                      midnight=[12, 7, 32],
+                      slate=[112, 128, 144],
+                      charcoal=[59, 69, 79],
+                      sand=[245, 222, 179])
 
         try:
             bg_color_name = config_opts['background']
         except KeyError:
             bg_color_name = config.get("visual", "background")
-        bg_color_code = bg_colors[bg_color_name]
+        bg_color_code = colors[bg_color_name]
         bg_color_code = tuple(map(lambda x: float(x) / 256, bg_color_code))
+
+        try:
+            fg_color_name = config_opts['foreground']
+        except KeyError:
+            fg_color_name = config.get("visual", "foreground")
+        fg_color_code = colors[fg_color_name]
+        fg_color_code = tuple(map(lambda x: float(x) / 256, fg_color_code))
 
         try:
             size = config_opts['size']
@@ -691,7 +733,7 @@ class Brain(object):
             size = config.getfloat("visual", "size")
         size = (size, size)
 
-        return bg_color_code, size
+        return fg_color_code, bg_color_code, size
 
     def __get_geo_colors(self, config_opts):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.

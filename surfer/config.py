@@ -6,6 +6,7 @@ homedir = os.environ['HOME']
 default_cfg = StringIO("""
 [visual]
 background = black
+foreground = white
 size = 800
 cortex = classic
 default_view = lateral
