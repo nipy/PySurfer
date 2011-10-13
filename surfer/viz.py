@@ -67,12 +67,14 @@ class Brain(object):
         self.surf = surf
 
         # Initialize an mlab figure
-        bg_color_code, size = self.__get_scene_properties(config_opts)
+        fg_color_code, bg_color_code, size = \
+                                    self.__get_scene_properties(config_opts)
         if title is None:
             title = subject_id
         self._f = mlab.figure(title,
                               bgcolor=bg_color_code,
-                              size=size)
+                              size=size,
+                              fgcolor=fg_color_code)
         mlab.clf()
         self._f.scene.disable_render = True
 
@@ -704,19 +706,26 @@ class Brain(object):
             viewer window size
 
         """
-        bg_colors = dict(black=[0, 0, 0],
-                         white=[256, 256, 256],
-                         midnight=[12, 7, 32],
-                         slate=[112, 128, 144],
-                         charcoal=[59, 69, 79],
-                         sand=[245, 222, 179])
+        colors = dict(black=[0, 0, 0],
+                      white=[256, 256, 256],
+                      midnight=[12, 7, 32],
+                      slate=[112, 128, 144],
+                      charcoal=[59, 69, 79],
+                      sand=[245, 222, 179])
 
         try:
             bg_color_name = config_opts['background']
         except KeyError:
             bg_color_name = config.get("visual", "background")
-        bg_color_code = bg_colors[bg_color_name]
+        bg_color_code = colors[bg_color_name]
         bg_color_code = tuple(map(lambda x: float(x) / 256, bg_color_code))
+
+        try:
+            fg_color_name = config_opts['foreground']
+        except KeyError:
+            fg_color_name = config.get("visual", "foreground")
+        fg_color_code = colors[fg_color_name]
+        fg_color_code = tuple(map(lambda x: float(x) / 256, fg_color_code))
 
         try:
             size = config_opts['size']
@@ -724,7 +733,7 @@ class Brain(object):
             size = config.getfloat("visual", "size")
         size = (size, size)
 
-        return bg_color_code, size
+        return fg_color_code, bg_color_code, size
 
     def __get_geo_colors(self, config_opts):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
