@@ -286,8 +286,9 @@ class Brain(object):
         if len(array) < self._geo.x.shape[0]:
             if vertices == None:
                 raise ValueError("len(data) < nvtx: need vertices")
-            smooth_mat = self._create_smoothing_matrix(vertices,
-                                                       smoothing_steps)                                     
+            adj_mat = utils.mesh_edges(self._geo.faces)
+            smooth_mat = utils.smoothing_matrix(vertices, adj_mat,
+                                                smoothing_steps)
         else:
             smooth_mat = None
 
@@ -924,6 +925,45 @@ class Brain(object):
                 print("Skipping %s: not in view dict" % view)
         return images_written
 
+    def save_image_sequence(self, time_idx, fname_pattern, use_abs_idx=True):
+        """Save a temporal image sequence
+
+        The files saved are named "fname_pattern % (pos)" where "pos" is a
+        relative or absolute index (controlled by "use_abs_idx")
+
+        Parameters
+        ----------
+        time_idx : array-like
+            time indices to save
+        fname_pattern : str
+            filename pattern, e.g. 'movie-frame_%0.4d.png'
+        use_abs_idx : boolean
+            if True the indices given by "time_idx" are used in the filename
+            if False the index in the filename starts at zero and is
+            incremented by one for each image (Default: True)
+
+        Returns
+        -------
+        images_written: list
+            all filenames written
+        """
+
+        current_time_idx = self.data["time_idx"]
+
+        images_written = list()
+        rel_pos = 0
+        for idx in time_idx:
+            self.set_data_time_index(idx)
+            fname = fname_pattern % (idx if use_abs_idx else rel_pos)
+            self.save_image(fname)
+            images_written.append(fname)
+            rel_pos += 1
+
+        # Restore original time index
+        self.set_data_time_index(current_time_idx)
+
+        return images_written
+
     def scale_data_colormap(self, fmin, fmid, fmax, transparent):
         """Scale the data colormap.
 
@@ -1091,8 +1131,11 @@ class Brain(object):
         smoothing_steps : int
             Number of smoothing steps
         """
-        smooth_mat = self._create_smoothing_matrix(self.data["vertices"],
-                                                   smoothing_steps)
+
+        adj_mat = utils.mesh_edges(self._geo.faces)
+        smooth_mat = utils.smoothing_matrix(self.data["vertices"], adj_mat,
+                                            smoothing_steps)
+
         self.data["smooth_mat"] = smooth_mat
   
         # Redraw
@@ -1258,50 +1301,7 @@ class Brain(object):
         mlab.close(self._f)
         #should we tear down other variables?
 
-    def _create_smoothing_matrix(self, vertices, smoothing_steps):
-        """Update the data smoothing matrix.
 
-        Parameters
-        ----------
-        smoothing_steps : int
-            number of smoothing steps
-        """
-        from scipy import sparse
-
-        print "Updating smoothing matrix, be patient.."
-
-        tris = self._geo.faces
-        e = utils.mesh_edges(tris)
-        e.data[e.data == 2] = 1
-        n_vertices = e.shape[0]
-        e = e + sparse.eye(n_vertices, n_vertices)
-        idx_use = vertices
-        smooth_mat = 1.0
-        for k in range(smoothing_steps):
-            e_use = e[:, idx_use]
-
-            data1 = e_use * np.ones(len(idx_use))
-            idx_use = np.where(data1)[0]
-            scale_mat = sparse.dia_matrix((1 / data1[idx_use], 0), \
-                                      shape=(len(idx_use), len(idx_use)))
-
-            smooth_mat = scale_mat * e_use[idx_use, :] * smooth_mat
-
-            print "Smoothing matrix creation, step %d/%d" % \
-                  (k + 1, smoothing_steps)
-
-        # Make sure the smooting matrix has the right number of rows
-        # and is in COO format
-        smooth_mat = smooth_mat.tocoo()
-        smooth_mat = sparse.coo_matrix((smooth_mat.data,
-                                       (idx_use[smooth_mat.row],
-                                       smooth_mat.col)),
-                                       shape=(n_vertices,
-                                             len(vertices)))
-
-        return smooth_mat
-
-           
 class Overlay(object):
 
     def __init__(self, scalar_data, geo, min, max, sign):

@@ -251,7 +251,7 @@ def read_label(filepath):
     return label_array
 
 
-def read_stc(filename):
+def read_stc(filepath):
     """Read an STC file from the MNE package
 
     STC files contain activations or source reconstructions
@@ -259,8 +259,8 @@ def read_stc(filename):
 
     Parameters
     ----------
-    filename: string
-        The name of the STC file
+    filepath: string
+        Path to STC file
 
     Returns
     -------
@@ -271,7 +271,7 @@ def read_stc(filename):
            vertices       vertex indices (0 based)
            data           The data matrix (nvert * ntime)
     """
-    fid = open(filename, 'rb')
+    fid = open(filepath, 'rb')
 
     stc = dict()
 
