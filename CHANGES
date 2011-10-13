@@ -1,0 +1,12 @@
+Version 0.3
+===========
+
+Enhancements
+------------
+TimeViewer GUI to control data exploration in the time dimension
+Support for reading and visualizing MEG data from MNE
+Utility function to smooth overlay data along the cortical manifold
+
+Fixes
+-----
+Big-endian overlay data should now display properly on 64-bit systems.
