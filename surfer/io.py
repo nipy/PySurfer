@@ -182,6 +182,8 @@ def read_annot(filepath, orig_ids=False):
         Annotation id at each vertex
     ctab : numpy array
         RGBA + label id colortable array
+    names : numpy array
+        Array of region names as stored in the annot file
 
     """
     with open(filepath, "rb") as fobj:
