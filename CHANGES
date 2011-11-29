@@ -6,6 +6,7 @@ Enhancements
 TimeViewer GUI to control data exploration in the time dimension
 Support for reading and visualizing MEG data from MNE
 Utility function to smooth overlay data along the cortical manifold
+Added example to display parcellation-based ROI analysis results
 
 Fixes
 -----
