@@ -377,7 +377,7 @@ class Brain(object):
 
         self._f.scene.disable_render = False
 
-    def add_annotation(self, annot, borders=True):
+    def add_annotation(self, annot, borders=True, alpha=1):
         """Add an annotation file.
 
         Parameters
@@ -433,6 +433,7 @@ class Brain(object):
         ord = np.argsort(cmap[:, -1])
         ids = ord[np.searchsorted(cmap[ord, -1], labels)]
         cmap = cmap[:, :4]
+        cmap[:, 3] = alpha * 255
 
         # Maybe get rid of old annot
         if hasattr(self, "annot"):
