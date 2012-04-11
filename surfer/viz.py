@@ -12,11 +12,11 @@ from .io import Surface
 from .config import config
 
 try:
-    from traits.api import HasTraits, Range, Int, Float, \
-                           Bool, Enum, on_trait_change
+    from traits.api import (HasTraits, Range, Int, Float,
+                            Bool, Enum, on_trait_change)
 except ImportError:
-    from enthought.traits.api import HasTraits, Range, Int, Float, \
-                                     Bool, Enum, on_trait_change
+    from enthought.traits.api import (HasTraits, Range, Int, Float, \
+                                      Bool, Enum, on_trait_change)
 
 try:
     from traits.ui.api import View, Item, VSplit, HSplit, Group
