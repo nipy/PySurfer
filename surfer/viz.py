@@ -433,7 +433,10 @@ class Brain(object):
         ord = np.argsort(cmap[:, -1])
         ids = ord[np.searchsorted(cmap[ord, -1], labels)]
         cmap = cmap[:, :4]
-        cmap[:, 3] = alpha * 255
+
+        #  Set the alpha level
+        alpha_vec = cmap[:, 3]
+        alpha_vec[alpha_vec > 0] = alpha * 255
 
         # Maybe get rid of old annot
         if hasattr(self, "annot"):
