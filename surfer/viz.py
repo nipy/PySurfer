@@ -274,7 +274,8 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_data(self, array, min=None, max=None, colormap="blue-red",
+    def add_data(self, array, min=None, max=None,
+                 colormap="blue-red", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d"):
         """Display data from a numpy array on the surface.
@@ -289,6 +290,8 @@ class Brain(object):
             max value in colormap (uses real max if None)
         colormap : str
             name of Mayavi colormap to use
+        alpha : float in [0, 1]
+            alpha level to control opacity
         vertices : numpy array
             vertices for which the data is defined (needed if len(data) < nvtx)
         smoothing_steps : int
@@ -345,7 +348,8 @@ class Brain(object):
                                                     self._geo.faces,
                                                     scalars=array_plot)
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
-                                     vmin=min, vmax=max)
+                                     vmin=min, vmax=max,
+                                     opacity=float(alpha))
 
         # Get the colorbar
         bar = mlab.scalarbar(surf)
@@ -386,6 +390,8 @@ class Brain(object):
             Either path to annotation file or annotation name
         borders : bool
             Show only borders of regions
+        alpha : float in [0, 1]
+            Alpha level to control opacity
 
         """
         try:
