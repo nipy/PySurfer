@@ -79,15 +79,12 @@ class Brain(object):
             self.viewdict = rh_viewdict
         self.surf = surf
 
-        # Initialize an mlab figure
-        fg_color_code, bg_color_code, size = \
-                                    self.__get_scene_properties(config_opts)
+        # Initialize the mlab figure
         if title is None:
             title = subject_id
+        self._set_scene_properties(config_opts)
         self._f = mlab.figure(title,
-                              bgcolor=bg_color_code,
-                              size=size,
-                              fgcolor=fg_color_code)
+                              **self.scene_properties)
         mlab.clf()
         self._f.scene.disable_render = True
 
@@ -235,8 +232,7 @@ class Brain(object):
 
         return scalar_data, name
 
-    def add_overlay(self, source, min=None, max=None, sign="abs",
-                    name=None, visible=True):
+    def add_overlay(self, source, min=None, max=None, sign="abs", name=None):
         """Add an overlay to the overlay dict from a file or array.
 
         Parameters
@@ -251,8 +247,6 @@ class Brain(object):
             whether positive, negative, or both values should be displayed
         name : str
             name for the overlay in the internal dictionary
-        visible : boolean
-            whether the overlay should be visible upon load
 
         """
         try:
@@ -794,20 +788,13 @@ class Brain(object):
 
         self.texts[name] = text
 
-    def __get_scene_properties(self, config_opts):
-        """Get the background color and size from the config parser.
+    def _set_scene_properties(self, config_opts):
+        """Set the scene_prop dict from the config parser.
 
         Parameters
         ----------
         config_opts : dict
             dictionary of config file "visual" options
-
-        Returns
-        -------
-        bg_color_code : (float, float, float)
-            RBG code for background color
-        size : (float, float)
-            viewer window size
 
         """
         colors = dict(black=[0, 0, 0],
@@ -837,7 +824,9 @@ class Brain(object):
             size = config.getfloat("visual", "size")
         size = (size, size)
 
-        return fg_color_code, bg_color_code, size
+        self.scene_properties = dict(fgcolor=fg_color_code,
+                                     bgcolor=bg_color_code,
+                                     size=size)
 
     def __get_geo_colors(self, config_opts):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
