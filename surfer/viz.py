@@ -190,7 +190,6 @@ class Brain(object):
             mlab.roll(roll)
         return mlab.view(), mlab.roll()
 
-
     def _read_scalar_data(self, source, name=None, cast=True):
         """Load in scalar data from an image stored in a file or an array
 
@@ -229,11 +228,11 @@ class Brain(object):
             scalar_data = source
 
         if cast:
-            if scalar_data.dtype.char == 'f' and scalar_data.dtype.itemsize < 8:
+            if (scalar_data.dtype.char == 'f' and
+                scalar_data.dtype.itemsize < 8):
                 scalar_data = scalar_data.astype(np.float)
 
         return scalar_data, name
-
 
     def add_overlay(self, source, min=None, max=None, sign="abs",
                     name=None, visible=True):
@@ -362,7 +361,7 @@ class Brain(object):
         # Fill in the data dict
         self.data = dict(surface=surf, colorbar=bar, orig_ctable=orig_ctable,
                          array=array, smoothing_steps=smoothing_steps,
-                         fmin=min, fmid=(min+max)/2, fmax=max,
+                         fmin=min, fmid=(min + max) / 2, fmax=max,
                          transparent=False, time=0, time_idx=0)
         if vertices != None:
             self.data["vertices"] = vertices
@@ -1160,17 +1159,15 @@ class Brain(object):
             time index
         """
         if time_idx < 0 or time_idx >= self.data["array"].shape[1]:
-            raise ValueError("time index out of range")    
+            raise ValueError("time index out of range")
 
-        plot_data = self.data["array"][:, time_idx]        
+        plot_data = self.data["array"][:, time_idx]
 
-        if self.data.has_key("smooth_mat"):
+        if "smooth_mat" in self.data:
             plot_data = self.data["smooth_mat"] * plot_data
-
         self.data["surface"].mlab_source.scalars = plot_data
-        
         self.data["time_idx"] = time_idx
-        
+
         # Update time label
         self.update_text(self.data["time_label"] % self.data["time"][time_idx],
                          "time_label")
@@ -1189,13 +1186,13 @@ class Brain(object):
                                             smoothing_steps)
 
         self.data["smooth_mat"] = smooth_mat
-  
+
         # Redraw
         if self.data["array"].ndim == 1:
             plot_data = self.data["array"]
         else:
             plot_data = self.data["array"][:, self.data["time_idx"]]
-        
+
         plot_data = self.data["smooth_mat"] * plot_data
 
         self.data["surface"].mlab_source.scalars = plot_data
