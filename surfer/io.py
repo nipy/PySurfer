@@ -352,8 +352,8 @@ class Surface(object):
         self.surf = surf
 
         if 'SUBJECTS_DIR' not in os.environ:
-            raise ValueError('pysurfer.Surface relies on the definition of the '
-                             'SUBJECTS_DIR environment variable')
+            raise ValueError('Surface relies on the definition of the '
+                             'of the SUBJECTS_DIR environment variable')
 
         subj_dir = os.environ["SUBJECTS_DIR"]
         self.data_path = pjoin(subj_dir, subject_id)

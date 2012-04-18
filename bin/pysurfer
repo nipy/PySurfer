@@ -49,7 +49,8 @@ if __name__ == '__main__':
         else:
             flag = '--no-banner '
             flag += '--gui=wx -i '
-        cmd = 'ipython %s ' % flag + __file__ + ' "%s"' % ' '.join(sys.argv[1:])
+        cmd = 'ipython %s ' % (flag + __file__ +
+                               ' "%s"' % ' '.join(sys.argv[1:]))
         os.system(cmd)
     else:
         args = parser.parse_args(sys.argv[1].split())

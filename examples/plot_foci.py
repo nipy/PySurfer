@@ -34,7 +34,7 @@ coords = [[-36, 18, -3],
           [-48, 26, -2]]
 
 """
-We can control the color of the sphereoids with 
+We can control the color of the sphereoids with
 an rgb triplet where values range from 0 to 1.
 (They are white by default.)
 """
@@ -43,7 +43,7 @@ rgb = (1, .63, .49)
 """
 Now we plot the foci on the inflated surface. We will map
 the foci onto the surface by finding the vertex on the "white"
-mesh that is closest to the coordinate of each point we want 
+mesh that is closest to the coordinate of each point we want
 to display.
 
 While this is not a perfect transformation, it can give you
@@ -83,5 +83,5 @@ scale_factor = 1.3
 Finally, plot the foci using the coords_as_verts option to
 center each sphereoid at its vertex id.
 """
-brain.add_foci(coords, coords_as_verts=True, 
+brain.add_foci(coords, coords_as_verts=True,
                scale_factor=scale_factor, color=(.46, .7, .87))

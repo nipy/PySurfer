@@ -34,7 +34,7 @@ You can also display the regions with "filled in" colors
 brain.add_annotation("aparc", borders=False)
 
 """
-You may also provide a full path to an annotation file 
+You may also provide a full path to an annotation file
 at an arbitray location on the disc.
 """
 subjects_dir = os.environ["SUBJECTS_DIR"]

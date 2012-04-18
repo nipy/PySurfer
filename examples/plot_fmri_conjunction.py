@@ -4,7 +4,7 @@ Display a Conjunction Map
 
 Show the overlap between two different activation maps.
 
-This is one of the most commonly asked questions about 
+This is one of the most commonly asked questions about
 Tksurfer on the Freesurfer mailing list. Below, we show
 how it can be accomplished in just a few lines of code
 with PySurfer.
@@ -24,7 +24,7 @@ Initialize the visualization.
 brain = Brain("fsaverage", "lh", "inflated")
 
 """
-Read both of the activation maps in using 
+Read both of the activation maps in using
 surfer's io functions.
 """
 data_dir = op.join("auto_examples", "data")

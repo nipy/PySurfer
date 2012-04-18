@@ -23,7 +23,7 @@ overlay_file = op.join("auto_examples", "data", "lh.sig.nii.gz")
 
 """
 Display the overlay on the surface using the defaults
-to control thresholding and colorbar saturation. 
+to control thresholding and colorbar saturation.
 These can be set through your config file.
 """
 brain.add_overlay(overlay_file)
