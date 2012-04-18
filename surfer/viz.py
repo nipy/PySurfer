@@ -5,6 +5,7 @@ from warnings import warn
 import numpy as np
 from scipy import stats
 from scipy import ndimage
+from matplotlib.colors import colorConverter
 
 from . import io
 from . import utils
@@ -464,7 +465,7 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_label(self, label, borders=True, color=(76, 169, 117, 255)):
+    def add_label(self, label, color="crimson", alpha=1, borders=False):
         """Add an ROI label to the image.
 
         Parameters
@@ -473,8 +474,10 @@ class Brain(object):
             label filepath or name
         borders : bool
             show only label borders
-        color : (float, float, float, float)
-            RGBA color tuple
+        color : matplotlib-style color
+            anything matplotlib accepts: string, RGB, hex, etc.
+        alpha : float in [0, 1]
+            alpha level to control opacity
 
         """
         try:
@@ -518,9 +521,8 @@ class Brain(object):
                                                    scalars=label)
         surf = mlab.pipeline.surface(mesh, name=label_name)
 
-        if not isinstance(color, tuple) or len(color) != 4:
-            raise TypeError("'color' parameter must be a 4-tuple")
-        cmap = np.array([(0, 0, 0, 0,), color])
+        color = colorConverter.to_rgba(color, alpha)
+        cmap = np.array([(0, 0, 0, 0,), color]) * 255
         surf.module_manager.scalar_lut_manager.lut.table = cmap
 
         self.labels[label_name] = surf
