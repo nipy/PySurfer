@@ -88,6 +88,9 @@ class Brain(object):
         mlab.clf()
         self._f.scene.disable_render = True
 
+        # Set the lights so they are oriented by hemisphere
+        self._orient_lights()
+
         # Initialize a Surface object as the geometry
         self._geo = Surface(subject_id, hemi, surf)
 
@@ -108,7 +111,7 @@ class Brain(object):
 
         # mlab surface for the geometry
         if curv:
-            colormap, vmin, vmax, reverse = self.__get_geo_colors(config_opts)
+            colormap, vmin, vmax, reverse = self._get_geo_colors(config_opts)
             self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                 colormap=colormap, vmin=vmin, vmax=vmax)
             if reverse:
@@ -237,7 +240,7 @@ class Brain(object):
 
         Parameters
         ----------
-        src : str or numpy array
+        source : str or numpy array
             path to the overlay file or numpy array with data
         min : float
             threshold for overlay display
@@ -256,6 +259,8 @@ class Brain(object):
 
         scalar_data, name = self._read_scalar_data(source, name)
 
+        min, max = self._get_display_range(scalar_data, min, max, sign)
+
         if name in self.overlays:
             "%s%d" % (name, len(self.overlays) + 1)
 
@@ -265,6 +270,12 @@ class Brain(object):
         self._f.scene.disable_render = True
         view = mlab.view()
         self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign)
+        for bar in ["pos_bar", "neg_bar"]:
+            try:
+                self._format_cbar_text(getattr(self.overlays[name], bar))
+            except AttributeError:
+                pass
+
         mlab.view(*view)
         self._f.scene.disable_render = False
 
@@ -273,6 +284,11 @@ class Brain(object):
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d"):
         """Display data from a numpy array on the surface.
+
+        This provides a similar interface to add_overlay, but does not
+        threshold the data and displays it with a single colormap. It
+        offers more flexibility over the colormap, and provides a way
+        to display four dimensional data (i.e. a timecourse)
 
         Parameters
         ----------
@@ -347,6 +363,7 @@ class Brain(object):
 
         # Get the colorbar
         bar = mlab.scalarbar(surf)
+        self._format_cbar_text(bar)
         bar.scalar_bar_representation.position2 = .8, 0.09
 
         # Get the original colormap table
@@ -595,6 +612,7 @@ class Brain(object):
 
         # Get the colorbar
         bar = mlab.scalarbar(surf)
+        self._format_cbar_text(bar)
         bar.scalar_bar_representation.position2 = .8, 0.09
 
         # Fil in the morphometry dict
@@ -666,17 +684,17 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_contour_overlay(self, filepath, min=None, max=None,
+    def add_contour_overlay(self, source, min=None, max=None,
                             n_contours=7, line_width=1.5):
-        """Add a topographic contour overlay.
+        """Add a topographic contour overlay of the positive data.
 
         Note: This visualization will look best when using the "low_contrast"
         cortical curvature colorscheme.
 
         Parameters
         ----------
-        filepath : str
-            path to the overlay file (must be readable by Nibabel, or .mgh)
+        source : str or array
+            path to the overlay file or numpy array
         min : float
             threshold for overlay display
         max : float
@@ -693,39 +711,9 @@ class Brain(object):
             from enthought.mayavi import mlab
 
         # Read the scalar data
-        scalar_data, _ = self._read_scalar_data(filepath)
+        scalar_data, _ = self._read_scalar_data(source)
 
-        #TODO find a better place for this; duplicates code in Overlay object
-        if min is None:
-            try:
-                min = config.getfloat("overlay", "min_thresh")
-            except ValueError:
-                min_str = config.get("overlay", "min_thresh")
-                if min_str == "robust_min":
-                    min = stats.scoreatpercentile(scalar_data, 2)
-                elif min_str == "actual_min":
-                    min = scalar_data.min()
-                else:
-                    min = 2.0
-                    warn("The 'min_thresh' value in your config value must be "
-                "a float, 'robust_min', or 'actual_min', but it is %s. "
-                "I'm setting the overlay min to the config default of 2" % min)
-
-        if max is None:
-            try:
-                max = config.getfloat("overlay", "max_thresh")
-            except ValueError:
-                max_str = config.get("overlay", "max_thresh")
-                if max_str == "robust_max":
-                    max = stats.scoreatpercentile(scalar_data, 98)
-                elif max_str == "actual_max":
-                    max = scalar_data.max()
-                else:
-                    max = stats.scoreatpercentile(scalar_data, 98)
-                    warn("The 'max_thresh' value in your config value must be "
-                "a float, 'robust_min', or 'actual_min', but it is %s. "
-                "I'm setting the overlay min to the config default "
-                "of robust_max" % max)
+        min, max = self._get_display_range(scalar_data, min, max, "pos")
 
         # Prep the viz
         self._f.scene.disable_render = True
@@ -751,6 +739,7 @@ class Brain(object):
         # Set the colorbar and range correctly
         bar = mlab.scalarbar(surf)
         bar.data_range = min, max
+        self._format_cbar_text(bar)
         bar.scalar_bar_representation.position2 = .8, 0.09
 
         # Set up a dict attribute with pointers at important things
@@ -828,7 +817,13 @@ class Brain(object):
                                      bgcolor=bg_color_code,
                                      size=size)
 
-    def __get_geo_colors(self, config_opts):
+    def _orient_lights(self):
+        """Set lights to come from same direction relative to brain."""
+        if self.hemi == "rh":
+            for light in self._f.scene.light_manager.lights:
+                light.azimuth *= -1
+
+    def _get_geo_colors(self, config_opts):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
 
         Parameters
@@ -1341,16 +1336,7 @@ class Brain(object):
         mlab.close(self._f)
         #should we tear down other variables?
 
-
-class Overlay(object):
-
-    def __init__(self, scalar_data, geo, min, max, sign):
-        """
-        """
-        try:
-            from mayavi import mlab
-        except ImportError:
-            from enthought.mayavi import mlab
+    def _get_display_range(self, scalar_data, min, max, sign):
 
         if scalar_data.min() >= 0:
             sign = "pos"
@@ -1366,6 +1352,7 @@ class Overlay(object):
         else:
             range_data = np.abs(scalar_data)
 
+        # Get the min and max from among various places
         if min is None:
             try:
                 min = config.getfloat("overlay", "min_thresh")
@@ -1387,7 +1374,7 @@ class Overlay(object):
             except ValueError:
                 max_str = config.get("overlay", "max_thresh")
                 if max_str == "robust_max":
-                    max = stats.scoreatpercentile(range_data, 98)
+                    max = stats.scoreatpercentile(scalar_data, 98)
                 elif max_str == "actual_max":
                     max = range_data.max()
                 else:
@@ -1397,8 +1384,29 @@ class Overlay(object):
                 "I'm setting the overlay min to the config default "
                 "of robust_max" % max)
 
-        # Clean up range_data since we don't need it and it might be big
-        del range_data
+        return min, max
+
+    def _format_cbar_text(self, cbar):
+
+        bg_color = self.scene_properties["bgcolor"]
+        text_color = (1., 1., 1.) if sum(bg_color) < 2 else (0., 0., 0.)
+        cbar.label_text_property.color = text_color
+
+
+class Overlay(object):
+    """Encapsulation of statistical neuroimaging overlay visualization."""
+
+    def __init__(self, scalar_data, geo, min, max, sign):
+        try:
+            from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+
+        if scalar_data.min() >= 0:
+            sign = "pos"
+        elif scalar_data.max() <= 0:
+            sign = "neg"
+        self.sign = sign
 
         # Byte swap inplace; due to mayavi bug
         mlab_data = scalar_data.copy()
@@ -1458,16 +1466,7 @@ class Overlay(object):
             self.neg = neg_surf
             self.neg_bar = neg_bar
 
-        self.__format_colorbar()
-
-    def toggle_visibility(self):
-
-        if self.sign in ["pos", "abs"]:
-            self.pos.visible = not self.pos.visible
-            self.pos_bar.visible = False
-        if self.sign in ["neg", "abs"]:
-            self.neg.visible = not self.neg.visible
-            self.neg_bar.visible = False
+        self._format_colorbar()
 
     def remove(self):
 
@@ -1478,7 +1477,7 @@ class Overlay(object):
             self.neg.remove()
             self.neg_bar.visible = False
 
-    def __format_colorbar(self):
+    def _format_colorbar(self):
 
         if self.sign in ["abs", "neg"]:
             self.neg_bar.scalar_bar_representation.position = (0.05, 0.01)

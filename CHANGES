@@ -14,3 +14,5 @@ Exposed alpha channel for data, annotation, and label surfaces
 Fixes
 -----
 Big-endian overlay data should now display properly on 64-bit systems.
+Colorbar text displays properly on light backgrounds
+Lights are oriented depending on hemisphere so surfaces are equally lit
