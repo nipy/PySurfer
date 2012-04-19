@@ -56,6 +56,8 @@
 .. _subversion: http://subversion.tigris.org/
 .. _nose: http://somethingaboutorange.com/mrl/projects/nose
 .. _`python coverage tester`: http://nedbatchelder.com/code/modules/coverage.html
+.. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
+.. _pip: http://pypi.python.org/pypi/pip
 
 .. Other python projects
 .. _numpy: http://www.scipy.org/NumPy
@@ -72,6 +74,7 @@
 .. _pythonxy: http://www.pythonxy.com/
 .. _EPD: http://www.enthought.com/products/epd.php
 .. _Traits: http://code.enthought.com/projects/traits/
+.. _PIL: http://www.pythonware.com/products/pil/
 
 .. Python imaging projects
 .. _PyMVPA: http://www.pymvpa.org
