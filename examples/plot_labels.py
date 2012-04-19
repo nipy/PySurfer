@@ -39,7 +39,7 @@ brain.add_label("BA6", alpha=.7)
 # Finally, you can plot the label in any color you want.
 brain.show_view("medial")
 
-# Use and valid matplotlib color.
+# Use any valid matplotlib color.
 brain.add_label("V1", color="steelblue", alpha=.6)
 brain.add_label("V2", color="#FF6347", alpha=.6)
 brain.add_label("entorhinal", color=(.2, 1, .5), alpha=.6)
