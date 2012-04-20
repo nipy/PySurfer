@@ -21,7 +21,9 @@ surface = "inflated"
 """
 Bring up the visualization
 """
-brain = Brain(subject_id, hemi, surface)
+brain = Brain(subject_id, hemi, surface,
+              config_opts=dict(background="slate",
+                               cortex="high_contrast"))
 
 """
 Read in the aparc annotation file

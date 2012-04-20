@@ -21,7 +21,8 @@ from surfer import Brain
 """
 Initialize the visualization.
 """
-brain = Brain("fsaverage", "lh", "inflated")
+brain = Brain("fsaverage", "lh", "inflated",
+              config_opts=dict(background="white"))
 
 """
 Read both of the activation maps in using

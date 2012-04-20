@@ -351,12 +351,19 @@ class Brain(object):
         if smooth_mat != None:
             array_plot = smooth_mat * array_plot
 
+        # Copy and byteswap to deal with Mayavi bug
+        if array_plot.dtype.byteorder == '>':
+            mlab_plot = array_plot.copy()
+            mlab_plot.byteswap(True)
+        else:
+            mlab_plot = array_plot
+
         # Set up the visualization pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
                                                     self._geo.z,
                                                     self._geo.faces,
-                                                    scalars=array_plot)
+                                                    scalars=mlab_plot)
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
                                      opacity=float(alpha))
@@ -1408,7 +1415,7 @@ class Overlay(object):
             sign = "neg"
         self.sign = sign
 
-        # Byte swap inplace; due to mayavi bug
+        # Byte swap copy; due to mayavi bug
         mlab_data = scalar_data.copy()
         if scalar_data.dtype.byteorder == '>':
             mlab_data.byteswap(True)

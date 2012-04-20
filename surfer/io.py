@@ -314,7 +314,7 @@ def read_stc(filepath):
 
 def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
                         projmeth="frac", projsum="avg", projarg=[0, 1, .1],
-                        surf="white", smooth=True, mask_label=None,
+                        surf="white", smooth_fwhm=3, mask_label=None,
                         target_subject=None, verbose=False):
     """Sample MRI volume onto cortical manifold.
 
@@ -341,8 +341,8 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         start, stop, and stop
     surf : string
         Target surface
-    smooth : boolean
-        If true, applies a small amount of smoothing on surface manifold
+    smooth_fwhm : float
+        FWHM of surface-based smoothing to apply; 0 skips smoothing
     mask_label : string
         Path to label file to constrain projection; otherwise uses cortex
     target_subject : string
@@ -378,8 +378,8 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
     cmd_list.extend([proj_flag, proj_arg])
 
     # Set misc args
-    if smooth:
-        cmd_list.extend(["--surf-fwhm", "2.5"])
+    if smooth_fwhm:
+        cmd_list.extend(["--surf-fwhm", str(smooth_fwhm)])
     if mask_label is not None:
         cmd_list.extend(["--mask", mask_label])
     if target_subject is not None:

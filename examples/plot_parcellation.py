@@ -19,7 +19,9 @@ surface = 'inflated'
 """
 Bring up the visualization
 """
-brain = Brain(subject_id, hemi, surface)
+brain = Brain(subject_id, hemi, surface,
+              config_opts={"cortex": "bone",
+                           "background": "sand"})
 
 """
 Display the 'aparc' parcellation borders.

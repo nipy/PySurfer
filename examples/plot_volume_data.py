@@ -12,17 +12,20 @@ print __doc__
 from surfer import Brain, io
 
 # Bring up the visualization
-brain = Brain("fsaverage", "lh", "inflated")
+brain = Brain("fsaverage", "lh", "inflated",
+              config_opts=dict(background="white"))
 
 # Project the volume file and return as an array
-mri_file = "auto_examples/data/zstat.nii.gz"
+mri_file = "auto_examples/data/resting_corr.nii.gz"
 reg_file = "auto_examples/data/register.dat"
 surf_data = io.project_volume_data(mri_file, "lh", reg_file)
 
 # You can pass this array to the add_overlay method for
 # a typical activation overlay (with thresholding, etc.)
-brain.add_overlay(surf_data, min=2.3, max=3.09, name="zstat")
+brain.add_overlay(surf_data, min=.3, max=.7, name="ang_corr")
 
-# You can also pass it to add_data
-brain.overlays["zstat"].remove()
-brain.add_data(surf_data, min=-4.265, max=4.265)
+# You can also pass it to add_data for more control
+# over the visualzation. Here we'll plot the whole
+# range of correlations
+brain.overlays["ang_corr"].remove()
+brain.add_data(surf_data, -.7, .7, "jet", alpha=.7)
