@@ -1,5 +1,7 @@
 import os
 from os.path import join as pjoin
+import tempfile
+from subprocess import check_output
 import gzip
 import numpy as np
 import nibabel as nib
@@ -308,6 +310,92 @@ def read_stc(filepath):
     # close the file
     fid.close()
     return stc
+
+
+def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
+                        projmeth="frac", projsum="avg", projarg=[0, 1, .1],
+                        surf="white", smooth=True, mask_label=None,
+                        target_subject=None, verbose=False):
+    """Sample MRI volume onto cortical manifold.
+
+    Note: this requires Freesurfer to be installed with correct
+    SUBJECTS_DIR definition (it uses mri_vol2surf internally).
+
+    Parameters
+    ----------
+    filepath : string
+        Volume file to resample (equivalent to --mov)
+    hemi : [lh, rh]
+        Hemisphere target
+    reg_file : string
+        Path to TKreg style affine matrix file
+    subject_id : string
+        Use if file is in register with subject's orig.mgz
+    projmeth : [frac, dist]
+        Projection arg should be understood as fraction of cortical
+        thickness or as an absolute distance (in mm)
+    projsum : [avg, max, point]
+        Average over projection samples, take max, or take point sample
+    projarg : single float or sequence of three floats
+        Single float for point sample, sequence for avg/max specifying
+        start, stop, and stop
+    surf : string
+        Target surface
+    smooth : boolean
+        If true, applies a small amount of smoothing on surface manifold
+    mask_label : string
+        Path to label file to constrain projection; otherwise uses cortex
+    target_subject : string
+        Subject to warp data to in surface space after projection
+    verbose : boolean
+        If true, print command line
+
+    """
+
+    # Set the basic commands
+    cmd_list = ["mri_vol2surf",
+                "--mov", filepath,
+                "--hemi", hemi,
+                "--surf", surf]
+
+    # Specify the affine registration
+    if reg_file is not None:
+        cmd_list.extend(["--reg", reg_file])
+    elif subject_id is not None:
+        cmd_list.extend(["--regheader", subject_id])
+    else:
+        raise ValueError("Must specify reg_file or subject_id")
+
+    # Specify the projection
+    proj_flag = "--proj" + projmeth
+    if projsum != "point":
+        proj_flag += "-"
+        proj_flag += projsum
+    if hasattr(projarg, "__iter__"):
+        proj_arg = "%.3f, %.3f, %.3f" % tuple(projarg)
+    else:
+        proj_arg = str(projarg)
+    cmd_list.extend([proj_flag, proj_arg])
+
+    # Set misc args
+    if smooth:
+        cmd_list.extend(["--surf-fwhm", "2.5"])
+    if mask_label is not None:
+        cmd_list.extend(["--mask", mask_label])
+    if target_subject is not None:
+        cmd_list.extend(["--trgsubject", target_subject])
+
+    # Execute the command
+    out_file = ".tmp-pysurfer.mgz"
+    cmd_list.extend(["--o", out_file])
+    if verbose:
+        print " ".join(cmd_list)
+    out = check_output(cmd_list)
+
+    # Read in the data
+    surf_data = read_scalar_data(out_file)
+    os.remove(out_file)
+    return surf_data
 
 
 class Surface(object):
