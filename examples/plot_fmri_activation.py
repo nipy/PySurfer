@@ -29,13 +29,7 @@ These can be set through your config file.
 brain.add_overlay(overlay_file)
 
 """
-To turn the overlay off, access it through the overlays
-dictionary attribute and call toggle_visibility method.
-"""
-brain.overlays["sig"].toggle_visibility()
-
-"""
-You can also get rid of it altogether.
+You can then turn the overlay off.
 """
 brain.overlays["sig"].remove()
 
