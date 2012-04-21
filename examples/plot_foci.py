@@ -42,6 +42,9 @@ to display.
 While this is not a perfect transformation, it can give you
 some idea of where peaks from a volume-based analysis would
 be located on the surface.
+
+You can use any valid matplotlib color for the foci; the
+default is white.
 """
 brain.add_foci(coords, map_surface="white", color="gold")
 
@@ -54,23 +57,20 @@ the group activation map.
 Here, we will just demonstrate with a set of randomly
 choosen vertices from within the superior temporal sulcus.
 
-First, we load in the Destrieux parcellation annotation file.
+First, we load in the Destrieux parcellation annotation file
+and find 10 random vertices within the STS.
 """
 annot_path = op.join(subjects_dir, subject_id, "label/lh.aparc.a2009s.annot")
 ids, ctab, names = io.read_annot(annot_path)
-
-"""
-Then, find 10 random vertices within the STS.
-"""
 verts = arange(0, len(ids))
 coords = permutation(verts[ids == 74])[:10]
 
 """
-You can also control the size of the spheroids.
-We'll make these a little bit bigger than our
+You can also control the size of the focus glpyhs.
+We'll make these a little bit smaller than our
 other foci.
 """
-scale_factor = 1.5
+scale_factor = 0.7
 
 """
 Finally, plot the foci using the coords_as_verts option to

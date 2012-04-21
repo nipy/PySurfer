@@ -690,7 +690,7 @@ class Brain(object):
                                foci_coords[:, 1],
                                foci_coords[:, 2],
                                np.ones(foci_coords.shape[0]),
-                               scale_factor=(6. * scale_factor),
+                               scale_factor=(10. * scale_factor),
                                color=color, opacity=alpha, name=name)
         self.foci[name] = points
         mlab.view(*view)
