@@ -70,7 +70,7 @@ You can also control the size of the spheroids.
 We'll make these a little bit bigger than our
 other foci.
 """
-scale_factor = 2
+scale_factor = 1.5
 
 """
 Finally, plot the foci using the coords_as_verts option to
