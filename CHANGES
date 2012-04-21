@@ -5,11 +5,12 @@ Enhancements
 ------------
 TimeViewer GUI to control data exploration in the time dimension
 Support for reading and visualizing MEG data from MNE
+Function to project volume-based data using mri_vol2surf
 Utility function to smooth overlay data along the cortical manifold
-Added example to display parcellation-based ROI analysis results
-Added example to display ROI labels
-Improved label color flexibility using matplotlib
-Exposed alpha channel for data, annotation, and label surfaces
+Example for displaying parcellation-based ROI analysis results
+Example for displaying ROI labels
+Improved color flexibility using matplotlib for many visualization modes
+Exposed alpha channel for many visualization modes
 
 Fixes
 -----
