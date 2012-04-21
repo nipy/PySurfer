@@ -21,7 +21,7 @@ Bring up the visualization
 """
 brain = Brain(subject_id, hemi, surface,
               config_opts={"cortex": "bone",
-                           "background": "sand"})
+                           "background": "ivory"})
 
 """
 Display the 'aparc' parcellation borders.

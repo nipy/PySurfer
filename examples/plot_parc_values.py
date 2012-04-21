@@ -22,7 +22,7 @@ surface = "inflated"
 Bring up the visualization
 """
 brain = Brain(subject_id, hemi, surface,
-              config_opts=dict(background="slate",
+              config_opts=dict(background="lightslategray",
                                cortex="high_contrast"))
 
 """

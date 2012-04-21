@@ -12,11 +12,7 @@ have to delve into the underlying engine to get a different look.
 Changing the display background
 -------------------------------
 
-There are five preset options for the color of the visualization
-background. They are ``black``, ``white``, ``charcoal``, ``midnight``,
-``slate``, and ``sand``:
-
-.. image:: ../_static/background_options.png
+The display background can take any valid matplotlib color.
 
 Changing the curvature color scheme
 ----------------------------------- 

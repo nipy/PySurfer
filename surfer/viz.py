@@ -809,15 +809,13 @@ class Brain(object):
             bg_color_name = config_opts['background']
         except KeyError:
             bg_color_name = config.get("visual", "background")
-        bg_color_code = colors[bg_color_name]
-        bg_color_code = tuple(map(lambda x: float(x) / 256, bg_color_code))
+        bg_color_code = colorConverter.to_rgb(bg_color_name)
 
         try:
             fg_color_name = config_opts['foreground']
         except KeyError:
             fg_color_name = config.get("visual", "foreground")
-        fg_color_code = colors[fg_color_name]
-        fg_color_code = tuple(map(lambda x: float(x) / 256, fg_color_code))
+        fg_color_code = colorConverter.to_rgb(fg_color_name)
 
         try:
             size = config_opts['size']
