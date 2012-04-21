@@ -61,6 +61,6 @@ For example:
 
 or::
 
-    pysurfer fsaverage lh inflated -background slate -size 400
+    pysurfer fsaverage lh inflated -background slategray -size 400
 
 in your shell terminal.
