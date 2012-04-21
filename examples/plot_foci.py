@@ -34,13 +34,6 @@ coords = [[-36, 18, -3],
           [-48, 26, -2]]
 
 """
-We can control the color of the sphereoids with
-an rgb triplet where values range from 0 to 1.
-(They are white by default.)
-"""
-rgb = (1, .63, .49)
-
-"""
 Now we plot the foci on the inflated surface. We will map
 the foci onto the surface by finding the vertex on the "white"
 mesh that is closest to the coordinate of each point we want
@@ -50,7 +43,7 @@ While this is not a perfect transformation, it can give you
 some idea of where peaks from a volume-based analysis would
 be located on the surface.
 """
-brain.add_foci(coords, map_surface="white", color=rgb)
+brain.add_foci(coords, map_surface="white", color="gold")
 
 """
 You can also plot foci with a set of surface vertex ids.
@@ -77,11 +70,11 @@ You can also control the size of the spheroids.
 We'll make these a little bit bigger than our
 other foci.
 """
-scale_factor = 1.3
+scale_factor = 2
 
 """
 Finally, plot the foci using the coords_as_verts option to
 center each sphereoid at its vertex id.
 """
 brain.add_foci(coords, coords_as_verts=True,
-               scale_factor=scale_factor, color=(.46, .7, .87))
+               scale_factor=scale_factor, color="#A52A2A")

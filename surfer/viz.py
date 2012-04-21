@@ -630,7 +630,7 @@ class Brain(object):
         self._f.scene.disable_render = False
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
-                 scale_factor=1, color=(1, 1, 1), name=None):
+                 scale_factor=1, color="white", alpha=1, name=None):
         """Add spherical foci, possibly mapping to displayed surf.
 
         The foci spheres can be displayed at the coordinates given, or
@@ -649,8 +649,10 @@ class Brain(object):
             surface to map coordinates through, or None to use raw coords
         scale_factor : int
             controls the size of the foci spheres
-        color : 3-tuple
-            RGB color code for foci spheres
+        color : matplotlib color code
+            HTML name, RBG tuple, or hex code
+        alpha : float in [0, 1]
+            opacity of focus gylphs
         name : str
             internal name to use
 
@@ -678,6 +680,9 @@ class Brain(object):
         if name is None:
             name = "foci_%d" % (len(self.foci) + 1)
 
+        # Convert the color code
+        color = colorConverter.to_rgb(color)
+
         # Create the visualization
         self._f.scene.disable_render = True
         view = mlab.view()
@@ -685,8 +690,8 @@ class Brain(object):
                                foci_coords[:, 1],
                                foci_coords[:, 2],
                                np.ones(foci_coords.shape[0]),
-                               scale_factor=(5. * scale_factor),
-                               color=color, name=name)
+                               scale_factor=(6. * scale_factor),
+                               color=color, opacity=alpha, name=name)
         self.foci[name] = points
         mlab.view(*view)
         self._f.scene.disable_render = False
