@@ -19,7 +19,7 @@ Visual
 ------
 *background*
     What color the display background should be. (Possible values:
-    any background color scheme name.)
+    any HTML color name or 256 color hex code.
 
 *cortex*
     What colormap should be used for the binarized curvature on the
