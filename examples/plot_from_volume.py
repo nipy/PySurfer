@@ -39,4 +39,4 @@ This overlay represents resting-state correlations with a
 seed in left angular gyrus. Let's plot that seed.
 """
 seed_coords = (-45, -67, 36)
-brain.add_foci(seed_coords, map_surface="white", scale_factor=2)
+brain.add_foci(seed_coords, map_surface="white")
