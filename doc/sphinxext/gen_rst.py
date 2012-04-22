@@ -170,9 +170,9 @@ def generate_file_rst(fname, target_dir, src_dir, plot_gallery):
             plt.close('all')
             try:
                 try:
-                    from enthought.mayavi import mlab
-                except ImportError:
                     from mayavi import mlab
+                except ImportError:
+                    from enthought.mayavi import mlab
                 mlab.close(all=True)
             except:
                 pass
@@ -187,9 +187,9 @@ def generate_file_rst(fname, target_dir, src_dir, plot_gallery):
 
                 try:
                     try:
-                        from enthought.mayavi import mlab
-                    except ImportError:
                         from mayavi import mlab
+                    except ImportError:
+                        from enthought.mayavi import mlab
 
                     e = mlab.get_engine()
                     if len(e.scenes) > 0:
