@@ -1444,7 +1444,7 @@ class Overlay(object):
             pos_thresh = mlab.pipeline.threshold(pos_mesh, low=thresh_low)
             pos_surf = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
                                              vmin=min, vmax=max)
-            pos_bar = mlab.scalarbar(pos_surf)
+            pos_bar = mlab.scalarbar(pos_surf, nb_labels=5)
             pos_bar.reverse_lut = True
 
             self.pos = pos_surf
@@ -1471,7 +1471,7 @@ class Overlay(object):
             neg_thresh = mlab.pipeline.threshold(neg_mesh, up=thresh_up)
             neg_surf = mlab.pipeline.surface(neg_thresh, colormap="PuBu",
                                              vmin=-max, vmax=-min)
-            neg_bar = mlab.scalarbar(neg_surf)
+            neg_bar = mlab.scalarbar(neg_surf, nb_labels=5)
 
             self.neg = neg_surf
             self.neg_bar = neg_bar

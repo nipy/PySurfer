@@ -19,7 +19,7 @@ Brain constructor.
 """
 brain = Brain("fsaverage", "lh", "inflated",
               config_opts={"cortex": "low_contrast",
-                           "background": "#101060"})
+                           "background": "#151540"})
 
 """
 Get a path to the overlay file
