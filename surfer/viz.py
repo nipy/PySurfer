@@ -749,7 +749,9 @@ class Brain(object):
                                              line_width=line_width)
 
         # Set the colorbar and range correctly
-        bar = mlab.scalarbar(surf, nb_colors=n_contours, nb_labels=n_contours)
+        bar = mlab.scalarbar(surf,
+                             nb_colors=n_contours,
+                             nb_labels=n_contours + 1)
         bar.data_range = min, max
         self._format_cbar_text(bar)
         bar.scalar_bar_representation.position2 = .8, 0.09
