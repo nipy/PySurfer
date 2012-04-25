@@ -18,15 +18,17 @@ brain = Brain(subject_id, hemi, surf)
 
 # If the label lives in the normal place in the subjects directory,
 # you can plot it by just using the name
-
 brain.add_label("BA1")
 
-# Or you can give a path to a label in an arbitrary location
+# Some labels have an associated scalar value at each ID in the label.
+# For example, they may be probabilistically defined. You can threshold
+# what vertices show up in the label using this scalar data
+brain.add_label("BA1", color="blue", scalar_thresh=.5)
 
+# Or you can give a path to a label in an arbitrary location
 subj_dir = os.environ["SUBJECTS_DIR"]
 label_file = os.path.join(subj_dir, subject_id,
                           "label", "%s.MT.label" % hemi)
-
 brain.add_label(label_file)
 
 # By default the label is 'filled-in', but you can

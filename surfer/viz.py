@@ -483,19 +483,24 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_label(self, label, color="crimson", alpha=1, borders=False):
+    def add_label(self, label, color="crimson", alpha=1,
+                  scalar_thresh=None, borders=False):
         """Add an ROI label to the image.
 
         Parameters
         ----------
         label : str
             label filepath or name
-        borders : bool
-            show only label borders
         color : matplotlib-style color
             anything matplotlib accepts: string, RGB, hex, etc.
         alpha : float in [0, 1]
             alpha level to control opacity
+        scalar_thresh : None or number
+            threshold the label ids using this value in the label
+            file's scalar field (i.e. label only vertices with
+            scalar >= thresh)
+        borders : bool
+            show only label borders
 
         """
         try:
@@ -520,7 +525,12 @@ class Brain(object):
                 raise ValueError('Label file %s does not exist'
                                  % filepath)
 
-        ids = (io.read_label(filepath),)
+        # Load the label data and create binary overlay
+        if scalar_thresh is None:
+            ids = io.read_label(filepath)
+        else:
+            ids, scalars = io.read_label(filepath, read_scalars=True)
+            ids = ids[scalars >= scalar_thresh]
         label = np.zeros(self._geo.coords.shape[0])
         label[ids] = 1
 
