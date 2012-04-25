@@ -1,8 +1,11 @@
+PySurfer Changes
+================
+
 Version 0.3
-===========
+-----------
 
 Enhancements
-------------
+~~~~~~~~~~~~
 TimeViewer GUI to control data exploration in the time dimension
 Support for reading and visualizing MEG data from MNE
 Function to project volume-based data using mri_vol2surf
@@ -14,7 +17,7 @@ Improved color flexibility using matplotlib for many visualization modes
 Exposed alpha channel for many visualization modes
 
 Fixes
------
+~~~~~
 Big-endian overlay data should now display properly on 64-bit systems.
 Colorbar text displays properly on light backgrounds
 Lights are oriented depending on hemisphere so surfaces are equally lit
