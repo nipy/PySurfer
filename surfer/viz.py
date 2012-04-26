@@ -279,16 +279,19 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_data(self, array, min=None, max=None,
+    def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="blue-red", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d"):
         """Display data from a numpy array on the surface.
 
-        This provides a similar interface to add_overlay, but does not
-        threshold the data and displays it with a single colormap. It
-        offers more flexibility over the colormap, and provides a way
-        to display four dimensional data (i.e. a timecourse)
+        This provides a similar interface to add_overlay, but it displays
+        it with a single colormap. It offers more flexibility over the
+        colormap, and provides a way to display four dimensional data
+        (i.e. a timecourse).
+
+        Note that min sets the low end of the colormap, and is separate
+        from thresh (this is a different convention from add_overlay)
 
         Parameters
         ----------
@@ -298,6 +301,8 @@ class Brain(object):
             min value in colormap (uses real min if None)
         max : float
             max value in colormap (uses real max if None)
+        thresh : None or float
+            if not None, values below thresh will not be visible
         colormap : str
             name of Mayavi colormap to use
         alpha : float in [0, 1]
@@ -364,6 +369,11 @@ class Brain(object):
                                                     self._geo.z,
                                                     self._geo.faces,
                                                     scalars=mlab_plot)
+        if thresh is not None:
+            if array_plot.min() >= thresh:
+                warn("Data min is greater than threshold.")
+            else:
+                mesh = mlab.pipeline.threshold(mesh, low=thresh)
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
                                      opacity=float(alpha))
