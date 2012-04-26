@@ -43,3 +43,10 @@ prob_field = np.zeros_like(brain._geo.x)
 ids, probs = io.read_label(label_file, read_scalars=True)
 prob_field[ids] = probs
 brain.add_data(prob_field, thresh=1e-5)
+
+"""
+Adjust the colorbar to represent the coarseness of the probability
+estimates more closely.
+"""
+brain.data["colorbar"].number_of_colors = 10
+brain.data["colorbar"].number_of_labels = 11
