@@ -1,2 +1,0 @@
-Introductory examples to PySurfer.
-
