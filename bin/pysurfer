@@ -75,20 +75,19 @@ if __name__ == '__main__':
         if args.overlay is not None:
             if args.range is not None:
                 args.min, args.max = args.range
-
             b.add_overlay(args.overlay, args.min, args.max, args.sign)
 
         # Maybe load an annot
         if args.annotation is not None:
             if not args.borders:
                 args.borders = any([args.overlay, args.morphometry])
-            b.add_annotation(args.annotation, args.borders)
+            b.add_annotation(args.annotation, borders=args.borders)
 
         # Maybe load a label
         if args.label is not None:
             if not args.borders:
                 args.borders = any([args.overlay, args.morphometry])
-            b.add_label(args.label, args.borders)
+            b.add_label(args.label, borders=args.borders)
 
         # Also point brain at the Brain() object
         brain = b
