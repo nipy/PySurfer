@@ -51,4 +51,4 @@ Display these values on the brain.
 Use the hot colormap and add an alpha channel
 so the underlying anatomy is visible.
 """
-brain.add_data(vtx_data, 0, 1, "hot", alpha=.7)
+brain.add_data(vtx_data, 0, 1, colormap="hot", alpha=.7)

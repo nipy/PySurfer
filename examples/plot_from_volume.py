@@ -32,7 +32,7 @@ over the visualzation. Here we'll plot the whole
 range of correlations
 """
 brain.overlays["ang_corr"].remove()
-brain.add_data(surf_data, -.7, .7, "jet", alpha=.7)
+brain.add_data(surf_data, -.7, .7, colormap="jet", alpha=.7)
 
 """
 This overlay represents resting-state correlations with a
