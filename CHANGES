@@ -6,18 +6,21 @@ Version 0.3
 
 Enhancements
 ~~~~~~~~~~~~
-TimeViewer GUI to control data exploration in the time dimension
-Support for reading and visualizing MEG data from MNE
-Function to project volume-based data using mri_vol2surf
-Label routines can read scalar data and threshold visualization
-Utility function to smooth overlay data along the cortical manifold
-Example for displaying parcellation-based ROI analysis results
-Example for displaying ROI labels
-Improved color flexibility using matplotlib for many visualization modes
-Exposed alpha channel for many visualization modes
+
+- TimeViewer GUI to control data exploration in the time dimension
+- Support for reading and visualizing MEG data from MNE
+- Function to project volume-based data using mri_vol2surf
+- Label routines can read scalar data and threshold visualization
+- Utility function to smooth overlay data along the cortical manifold
+- Example for displaying parcellation-based ROI analysis results
+- Example for displaying ROI labels
+- Example for plotting probabilistic labels
+- Improved color flexibility using matplotlib for many visualization modes
+- Exposed alpha channel for many visualization modes
 
 Fixes
 ~~~~~
-Big-endian overlay data should now display properly on 64-bit systems.
-Colorbar text displays properly on light backgrounds
-Lights are oriented depending on hemisphere so surfaces are equally lit
+
+- Big-endian overlay data should now display properly on 64-bit systems.
+- Colorbar text displays properly on light backgrounds
+- Lights are oriented depending on hemisphere so surfaces are equally lit
