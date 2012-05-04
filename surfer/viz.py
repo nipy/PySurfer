@@ -22,7 +22,10 @@ except ImportError:
 try:
     from traits.ui.api import View, Item, VSplit, HSplit, Group
 except ImportError:
-    from enthought.traits.ui.api import View, Item, VSplit, HSplit, Group
+    try:
+        from traitsui.api import View, Item, VSplit, HSplit, Group
+    except ImportError:
+        from enthought.traits.ui.api import View, Item, VSplit, HSplit, Group
 
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
                 'medial': {'v': (0., 90.), 'r': -90.},
