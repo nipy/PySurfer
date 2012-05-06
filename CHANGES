@@ -1,6 +1,15 @@
 PySurfer Changes
 ================
 
+Version 0.3.1
+-------------
+
+Fixes
+~~~~~
+
+- Reverted change in io.py that broke Python 2.6 compatability
+- Updated traitsui import while keeping backgrounds compatability
+
 Version 0.3
 -----------
 
