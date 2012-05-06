@@ -20,10 +20,10 @@ except ImportError:
                                       Bool, Enum, on_trait_change)
 
 try:
-    from traits.ui.api import View, Item, VSplit, HSplit, Group
+    from traitsui.api import View, Item, VSplit, HSplit, Group
 except ImportError:
     try:
-        from traitsui.api import View, Item, VSplit, HSplit, Group
+        from traits.ui.api import View, Item, VSplit, HSplit, Group
     except ImportError:
         from enthought.traits.ui.api import View, Item, VSplit, HSplit, Group
 
