@@ -1,6 +1,6 @@
 import os
 from os.path import join as pjoin
-from subprocess import check_output
+from subprocess import call
 import gzip
 import numpy as np
 import nibabel as nib
@@ -396,7 +396,10 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
     cmd_list.extend(["--o", out_file])
     if verbose:
         print " ".join(cmd_list)
-    out = check_output(cmd_list)
+    out = call(cmd_list)
+    if out:
+        raise RuntimeError(("mri_vol2surf command failed "
+                            "with command-line: ") + " ".join(cmd_list))
 
     # Read in the data
     surf_data = read_scalar_data(out_file)
