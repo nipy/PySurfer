@@ -8,7 +8,8 @@ build
 dist/
 doc/_build/
 doc/build/
-doc/auto_examples/
+doc/examples/
+doc/example_data
 doc/modules/generated/
 doc/documentation/pysurfer_usage.txt
 pip-log.txt

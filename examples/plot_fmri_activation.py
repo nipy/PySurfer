@@ -19,7 +19,7 @@ brain = Brain("fsaverage", "lh", "inflated")
 """
 Get a path to the overlay file.
 """
-overlay_file = op.join("auto_examples", "data", "lh.sig.nii.gz")
+overlay_file = op.join("example_data", "lh.sig.nii.gz")
 
 """
 Display the overlay on the surface using the defaults

@@ -16,8 +16,8 @@ brain = Brain("fsaverage", "lh", "inflated",
               config_opts=dict(background="white"))
 
 """Project the volume file and return as an array"""
-mri_file = "auto_examples/data/resting_corr.nii.gz"
-reg_file = "auto_examples/data/register.dat"
+mri_file = "example_data/resting_corr.nii.gz"
+reg_file = "example_data/register.dat"
 surf_data = io.project_volume_data(mri_file, "lh", reg_file)
 
 """

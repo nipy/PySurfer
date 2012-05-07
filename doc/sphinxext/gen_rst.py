@@ -78,10 +78,10 @@ def generate_example_rst(app):
     """ Generate the list of examples, as well as the contents of
         examples.
     """
-    root_dir = os.path.join(app.builder.srcdir, 'auto_examples')
+    root_dir = os.path.join(app.builder.srcdir, 'examples')
     example_dir = os.path.abspath(app.builder.srcdir +  '/../' + 'examples')
-    doc_data_link = os.path.join(root_dir, 'data')
-    example_data_dir = os.path.join(example_dir, 'data')
+    doc_data_link = os.path.join(app.builder.srcdir, 'example_data')
+    example_data_dir = os.path.join(example_dir, 'example_data')
     try:
         plot_gallery = eval(app.builder.config.plot_gallery)
     except TypeError:

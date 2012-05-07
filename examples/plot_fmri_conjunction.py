@@ -28,7 +28,7 @@ brain = Brain("fsaverage", "lh", "inflated",
 Read both of the activation maps in using
 surfer's io functions.
 """
-data_dir = op.join("auto_examples", "data")
+data_dir = op.join("example_data")
 sig1 = io.read_scalar_data(op.join(data_dir, "lh.sig.nii.gz"))
 sig2 = io.read_scalar_data(op.join(data_dir, "lh.alt_sig.nii.gz"))
 

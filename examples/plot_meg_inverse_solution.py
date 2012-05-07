@@ -26,7 +26,7 @@ brain = Brain(subject_id, hemi, surface)
 """
 read MNE dSPM inverse solution
 """
-stc_fname = os.path.join('auto_examples', 'data',
+stc_fname = os.path.join('example_data',
                          'meg_source_estimate-' + hemi + '.stc')
 stc = read_stc(stc_fname)
 
