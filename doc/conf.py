@@ -45,7 +45,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'PySurfer'
-copyright = u'2011, Michael Waskom, Alexandre Gramfort, Scott Burns'
+copyright = u'2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi'
 
 # Generate the plots for the gallery
 plot_gallery = True
@@ -189,7 +189,7 @@ htmlhelp_basename = 'PySurferdoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'PySurfer.tex', u'PySurfer Documentation',
-   u'Michael Waskom, Alexandre Gramfort, Scott Burns', 'manual'),
+   u'Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
