@@ -19,7 +19,7 @@ Contents
     :maxdepth: 2
     
     install
-    auto_examples/index.rst
+    examples/index.rst
     documentation/index.rst
 
 Authors
