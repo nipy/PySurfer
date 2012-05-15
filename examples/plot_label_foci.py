@@ -38,4 +38,21 @@ the foci onto the surface by finding the vertex on the "white"
 mesh that is closest to the coordinate of the point we want
 to display.
 """
-brain.add_foci(coord, map_surface="white", color="gold")
+brain.add_foci([coord], map_surface="white", color="gold")
+
+"""
+or using a vertex index
+"""
+coord = 0
+
+utils.coord_to_label(subject_id, coord, label='coord', hemi='lh', n_steps=50,
+                     map_surface="white", coord_as_vert=True)
+brain.add_label('coord-lh.label', color='blue')
+
+"""
+Now we plot the foci on the inflated surface. We will map
+the foci onto the surface by finding the vertex on the "white"
+mesh that is closest to the coordinate of the point we want
+to display.
+"""
+brain.add_foci([coord], map_surface="white", color="red", coords_as_verts=True)

@@ -131,15 +131,15 @@ def smoothing_matrix(vertices, adj_mat, smoothing_steps=20):
 
 
 def coord_to_label(subject_id, coord, label, hemi='lh', n_steps=30,
-                   map_surface='white'):
+                   map_surface='white', coord_as_vert=False):
     """Create label from MNI coordinate
 
     Parameters
     ----------
     subject_id : string
         Use if file is in register with subject's orig.mgz
-    mni_coords : numpy array of size 3
-        One coordinate in MNI space
+    coord : numpy array of size 3 | int
+        One coordinate in MNI space or the vertex index.
     label : str
         Label name
     hemi : [lh, rh]
@@ -148,9 +148,15 @@ def coord_to_label(subject_id, coord, label, hemi='lh', n_steps=30,
         Number of dilation iterations
     map_surface : str
         The surface name used to find the closest point
+    coord_as_vert : bool
+        whether the coords parameter should be interpreted as vertex ids
     """
     geo = Surface(subject_id, hemi, map_surface)
     geo.load_geometry()
+
+    if coord_as_vert:
+        coord = geo.coords[coord]
+
     n_vertices = len(geo.coords)
     adj_mat = mesh_edges(geo.faces)
     foci_vtxs = find_closest_vertices(geo.coords, [coord])
