@@ -1,0 +1,16 @@
+
+
+.. _example_rotate_animation.py:
+
+
+============================
+Animate brain and save movie
+============================
+
+
+
+**Python source code:** :download:`rotate_animation.py <rotate_animation.py>`
+
+.. literalinclude:: rotate_animation.py
+    :lines: 7-
+    

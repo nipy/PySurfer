@@ -1,0 +1,21 @@
+
+
+.. _example_plot_to_montage.py:
+
+
+======================
+Make a multiview image
+======================
+
+Make one image from multiple views.
+
+
+
+.. image:: images/plot_to_montage.png
+    :align: center
+
+**Python source code:** :download:`plot_to_montage.py <plot_to_montage.py>`
+
+.. literalinclude:: plot_to_montage.py
+    :lines: 9-
+    

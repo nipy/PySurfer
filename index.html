@@ -1,0 +1,183 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="#" />
+    <link rel="next" title="Installation and Dependencies" href="install.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="#">
+  <img src="_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="install.html" title="Installation and Dependencies"
+             accesskey="N">next</a></li>
+        <li><a href="#">PySurfer 0.4.dev documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Introduction</a><ul>
+<li><a class="reference internal" href="#contents">Contents</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#authors">Authors</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#support">Support</a></li>
+<li><a class="reference internal" href="#contribute">Contribute</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="install.html"
+                        title="next chapter">Installation and Dependencies</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>PySurfer is a Python based program for visualization and interaction
+with cortical surface representations of neuroimaging data from
+<a class="reference external" href="http://surfer.nmr.mgh.harvard.edu/">Freesurfer</a>. It extends
+<a class="reference external" href="http://github.enthought.com/mayavi/mayavi/index.html">Mayavi&#8217;s</a> powerful
+visualization engine with a high-level interface for working with
+MRI and MEG data.</p>
+<p>PySurfer offers both a command-line interface designed to broadly
+replicate Freesurfer&#8217;s Tksurfer program as well as a Python library
+for writing scripts to efficiently explore complex datasets.</p>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation and Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_basics.html">Basic Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_fmri_activation.html">Display fMRI Activation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_fmri_conjunction.html">Display a Conjunction Map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_fmri_contours.html">Display Activation Contours</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_foci.html">Plot Activation Foci</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_from_volume.html">Display Volume Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_label_foci.html">Plot a label generated at an activation foci</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_labels.html">Display ROI Labels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_meg_inverse_solution.html">Plot MEG inverse solution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_morphometry.html">Overlay Morphometry Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_parc_values.html">Display ROI Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_parcellation.html">Using Annotation Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_probabilistic_label.html">Display Probabilistic Labels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_show_view.html">Show the different brain views</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/plot_to_montage.html">Make a multiview image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/rotate_animation.html">Animate brain and save movie</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/save_views.html">Save a set of views</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="documentation/index.html">Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="documentation/command_line.html">The command-line interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="documentation/custom_viz.html">Customizing the Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="documentation/config_file.html">The Config File</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="authors">
+<h2>Authors<a class="headerlink" href="#authors" title="Permalink to this headline">¶</a></h2>
+<p>Michael Waskom, Stanford University</p>
+<p>Alexandre Gramfort, Harvard Med. School MGH Martinos Center - INRIA</p>
+<p>Scott Burns, Harvard Med. School MGH Martinos Center</p>
+<p>Martin Luessi, Harvard Med. School MGH Martinos Center</p>
+</div>
+<div class="section" id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<p>The PySurfer source code is available under the simplified BSD license</p>
+</div>
+<div class="section" id="support">
+<h2>Support<a class="headerlink" href="#support" title="Permalink to this headline">¶</a></h2>
+<p>If you have problems installing the software or questions about usage,
+documentation or something else related to PySurfer, you can post to the NiPy
+mailing list. Please preface the subject line with &#8220;[PySurfer]&#8221;.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Mailing list:</th><td class="field-body"><a class="reference external" href="mailto:nipy-devel&#37;&#52;&#48;neuroimaging&#46;scipy&#46;org">nipy-devel<span>&#64;</span>neuroimaging<span>&#46;</span>scipy<span>&#46;</span>org</a> [<a class="reference external" href="http://mail.scipy.org/mailman/listinfo/nipy-devel">subscription</a>, <a class="reference external" href="http://mail.scipy.org/pipermail/nipy-devel">archive</a>]</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="contribute">
+<h2>Contribute<a class="headerlink" href="#contribute" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/nipy/PySurfer/">https://github.com/nipy/PySurfer/</a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="install.html" title="Installation and Dependencies"
+             >next</a></li>
+        <li><a href="#">PySurfer 0.4.dev documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

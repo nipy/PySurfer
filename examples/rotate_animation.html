@@ -1,0 +1,142 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Examples" href="index.html" />
+    <link rel="next" title="Save a set of views" href="save_views.html" />
+    <link rel="prev" title="Make a multiview image" href="plot_to_montage.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="save_views.html" title="Save a set of views"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="plot_to_montage.html" title="Make a multiview image"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plot_to_montage.html"
+                        title="previous chapter">Make a multiview image</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="save_views.html"
+                        title="next chapter">Save a set of views</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="animate-brain-and-save-movie">
+<span id="example-rotate-animation-py"></span><h1>Animate brain and save movie<a class="headerlink" href="#animate-brain-and-save-movie" title="Permalink to this headline">¶</a></h1>
+<p><strong>Python source code:</strong> <a class="reference download internal" href="../_downloads/rotate_animation.py"><tt class="xref download docutils literal"><span class="pre">rotate_animation.py</span></tt></a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="n">__doc__</span>
+
+<span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">Brain</span>
+
+<span class="n">sub</span> <span class="o">=</span> <span class="s">&#39;fsaverage&#39;</span>
+<span class="n">hemi</span> <span class="o">=</span> <span class="s">&#39;lh&#39;</span>
+<span class="n">surf</span> <span class="o">=</span> <span class="s">&#39;inflated&#39;</span>
+
+<span class="n">brain</span> <span class="o">=</span> <span class="n">Brain</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">hemi</span><span class="p">,</span> <span class="n">surf</span><span class="p">)</span>
+
+<span class="n">brain</span><span class="o">.</span><span class="n">animate</span><span class="p">([</span><span class="s">&#39;l&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">])</span>
+
+<span class="c"># control number of steps</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">animate</span><span class="p">([</span><span class="s">&#39;l&#39;</span><span class="p">,</span> <span class="s">&#39;m&#39;</span><span class="p">],</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+
+<span class="c"># any path you can think of</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">animate</span><span class="p">([</span><span class="s">&#39;l&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;m&#39;</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="s">&#39;l&#39;</span><span class="p">],</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">45</span><span class="p">)</span>
+
+<span class="c"># full turns</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">animate</span><span class="p">([</span><span class="s">&quot;m&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="c"># movies</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">animate</span><span class="p">([</span><span class="s">&#39;l&#39;</span><span class="p">,</span> <span class="s">&#39;l&#39;</span><span class="p">],</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="s">&#39;simple_animation.avi&#39;</span><span class="p">)</span>
+
+<span class="c"># however, rotating out of the axial plane is not allowed</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">brain</span><span class="o">.</span><span class="n">animate</span><span class="p">([</span><span class="s">&#39;l&#39;</span><span class="p">,</span> <span class="s">&#39;d&#39;</span><span class="p">])</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">e</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="save_views.html" title="Save a set of views"
+             >next</a></li>
+        <li class="right" >
+          <a href="plot_to_montage.html" title="Make a multiview image"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+
+
+.. _example_plot_parc_values.py:
+
+
+Display ROI Values
+==================
+
+Here we demonstrate how to take the results of an ROI analysis
+performed within each region of some parcellation and display
+those values on the surface to quickly summarize the analysis.
+
+
+
+.. image:: images/plot_parc_values.png
+    :align: center
+
+**Python source code:** :download:`plot_parc_values.py <plot_parc_values.py>`
+
+.. literalinclude:: plot_parc_values.py
+    :lines: 10-
+    

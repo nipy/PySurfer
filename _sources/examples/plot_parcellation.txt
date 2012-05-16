@@ -1,0 +1,20 @@
+
+
+.. _example_plot_parcellation.py:
+
+
+Using Annotation Files
+======================
+
+Display a Freesurfer cortical parcellation from an annotation file.
+
+
+
+.. image:: images/plot_parcellation.png
+    :align: center
+
+**Python source code:** :download:`plot_parcellation.py <plot_parcellation.py>`
+
+.. literalinclude:: plot_parcellation.py
+    :lines: 8-
+    

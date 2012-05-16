@@ -1,0 +1,152 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Examples" href="index.html" />
+    <link rel="next" title="Display Probabilistic Labels" href="plot_probabilistic_label.html" />
+    <link rel="prev" title="Display ROI Values" href="plot_parc_values.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_probabilistic_label.html" title="Display Probabilistic Labels"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="plot_parc_values.html" title="Display ROI Values"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plot_parc_values.html"
+                        title="previous chapter">Display ROI Values</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plot_probabilistic_label.html"
+                        title="next chapter">Display Probabilistic Labels</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="using-annotation-files">
+<span id="example-plot-parcellation-py"></span><h1>Using Annotation Files<a class="headerlink" href="#using-annotation-files" title="Permalink to this headline">¶</a></h1>
+<p>Display a Freesurfer cortical parcellation from an annotation file.</p>
+<img alt="../_images/plot_parcellation.png" class="align-center" src="../_images/plot_parcellation.png" />
+<p><strong>Python source code:</strong> <a class="reference download internal" href="../_downloads/plot_parcellation.py"><tt class="xref download docutils literal"><span class="pre">plot_parcellation.py</span></tt></a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="n">__doc__</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">join</span> <span class="k">as</span> <span class="n">pjoin</span>
+<span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">Brain</span>
+
+
+<span class="n">subject_id</span> <span class="o">=</span> <span class="s">&#39;fsaverage&#39;</span>
+<span class="n">hemi</span> <span class="o">=</span> <span class="s">&#39;lh&#39;</span>
+<span class="n">surface</span> <span class="o">=</span> <span class="s">&#39;inflated&#39;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Bring up the visualization</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span> <span class="o">=</span> <span class="n">Brain</span><span class="p">(</span><span class="n">subject_id</span><span class="p">,</span> <span class="n">hemi</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span>
+              <span class="n">config_opts</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;cortex&quot;</span><span class="p">:</span> <span class="s">&quot;bone&quot;</span><span class="p">,</span>
+                           <span class="s">&quot;background&quot;</span><span class="p">:</span> <span class="s">&quot;ivory&quot;</span><span class="p">})</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Display the &#39;aparc&#39; parcellation borders.</span>
+<span class="sd">To use annotations that live in your subject&#39;s</span>
+<span class="sd">label directory, just use the annot name.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="s">&quot;aparc&quot;</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">You can also display the regions with &quot;filled in&quot; colors</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="s">&quot;aparc&quot;</span><span class="p">,</span> <span class="n">borders</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">You may also provide a full path to an annotation file</span>
+<span class="sd">at an arbitray location on the disc.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">subjects_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&quot;SUBJECTS_DIR&quot;</span><span class="p">]</span>
+<span class="n">annot_path</span> <span class="o">=</span> <span class="n">pjoin</span><span class="p">(</span><span class="n">subjects_dir</span><span class="p">,</span> <span class="n">subject_id</span><span class="p">,</span> <span class="s">&quot;label&quot;</span><span class="p">,</span> <span class="s">&quot;lh.aparc.annot&quot;</span><span class="p">)</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="n">annot_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_probabilistic_label.html" title="Display Probabilistic Labels"
+             >next</a></li>
+        <li class="right" >
+          <a href="plot_parc_values.html" title="Display ROI Values"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,198 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Documentation" href="index.html" />
+    <link rel="next" title="Customizing the Visualization" href="custom_viz.html" />
+    <link rel="prev" title="Documentation" href="index.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="custom_viz.html" title="Customizing the Visualization"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="index.html" title="Documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The command-line interface</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#manipulating-the-visualization">Manipulating the visualization</a></li>
+<li><a class="reference internal" href="#other-command-line-options">Other command-line options</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Documentation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="custom_viz.html"
+                        title="next chapter">Customizing the Visualization</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="the-command-line-interface">
+<span id="command-line"></span><h1>The command-line interface<a class="headerlink" href="#the-command-line-interface" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The command-line program <tt class="docutils literal"><span class="pre">pysurfer</span></tt> is designed to largely replicate
+Freesufer&#8217;s tksurfer command-line interface in the format and style
+of arguments it accepts. Like tksurfer, invoking it will initialize
+a visualization in an external window and begin an IPython session in the
+terminal, through which the visualization can be manipulated.</p>
+<p>Initializing a simple visualization session is quite easy. Simply call
+<tt class="docutils literal"><span class="pre">pysurfer</span></tt> with three positional arguments: the subject_id, the
+hemisphere, and the surface geometry to visualize:</p>
+<div class="highlight-python"><pre>pysurfer fsaverage lh inflated</pre>
+</div>
+<p>which will open a viewing session that looks like this:</p>
+<img alt="../_images/basic_session.png" src="../_images/basic_session.png" />
+</div>
+<div class="section" id="manipulating-the-visualization">
+<h2>Manipulating the visualization<a class="headerlink" href="#manipulating-the-visualization" title="Permalink to this headline">¶</a></h2>
+<p>Once the viewer window is open, there are two ways to manipulate the
+visualization. To see other angles, zoom in or out, and translate the
+brain, simply click and drag with your mouse. See the <a class="reference external" href="http://code.enthought.com/projects/mayavi/docs/development/html/mayavi/application.html#mouse-interaction">Mayavi documentation</a> for more information about using the
+mouse and keyboard to interact with a Mayavi scence.</p>
+<p>When pysurfer finishes loading the visualization, it initializes an
+IPython session in terminal, which allows for a more comprehensive
+interaction with the scene. The IPython interactive namespace will
+include a <tt class="docutils literal"><span class="pre">brain</span></tt> variable, which is bound to the <tt class="xref py py-class docutils literal"><span class="pre">viz.Brain</span></tt>
+object underlying the visualization. For convenience, the <tt class="docutils literal"><span class="pre">b</span></tt> variable
+is also mapped to this object. (As a reminder, you can always type
+<tt class="docutils literal"><span class="pre">whos</span></tt> in an IPython prompt to see the contents of the interactive
+namespace.) See the <tt class="xref py py-class docutils literal"><span class="pre">viz.Brain</span></tt> documentation for full information
+about how to control the visualization in this way.</p>
+</div>
+<div class="section" id="other-command-line-options">
+<h2>Other command-line options<a class="headerlink" href="#other-command-line-options" title="Permalink to this headline">¶</a></h2>
+<p>As in tksurfer, most aspects of the visualization can be initialized
+from the command-line. To get a full documentation of the command-line
+interface, simply type <tt class="docutils literal"><span class="pre">pysurfer</span></tt> at a terminal prompt and hit enter.
+For convenience, this usage message is reproduced below.</p>
+<div class="highlight-python"><pre>usage: pysurfer subject_id hemisphere surface [options]
+
+PySurfer is a package for visualization and interaction with cortical
+surface representations of neuroimaging data from Freesurfer.
+
+The command-line program pysurfer is designed to largely replicate
+Freesufer's tksurfer command-line interface in the format and style
+of arguments it accepts, and, like tksurfer, invoking it will initialize
+a visualization in an external window and begin an IPython session in the
+terminal, through which the visualization can be manipulated.
+
+The visualization interface is exposed through methods on the `brain'
+variable that will exist in IPython namespace when the program finishes
+loading. Please see the PySurfer documentation for more information
+about how to interact with the Brain object.
+
+positional arguments:
+  subject_id           subject id as in subjects dir
+  hemi                 hemisphere to load
+  surf                 surface mesh (e.g. 'pial', 'inflated')
+
+optional arguments:
+  -h, --help           show this help message and exit
+  -no-curv             do not display the binarized surface curvature
+  -morphometry MEAS    load morphometry file (e.g. thickness, curvature)
+  -annotation ANNOT    load annotation (by name or filepath)
+  -label LABEL         load label (by name or filepath
+  -borders             only show label/annot borders
+  -overlay FILE        load scalar overlay file
+  -range MIN MAX       overlay threshold and saturation point
+  -min MIN             overlay threshold
+  -max MAX             overlay saturation point
+  -sign {abs,pos,neg}  overlay sign
+  -name NAME           name to use for the overlay
+  -size SIZE           size of the display window (in pixels)
+  -background COLOR    background color for display
+  -cortex COLOR        colormap for binary cortex curvature
+  -title TITLE         title to use for the figure
+</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="custom_viz.html" title="Customizing the Visualization"
+             >next</a></li>
+        <li class="right" >
+          <a href="index.html" title="Documentation"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

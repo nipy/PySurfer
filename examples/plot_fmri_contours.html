@@ -1,0 +1,163 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Examples" href="index.html" />
+    <link rel="next" title="Plot Activation Foci" href="plot_foci.html" />
+    <link rel="prev" title="Display a Conjunction Map" href="plot_fmri_conjunction.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_foci.html" title="Plot Activation Foci"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="plot_fmri_conjunction.html" title="Display a Conjunction Map"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plot_fmri_conjunction.html"
+                        title="previous chapter">Display a Conjunction Map</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plot_foci.html"
+                        title="next chapter">Plot Activation Foci</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="display-activation-contours">
+<span id="example-plot-fmri-contours-py"></span><h1>Display Activation Contours<a class="headerlink" href="#display-activation-contours" title="Permalink to this headline">¶</a></h1>
+<p>Load a statistical overlay as a &#8220;topographic&#8221; contour map.</p>
+<img alt="../_images/plot_fmri_contours.png" class="align-center" src="../_images/plot_fmri_contours.png" />
+<p><strong>Python source code:</strong> <a class="reference download internal" href="../_downloads/plot_fmri_contours.py"><tt class="xref download docutils literal"><span class="pre">plot_fmri_contours.py</span></tt></a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="n">__doc__</span>
+
+<span class="kn">import</span> <span class="nn">os.path</span> <span class="kn">as</span> <span class="nn">op</span>
+<span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">Brain</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Bring up the visualization.</span>
+<span class="sd">Contour maps looks best with the &quot;low_contrast&quot; cortex</span>
+<span class="sd">colorscheme, so we will pass that as an option to the</span>
+<span class="sd">Brain constructor.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span> <span class="o">=</span> <span class="n">Brain</span><span class="p">(</span><span class="s">&quot;fsaverage&quot;</span><span class="p">,</span> <span class="s">&quot;lh&quot;</span><span class="p">,</span> <span class="s">&quot;inflated&quot;</span><span class="p">,</span>
+              <span class="n">config_opts</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;cortex&quot;</span><span class="p">:</span> <span class="s">&quot;low_contrast&quot;</span><span class="p">,</span>
+                           <span class="s">&quot;background&quot;</span><span class="p">:</span> <span class="s">&quot;#151540&quot;</span><span class="p">})</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Get a path to the overlay file</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">overlay_file</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;example_data&quot;</span><span class="p">,</span> <span class="s">&quot;lh.sig.nii.gz&quot;</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Add the contour overlay with the default display settings</span>
+<span class="sd">Contours overlays only ever use the positive components of</span>
+<span class="sd">your image, but they get threshold and colormap saturation</span>
+<span class="sd">from your configuration settings just as normal overlays do.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_contour_overlay</span><span class="p">(</span><span class="n">overlay_file</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The Brain object can only display one contour overlay at a time,</span>
+<span class="sd">So if we bring up another one, it will remove the original overlay</span>
+<span class="sd">behind the scenes for us.  Here let&#39;s specify a different number of</span>
+<span class="sd">contours and use a different line width.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_contour_overlay</span><span class="p">(</span><span class="n">overlay_file</span><span class="p">,</span>
+                          <span class="nb">max</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                          <span class="n">n_contours</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span>
+                          <span class="n">line_width</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">At the moment, the Brain object itself does not expose an interface</span>
+<span class="sd">to manipulate what the contour overlay looks like after it has been</span>
+<span class="sd">loaded, but if you know a little bit about the underlying Mayavi</span>
+<span class="sd">engine, you can control aspects of the visualization through the</span>
+<span class="sd">contour dictionary attribute.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">contour</span><span class="p">[</span><span class="s">&#39;surface&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">property</span><span class="o">.</span><span class="n">line_width</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">contour</span><span class="p">[</span><span class="s">&#39;surface&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">contour</span><span class="o">.</span><span class="n">number_of_contours</span> <span class="o">=</span> <span class="mi">10</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_foci.html" title="Plot Activation Foci"
+             >next</a></li>
+        <li class="right" >
+          <a href="plot_fmri_conjunction.html" title="Display a Conjunction Map"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

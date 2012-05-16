@@ -1,0 +1,22 @@
+
+
+.. _example_plot_probabilistic_label.py:
+
+
+Display Probabilistic Labels
+============================
+
+Freesurfer ships with some probabilistic labels of cytoarchitectonic
+and visual areas. Here we show several ways to visualize these labels
+to help characterize the location of your data.
+
+
+
+.. image:: images/plot_probabilistic_label.png
+    :align: center
+
+**Python source code:** :download:`plot_probabilistic_label.py <plot_probabilistic_label.py>`
+
+.. literalinclude:: plot_probabilistic_label.py
+    :lines: 10-
+    

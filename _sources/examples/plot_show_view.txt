@@ -1,0 +1,21 @@
+
+
+.. _example_plot_show_view.py:
+
+
+==============================
+Show the different brain views
+==============================
+
+Among the views available are lateral, rostral, caudal, frontal etc.
+
+
+
+.. image:: images/plot_show_view.png
+    :align: center
+
+**Python source code:** :download:`plot_show_view.py <plot_show_view.py>`
+
+.. literalinclude:: plot_show_view.py
+    :lines: 9-
+    

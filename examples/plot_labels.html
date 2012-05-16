@@ -1,0 +1,155 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Examples" href="index.html" />
+    <link rel="next" title="Plot MEG inverse solution" href="plot_meg_inverse_solution.html" />
+    <link rel="prev" title="Plot a label generated at an activation foci" href="plot_label_foci.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_meg_inverse_solution.html" title="Plot MEG inverse solution"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="plot_label_foci.html" title="Plot a label generated at an activation foci"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plot_label_foci.html"
+                        title="previous chapter">Plot a label generated at an activation foci</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plot_meg_inverse_solution.html"
+                        title="next chapter">Plot MEG inverse solution</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="display-roi-labels">
+<span id="example-plot-labels-py"></span><h1>Display ROI Labels<a class="headerlink" href="#display-roi-labels" title="Permalink to this headline">¶</a></h1>
+<p>Using PySurfer you can plot Freesurfer cortical labels on the surface
+with a large amount of control over the visual representation.</p>
+<img alt="../_images/plot_labels.png" class="align-center" src="../_images/plot_labels.png" />
+<p><strong>Python source code:</strong> <a class="reference download internal" href="../_downloads/plot_labels.py"><tt class="xref download docutils literal"><span class="pre">plot_labels.py</span></tt></a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="n">__doc__</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">Brain</span>
+
+<span class="n">subject_id</span> <span class="o">=</span> <span class="s">&quot;fsaverage&quot;</span>
+<span class="n">hemi</span> <span class="o">=</span> <span class="s">&quot;lh&quot;</span>
+<span class="n">surf</span> <span class="o">=</span> <span class="s">&quot;smoothwm&quot;</span>
+<span class="n">brain</span> <span class="o">=</span> <span class="n">Brain</span><span class="p">(</span><span class="n">subject_id</span><span class="p">,</span> <span class="n">hemi</span><span class="p">,</span> <span class="n">surf</span><span class="p">)</span>
+
+<span class="c"># If the label lives in the normal place in the subjects directory,</span>
+<span class="c"># you can plot it by just using the name</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_label</span><span class="p">(</span><span class="s">&quot;BA1&quot;</span><span class="p">)</span>
+
+<span class="c"># Some labels have an associated scalar value at each ID in the label.</span>
+<span class="c"># For example, they may be probabilistically defined. You can threshold</span>
+<span class="c"># what vertices show up in the label using this scalar data</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_label</span><span class="p">(</span><span class="s">&quot;BA1&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&quot;blue&quot;</span><span class="p">,</span> <span class="n">scalar_thresh</span><span class="o">=.</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="c"># Or you can give a path to a label in an arbitrary location</span>
+<span class="n">subj_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&quot;SUBJECTS_DIR&quot;</span><span class="p">]</span>
+<span class="n">label_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subj_dir</span><span class="p">,</span> <span class="n">subject_id</span><span class="p">,</span>
+                          <span class="s">&quot;label&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.MT.label&quot;</span> <span class="o">%</span> <span class="n">hemi</span><span class="p">)</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_label</span><span class="p">(</span><span class="n">label_file</span><span class="p">)</span>
+
+<span class="c"># By default the label is &#39;filled-in&#39;, but you can</span>
+<span class="c"># plot just the label boundaries</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_label</span><span class="p">(</span><span class="s">&quot;BA44&quot;</span><span class="p">,</span> <span class="n">borders</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c"># You can also control the opacity of the label color</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_label</span><span class="p">(</span><span class="s">&quot;BA6&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">7</span><span class="p">)</span>
+
+<span class="c"># Finally, you can plot the label in any color you want.</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">show_view</span><span class="p">(</span><span class="s">&quot;medial&quot;</span><span class="p">)</span>
+
+<span class="c"># Use any valid matplotlib color.</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_label</span><span class="p">(</span><span class="s">&quot;V1&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&quot;steelblue&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">6</span><span class="p">)</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_label</span><span class="p">(</span><span class="s">&quot;V2&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&quot;#FF6347&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">6</span><span class="p">)</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_label</span><span class="p">(</span><span class="s">&quot;entorhinal&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="o">.</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_meg_inverse_solution.html" title="Plot MEG inverse solution"
+             >next</a></li>
+        <li class="right" >
+          <a href="plot_label_foci.html" title="Plot a label generated at an activation foci"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

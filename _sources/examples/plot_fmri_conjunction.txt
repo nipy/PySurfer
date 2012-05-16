@@ -1,0 +1,25 @@
+
+
+.. _example_plot_fmri_conjunction.py:
+
+
+Display a Conjunction Map
+=========================
+
+Show the overlap between two different activation maps.
+
+This is one of the most commonly asked questions about
+Tksurfer on the Freesurfer mailing list. Below, we show
+how it can be accomplished in just a few lines of code
+with PySurfer.
+
+
+
+.. image:: images/plot_fmri_conjunction.png
+    :align: center
+
+**Python source code:** :download:`plot_fmri_conjunction.py <plot_fmri_conjunction.py>`
+
+.. literalinclude:: plot_fmri_conjunction.py
+    :lines: 13-
+    

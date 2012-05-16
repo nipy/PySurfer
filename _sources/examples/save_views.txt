@@ -1,0 +1,18 @@
+
+
+.. _example_save_views.py:
+
+
+===================
+Save a set of views
+===================
+
+Save some views in png files.
+
+
+
+**Python source code:** :download:`save_views.py <save_views.py>`
+
+.. literalinclude:: save_views.py
+    :lines: 9-
+    

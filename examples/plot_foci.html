@@ -1,0 +1,187 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Examples" href="index.html" />
+    <link rel="next" title="Display Volume Data" href="plot_from_volume.html" />
+    <link rel="prev" title="Display Activation Contours" href="plot_fmri_contours.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_from_volume.html" title="Display Volume Data"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="plot_fmri_contours.html" title="Display Activation Contours"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plot_fmri_contours.html"
+                        title="previous chapter">Display Activation Contours</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plot_from_volume.html"
+                        title="next chapter">Display Volume Data</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="plot-activation-foci">
+<span id="example-plot-foci-py"></span><h1>Plot Activation Foci<a class="headerlink" href="#plot-activation-foci" title="Permalink to this headline">¶</a></h1>
+<p>Plot spheroids at positions on the surface manifold
+according to coordinates or vertex ids.</p>
+<img alt="../_images/plot_foci.png" class="align-center" src="../_images/plot_foci.png" />
+<p><strong>Python source code:</strong> <a class="reference download internal" href="../_downloads/plot_foci.py"><tt class="xref download docutils literal"><span class="pre">plot_foci.py</span></tt></a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="n">__doc__</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">os.path</span> <span class="kn">as</span> <span class="nn">op</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">arange</span>
+<span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">permutation</span>
+<span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">Brain</span>
+<span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">io</span>
+
+<span class="n">subject_id</span> <span class="o">=</span> <span class="s">&quot;fsaverage&quot;</span>
+<span class="n">subjects_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&quot;SUBJECTS_DIR&quot;</span><span class="p">]</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Bring up the visualization.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span> <span class="o">=</span> <span class="n">Brain</span><span class="p">(</span><span class="n">subject_id</span><span class="p">,</span> <span class="s">&quot;lh&quot;</span><span class="p">,</span> <span class="s">&quot;inflated&quot;</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">First we&#39;ll get a set of stereotaxic foci in the MNI</span>
+<span class="sd">coordinate system. These might be peak activations from</span>
+<span class="sd">a volume based analysis.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">coords</span> <span class="o">=</span> <span class="p">[[</span><span class="o">-</span><span class="mi">36</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mi">43</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">24</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mi">48</span><span class="p">,</span> <span class="mi">26</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">]]</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Now we plot the foci on the inflated surface. We will map</span>
+<span class="sd">the foci onto the surface by finding the vertex on the &quot;white&quot;</span>
+<span class="sd">mesh that is closest to the coordinate of each point we want</span>
+<span class="sd">to display.</span>
+
+<span class="sd">While this is not a perfect transformation, it can give you</span>
+<span class="sd">some idea of where peaks from a volume-based analysis would</span>
+<span class="sd">be located on the surface.</span>
+
+<span class="sd">You can use any valid matplotlib color for the foci; the</span>
+<span class="sd">default is white.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_foci</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">map_surface</span><span class="o">=</span><span class="s">&quot;white&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&quot;gold&quot;</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">You can also plot foci with a set of surface vertex ids.</span>
+<span class="sd">For instance, you might want to plot the peak activation</span>
+<span class="sd">within an ROI for each of your indivdiual subjects over</span>
+<span class="sd">the group activation map.</span>
+
+<span class="sd">Here, we will just demonstrate with a set of randomly</span>
+<span class="sd">choosen vertices from within the superior temporal sulcus.</span>
+
+<span class="sd">First, we load in the Destrieux parcellation annotation file</span>
+<span class="sd">and find 10 random vertices within the STS.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">annot_path</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjects_dir</span><span class="p">,</span> <span class="n">subject_id</span><span class="p">,</span> <span class="s">&quot;label/lh.aparc.a2009s.annot&quot;</span><span class="p">)</span>
+<span class="n">ids</span><span class="p">,</span> <span class="n">ctab</span><span class="p">,</span> <span class="n">names</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">read_annot</span><span class="p">(</span><span class="n">annot_path</span><span class="p">)</span>
+<span class="n">verts</span> <span class="o">=</span> <span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ids</span><span class="p">))</span>
+<span class="n">coords</span> <span class="o">=</span> <span class="n">permutation</span><span class="p">(</span><span class="n">verts</span><span class="p">[</span><span class="n">ids</span> <span class="o">==</span> <span class="mi">74</span><span class="p">])[:</span><span class="mi">10</span><span class="p">]</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">You can also control the size of the focus glpyhs.</span>
+<span class="sd">We&#39;ll make these a little bit smaller than our</span>
+<span class="sd">other foci.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">scale_factor</span> <span class="o">=</span> <span class="mf">0.7</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Finally, plot the foci using the coords_as_verts option to</span>
+<span class="sd">center each sphereoid at its vertex id.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_foci</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">coords_as_verts</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+               <span class="n">scale_factor</span><span class="o">=</span><span class="n">scale_factor</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&quot;#A52A2A&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_from_volume.html" title="Display Volume Data"
+             >next</a></li>
+        <li class="right" >
+          <a href="plot_fmri_contours.html" title="Display Activation Contours"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

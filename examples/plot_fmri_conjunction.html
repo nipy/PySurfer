@@ -1,0 +1,187 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Examples" href="index.html" />
+    <link rel="next" title="Display Activation Contours" href="plot_fmri_contours.html" />
+    <link rel="prev" title="Display fMRI Activation" href="plot_fmri_activation.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_fmri_contours.html" title="Display Activation Contours"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="plot_fmri_activation.html" title="Display fMRI Activation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plot_fmri_activation.html"
+                        title="previous chapter">Display fMRI Activation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plot_fmri_contours.html"
+                        title="next chapter">Display Activation Contours</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="display-a-conjunction-map">
+<span id="example-plot-fmri-conjunction-py"></span><h1>Display a Conjunction Map<a class="headerlink" href="#display-a-conjunction-map" title="Permalink to this headline">¶</a></h1>
+<p>Show the overlap between two different activation maps.</p>
+<p>This is one of the most commonly asked questions about
+Tksurfer on the Freesurfer mailing list. Below, we show
+how it can be accomplished in just a few lines of code
+with PySurfer.</p>
+<img alt="../_images/plot_fmri_conjunction.png" class="align-center" src="../_images/plot_fmri_conjunction.png" />
+<p><strong>Python source code:</strong> <a class="reference download internal" href="../_downloads/plot_fmri_conjunction.py"><tt class="xref download docutils literal"><span class="pre">plot_fmri_conjunction.py</span></tt></a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="n">__doc__</span>
+
+<span class="kn">import</span> <span class="nn">os.path</span> <span class="kn">as</span> <span class="nn">op</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">io</span>
+<span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">Brain</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Initialize the visualization.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span> <span class="o">=</span> <span class="n">Brain</span><span class="p">(</span><span class="s">&quot;fsaverage&quot;</span><span class="p">,</span> <span class="s">&quot;lh&quot;</span><span class="p">,</span> <span class="s">&quot;inflated&quot;</span><span class="p">,</span>
+              <span class="n">config_opts</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s">&quot;white&quot;</span><span class="p">))</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Read both of the activation maps in using</span>
+<span class="sd">surfer&#39;s io functions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">data_dir</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;example_data&quot;</span><span class="p">)</span>
+<span class="n">sig1</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">read_scalar_data</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s">&quot;lh.sig.nii.gz&quot;</span><span class="p">))</span>
+<span class="n">sig2</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">read_scalar_data</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="s">&quot;lh.alt_sig.nii.gz&quot;</span><span class="p">))</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Zero out the vertices that do not meet a threshold.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">thresh</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">sig1</span><span class="p">[</span><span class="n">sig1</span> <span class="o">&lt;</span> <span class="n">thresh</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">sig2</span><span class="p">[</span><span class="n">sig2</span> <span class="o">&lt;</span> <span class="n">thresh</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A conjunction is defined as the minimum significance</span>
+<span class="sd">value between the two maps at each vertex.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">conjunct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">sig1</span><span class="p">,</span> <span class="n">sig2</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Now load the numpy array as an overlay.</span>
+<span class="sd">Use a high saturation point so that the</span>
+<span class="sd">blob will largely be colored with lower</span>
+<span class="sd">values from the lookup table.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_overlay</span><span class="p">(</span><span class="n">sig1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;sig1&quot;</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A pointer to the overlay&#39;s color manager</span>
+<span class="sd">gets stored in the overlays dictionary.</span>
+<span class="sd">Change the lookup table to &quot;Reds&quot; and turn the</span>
+<span class="sd">color bar itself off, as otherwise the bars</span>
+<span class="sd">for the three maps will get confusingly stacked.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">overlays</span><span class="p">[</span><span class="s">&quot;sig1&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pos_bar</span><span class="o">.</span><span class="n">lut_mode</span> <span class="o">=</span> <span class="s">&quot;Reds&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">overlays</span><span class="p">[</span><span class="s">&quot;sig1&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pos_bar</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Now load the other two maps and again change</span>
+<span class="sd">the lookup table and turn off the color bar itself.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_overlay</span><span class="p">(</span><span class="n">sig2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;sig2&quot;</span><span class="p">)</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">overlays</span><span class="p">[</span><span class="s">&quot;sig2&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pos_bar</span><span class="o">.</span><span class="n">lut_mode</span> <span class="o">=</span> <span class="s">&quot;Blues&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">overlays</span><span class="p">[</span><span class="s">&quot;sig2&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pos_bar</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Display the overlap as purple, which is what you</span>
+<span class="sd">get when you mix red and blue.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_overlay</span><span class="p">(</span><span class="n">conjunct</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;conjunct&quot;</span><span class="p">)</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">overlays</span><span class="p">[</span><span class="s">&quot;conjunct&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pos_bar</span><span class="o">.</span><span class="n">lut_mode</span> <span class="o">=</span> <span class="s">&quot;Purples&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">overlays</span><span class="p">[</span><span class="s">&quot;conjunct&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pos_bar</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="bp">False</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_fmri_contours.html" title="Display Activation Contours"
+             >next</a></li>
+        <li class="right" >
+          <a href="plot_fmri_activation.html" title="Display fMRI Activation"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

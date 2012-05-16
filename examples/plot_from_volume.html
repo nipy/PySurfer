@@ -1,0 +1,150 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Examples" href="index.html" />
+    <link rel="next" title="Plot a label generated at an activation foci" href="plot_label_foci.html" />
+    <link rel="prev" title="Plot Activation Foci" href="plot_foci.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_label_foci.html" title="Plot a label generated at an activation foci"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="plot_foci.html" title="Plot Activation Foci"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plot_foci.html"
+                        title="previous chapter">Plot Activation Foci</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plot_label_foci.html"
+                        title="next chapter">Plot a label generated at an activation foci</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="display-volume-data">
+<span id="example-plot-from-volume-py"></span><h1>Display Volume Data<a class="headerlink" href="#display-volume-data" title="Permalink to this headline">¶</a></h1>
+<p>PySurfer provides a function to sample a volume-encoded file
+to the surface for improved visualization. At the moment, this
+uses Freesurfer&#8217;s mri_vol2surf routine.</p>
+<img alt="../_images/plot_from_volume.png" class="align-center" src="../_images/plot_from_volume.png" />
+<p><strong>Python source code:</strong> <a class="reference download internal" href="../_downloads/plot_from_volume.py"><tt class="xref download docutils literal"><span class="pre">plot_from_volume.py</span></tt></a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="n">__doc__</span>
+
+<span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">Brain</span><span class="p">,</span> <span class="n">io</span>
+
+<span class="sd">&quot;&quot;&quot;Bring up the visualization&quot;&quot;&quot;</span>
+<span class="n">brain</span> <span class="o">=</span> <span class="n">Brain</span><span class="p">(</span><span class="s">&quot;fsaverage&quot;</span><span class="p">,</span> <span class="s">&quot;lh&quot;</span><span class="p">,</span> <span class="s">&quot;inflated&quot;</span><span class="p">,</span>
+              <span class="n">config_opts</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s">&quot;white&quot;</span><span class="p">))</span>
+
+<span class="sd">&quot;&quot;&quot;Project the volume file and return as an array&quot;&quot;&quot;</span>
+<span class="n">mri_file</span> <span class="o">=</span> <span class="s">&quot;example_data/resting_corr.nii.gz&quot;</span>
+<span class="n">reg_file</span> <span class="o">=</span> <span class="s">&quot;example_data/register.dat&quot;</span>
+<span class="n">surf_data</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">project_volume_data</span><span class="p">(</span><span class="n">mri_file</span><span class="p">,</span> <span class="s">&quot;lh&quot;</span><span class="p">,</span> <span class="n">reg_file</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">You can pass this array to the add_overlay method for</span>
+<span class="sd">a typical activation overlay (with thresholding, etc.)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_overlay</span><span class="p">(</span><span class="n">surf_data</span><span class="p">,</span> <span class="nb">min</span><span class="o">=.</span><span class="mi">3</span><span class="p">,</span> <span class="nb">max</span><span class="o">=.</span><span class="mi">7</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;ang_corr&quot;</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">You can also pass it to add_data for more control</span>
+<span class="sd">over the visualzation. Here we&#39;ll plot the whole</span>
+<span class="sd">range of correlations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">overlays</span><span class="p">[</span><span class="s">&quot;ang_corr&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_data</span><span class="p">(</span><span class="n">surf_data</span><span class="p">,</span> <span class="o">-.</span><span class="mi">7</span><span class="p">,</span> <span class="o">.</span><span class="mi">7</span><span class="p">,</span> <span class="n">colormap</span><span class="o">=</span><span class="s">&quot;jet&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">7</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This overlay represents resting-state correlations with a</span>
+<span class="sd">seed in left angular gyrus. Let&#39;s plot that seed.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">seed_coords</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">45</span><span class="p">,</span> <span class="o">-</span><span class="mi">67</span><span class="p">,</span> <span class="mi">36</span><span class="p">)</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_foci</span><span class="p">(</span><span class="n">seed_coords</span><span class="p">,</span> <span class="n">map_surface</span><span class="o">=</span><span class="s">&quot;white&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_label_foci.html" title="Plot a label generated at an activation foci"
+             >next</a></li>
+        <li class="right" >
+          <a href="plot_foci.html" title="Plot Activation Foci"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+
+
+.. _example_plot_meg_inverse_solution.py:
+
+
+Plot MEG inverse solution
+=========================
+
+Data were computed using mne-python (http://martinos.org/mne)
+
+
+
+.. image:: images/plot_meg_inverse_solution.png
+    :align: center
+
+**Python source code:** :download:`plot_meg_inverse_solution.py <plot_meg_inverse_solution.py>`
+
+.. literalinclude:: plot_meg_inverse_solution.py
+    :lines: 8-
+    

@@ -1,0 +1,152 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Documentation" href="index.html" />
+    <link rel="prev" title="Customizing the Visualization" href="custom_viz.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="custom_viz.html" title="Customizing the Visualization"
+             accesskey="P">previous</a></li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The Config File</a><ul>
+<li><a class="reference internal" href="#visual">Visual</a></li>
+<li><a class="reference internal" href="#overlay">Overlay</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="custom_viz.html"
+                        title="previous chapter">Customizing the Visualization</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="the-config-file">
+<span id="config-file"></span><h1>The Config File<a class="headerlink" href="#the-config-file" title="Permalink to this headline">¶</a></h1>
+<p>There are several aspects of how PySurfer looks and behaves that you may
+wish to customize but do not want to have to alter every time you
+instantiate a Brain object or use the command-line interface. To
+facilitate this, PySurfer allows you to set certain options with a
+standard Python config file.</p>
+<p>When a new Brain object is created (either in a script or via the
+command-line), it can read configuration options from one of two places:
+first, in the local folder in a file called <tt class="docutils literal"><span class="pre">surfer.cfg</span></tt>, and next in
+your home directory, from a file called <tt class="docutils literal"><span class="pre">.surfer.cfg</span></tt>. The file is
+divided into the following sections:</p>
+<div class="section" id="visual">
+<h2>Visual<a class="headerlink" href="#visual" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><em>background</em></dt>
+<dd>What color the display background should be. (Possible values:
+any HTML color name or 256 color hex code.</dd>
+<dt><em>cortex</em></dt>
+<dd>What colormap should be used for the binarized curvature on the
+cortex. (Possible values: any cortical curvature color scheme name.)</dd>
+<dt><em>size</em></dt>
+<dd>How large the sides of the display window should be (measured in
+pixels.) The window is always square, so just give one value, and
+it will be used for the height and width. (Possible values: any
+positive number.)</dd>
+<dt><em>default_view</em></dt>
+<dd>Which view should be shown at the beginning of a visualization
+session. (Possible values: <tt class="docutils literal"><span class="pre">lateral</span></tt>, <tt class="docutils literal"><span class="pre">medial</span></tt>, <tt class="docutils literal"><span class="pre">rostral</span></tt>,
+<tt class="docutils literal"><span class="pre">caudal</span></tt>, <tt class="docutils literal"><span class="pre">dorsal</span></tt>, <tt class="docutils literal"><span class="pre">ventral</span></tt>, <tt class="docutils literal"><span class="pre">frontal</span></tt>, <tt class="docutils literal"><span class="pre">parietal</span></tt>.)</dd>
+</dl>
+</div>
+<div class="section" id="overlay">
+<h2>Overlay<a class="headerlink" href="#overlay" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><em>min_thresh</em></dt>
+<dd>What the default minimum threshold should be if not provided when
+calling the <tt class="xref py py-meth docutils literal"><span class="pre">Brain.add_overlay()</span></tt> method. (Possible values: any
+float, <tt class="docutils literal"><span class="pre">robust_min</span></tt>, <tt class="docutils literal"><span class="pre">actual_min</span></tt>.)</dd>
+<dt><em>max_thresh</em></dt>
+<dd>What the default saturation point of the colormap should be if not
+provided when calling the <tt class="xref py py-meth docutils literal"><span class="pre">Brain.add_overlay()</span></tt> method.
+(Possible values: any float, <tt class="docutils literal"><span class="pre">robust_max</span></tt>, <tt class="docutils literal"><span class="pre">actual_max</span></tt>.)</dd>
+</dl>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="custom_viz.html" title="Customizing the Visualization"
+             >previous</a></li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

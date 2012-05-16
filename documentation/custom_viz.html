@@ -1,0 +1,172 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Documentation" href="index.html" />
+    <link rel="next" title="The Config File" href="config_file.html" />
+    <link rel="prev" title="The command-line interface" href="command_line.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="config_file.html" title="The Config File"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="command_line.html" title="The command-line interface"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Customizing the Visualization</a><ul>
+<li><a class="reference internal" href="#changing-the-display-background">Changing the display background</a></li>
+<li><a class="reference internal" href="#changing-the-curvature-color-scheme">Changing the curvature color scheme</a></li>
+<li><a class="reference internal" href="#changing-the-display-size">Changing the display size</a></li>
+<li><a class="reference internal" href="#how-to-use-these-themes">How to use these themes</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="command_line.html"
+                        title="previous chapter">The command-line interface</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="config_file.html"
+                        title="next chapter">The Config File</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="customizing-the-visualization">
+<span id="custom-viz"></span><h1>Customizing the Visualization<a class="headerlink" href="#customizing-the-visualization" title="Permalink to this headline">¶</a></h1>
+<p>One advantage to PySurfer over Tksurfer is that you are not
+limited to a single look for the visualization. Of course, being
+built on Mayavi, PySurfer is in theory completely customizable.
+However, we also offer a few preset options so that you do not
+have to delve into the underlying engine to get a different look.</p>
+<div class="section" id="changing-the-display-background">
+<h2>Changing the display background<a class="headerlink" href="#changing-the-display-background" title="Permalink to this headline">¶</a></h2>
+<p>The display background can take any valid matplotlib color.</p>
+</div>
+<div class="section" id="changing-the-curvature-color-scheme">
+<h2>Changing the curvature color scheme<a class="headerlink" href="#changing-the-curvature-color-scheme" title="Permalink to this headline">¶</a></h2>
+<p>By default, a new <tt class="xref py py-class docutils literal"><span class="pre">Brain</span></tt> instance displays the binarized
+cortical curvature values, so you can see which patches of cortex
+are gyri and which are sulci (pass <tt class="docutils literal"><span class="pre">curv=False</span></tt> to the
+<tt class="xref py py-class docutils literal"><span class="pre">Brain</span></tt> constructor, or use the <tt class="docutils literal"><span class="pre">-no-curv</span></tt> switch in the
+command-line interface to turn this off). There are four preset
+themes for the curvature color scheme: <tt class="docutils literal"><span class="pre">classic</span></tt>, <tt class="docutils literal"><span class="pre">bone</span></tt>,
+<tt class="docutils literal"><span class="pre">high_contrast</span></tt>, and <tt class="docutils literal"><span class="pre">low_contrast</span></tt>:</p>
+<img alt="../_images/cortex_options.png" src="../_images/cortex_options.png" />
+<p>Note that, in each theme, the darker color signifies sulci.</p>
+</div>
+<div class="section" id="changing-the-display-size">
+<h2>Changing the display size<a class="headerlink" href="#changing-the-display-size" title="Permalink to this headline">¶</a></h2>
+<p>The default display window is 800px by 800px, but this is also
+customizable. You may use any positive number for the size
+(subject, possibly, to Mayavi/hardware limitations we are not
+aware of). The viewing window is always square, so just give one
+number and it will be used for both width and height.</p>
+</div>
+<div class="section" id="how-to-use-these-themes">
+<h2>How to use these themes<a class="headerlink" href="#how-to-use-these-themes" title="Permalink to this headline">¶</a></h2>
+<p>These options can be set in three places. The first is in your
+config file. Set your preferred visualization theme there, and it
+will be used automatically whenever you start PySurfer. You may
+also override this theme for any individual visualization session.
+If using the Python <tt class="docutils literal"><span class="pre">surfer</span></tt> library, you may pass a
+<tt class="docutils literal"><span class="pre">config_opts</span></tt> dictionary to the <tt class="xref py py-class docutils literal"><span class="pre">Brain</span></tt> constructor,
+which will override any values you have set in your config file.
+If using the command-line interface, there are parameters for each
+of the above options. Regardless of method, the key names are
+<tt class="docutils literal"><span class="pre">background</span></tt>, <tt class="docutils literal"><span class="pre">cortex</span></tt>, and <tt class="docutils literal"><span class="pre">size</span></tt>.</p>
+<p>For example:</p>
+<div class="highlight-ipython"><div class="highlight"><pre><span class="gp">In [1]: </span><span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">Brain</span>
+<span class="gp">In [2]: </span><span class="n">b</span> <span class="o">=</span> <span class="n">Brain</span><span class="p">(</span><span class="s">&#39;fsaverage&#39;</span><span class="p">,</span> <span class="s">&#39;lh&#39;</span><span class="p">,</span> <span class="s">&#39;inflated&#39;</span><span class="p">,</span> <span class="n">config_opts</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;cortex&#39;</span><span class="p">:</span><span class="s">&#39;bone&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>or:</p>
+<div class="highlight-python"><pre>pysurfer fsaverage lh inflated -background slategray -size 400</pre>
+</div>
+<p>in your shell terminal.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="config_file.html" title="The Config File"
+             >next</a></li>
+        <li class="right" >
+          <a href="command_line.html" title="The command-line interface"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

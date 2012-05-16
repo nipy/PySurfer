@@ -1,0 +1,23 @@
+
+
+.. _example_plot_label_foci.py:
+
+
+============================================
+Plot a label generated at an activation foci
+============================================
+
+Plot a spheroid at a position on the surface manifold
+according to an MNI coordinate, generate a label
+around it and plot it.
+
+
+
+.. image:: images/plot_label_foci.png
+    :align: center
+
+**Python source code:** :download:`plot_label_foci.py <plot_label_foci.py>`
+
+.. literalinclude:: plot_label_foci.py
+    :lines: 11-
+    

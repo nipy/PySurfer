@@ -1,0 +1,22 @@
+
+
+.. _example_plot_foci.py:
+
+
+====================
+Plot Activation Foci
+====================
+
+Plot spheroids at positions on the surface manifold
+according to coordinates or vertex ids.
+
+
+
+.. image:: images/plot_foci.png
+    :align: center
+
+**Python source code:** :download:`plot_foci.py <plot_foci.py>`
+
+.. literalinclude:: plot_foci.py
+    :lines: 10-
+    

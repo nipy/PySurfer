@@ -1,0 +1,165 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="up" title="Examples" href="index.html" />
+    <link rel="next" title="Display ROI Labels" href="plot_labels.html" />
+    <link rel="prev" title="Display Volume Data" href="plot_from_volume.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_labels.html" title="Display ROI Labels"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="plot_from_volume.html" title="Display Volume Data"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="plot_from_volume.html"
+                        title="previous chapter">Display Volume Data</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plot_labels.html"
+                        title="next chapter">Display ROI Labels</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="plot-a-label-generated-at-an-activation-foci">
+<span id="example-plot-label-foci-py"></span><h1>Plot a label generated at an activation foci<a class="headerlink" href="#plot-a-label-generated-at-an-activation-foci" title="Permalink to this headline">¶</a></h1>
+<p>Plot a spheroid at a position on the surface manifold
+according to an MNI coordinate, generate a label
+around it and plot it.</p>
+<img alt="../_images/plot_label_foci.png" class="align-center" src="../_images/plot_label_foci.png" />
+<p><strong>Python source code:</strong> <a class="reference download internal" href="../_downloads/plot_label_foci.py"><tt class="xref download docutils literal"><span class="pre">plot_label_foci.py</span></tt></a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="n">__doc__</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">surfer</span> <span class="kn">import</span> <span class="n">Brain</span><span class="p">,</span> <span class="n">utils</span>
+
+<span class="n">subject_id</span> <span class="o">=</span> <span class="s">&quot;fsaverage&quot;</span>
+<span class="n">subjects_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&quot;SUBJECTS_DIR&quot;</span><span class="p">]</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Bring up the visualization.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span> <span class="o">=</span> <span class="n">Brain</span><span class="p">(</span><span class="n">subject_id</span><span class="p">,</span> <span class="s">&quot;lh&quot;</span><span class="p">,</span> <span class="s">&quot;inflated&quot;</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">First we&#39;ll get a set of stereotaxic foci in the MNI</span>
+<span class="sd">coordinate system. These might be peak activations from</span>
+<span class="sd">a volume based analysis.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">coord</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">43</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">24</span><span class="p">]</span>
+
+<span class="n">utils</span><span class="o">.</span><span class="n">coord_to_label</span><span class="p">(</span><span class="n">subject_id</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;coord&#39;</span><span class="p">,</span> <span class="n">hemi</span><span class="o">=</span><span class="s">&#39;lh&#39;</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                     <span class="n">map_surface</span><span class="o">=</span><span class="s">&quot;white&quot;</span><span class="p">)</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_label</span><span class="p">(</span><span class="s">&#39;coord-lh.label&#39;</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Now we plot the foci on the inflated surface. We will map</span>
+<span class="sd">the foci onto the surface by finding the vertex on the &quot;white&quot;</span>
+<span class="sd">mesh that is closest to the coordinate of the point we want</span>
+<span class="sd">to display.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_foci</span><span class="p">([</span><span class="n">coord</span><span class="p">],</span> <span class="n">map_surface</span><span class="o">=</span><span class="s">&quot;white&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&quot;gold&quot;</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">or using a vertex index</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">coord</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">utils</span><span class="o">.</span><span class="n">coord_to_label</span><span class="p">(</span><span class="n">subject_id</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;coord&#39;</span><span class="p">,</span> <span class="n">hemi</span><span class="o">=</span><span class="s">&#39;lh&#39;</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                     <span class="n">map_surface</span><span class="o">=</span><span class="s">&quot;white&quot;</span><span class="p">,</span> <span class="n">coord_as_vert</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_label</span><span class="p">(</span><span class="s">&#39;coord-lh.label&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;blue&#39;</span><span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Now we plot the foci on the inflated surface. We will map</span>
+<span class="sd">the foci onto the surface by finding the vertex on the &quot;white&quot;</span>
+<span class="sd">mesh that is closest to the coordinate of the point we want</span>
+<span class="sd">to display.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">brain</span><span class="o">.</span><span class="n">add_foci</span><span class="p">([</span><span class="n">coord</span><span class="p">],</span> <span class="n">map_surface</span><span class="o">=</span><span class="s">&quot;white&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&quot;red&quot;</span><span class="p">,</span> <span class="n">coords_as_verts</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="plot_labels.html" title="Display ROI Labels"
+             >next</a></li>
+        <li class="right" >
+          <a href="plot_from_volume.html" title="Display Volume Data"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Examples</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+
+
+.. _example_plot_from_volume.py:
+
+
+Display Volume Data
+===================
+
+PySurfer provides a function to sample a volume-encoded file
+to the surface for improved visualization. At the moment, this
+uses Freesurfer's mri_vol2surf routine.
+
+
+
+.. image:: images/plot_from_volume.png
+    :align: center
+
+**Python source code:** :download:`plot_from_volume.py <plot_from_volume.py>`
+
+.. literalinclude:: plot_from_volume.py
+    :lines: 10-
+    
