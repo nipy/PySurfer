@@ -1125,7 +1125,9 @@ class Brain(object):
         # get bounding box for cropping
         boxes = []
         for im in images:
-            labels, n_labels = ndimage.label(np.array(im)[:, :, 0])
+            red = np.array(im)[:, :, 0]
+            red[red == red[0, 0]] = 0  # hack for find_objects that wants 0
+            labels, n_labels = ndimage.label(red)
             s = ndimage.find_objects(labels, n_labels)[0]  # slice roi
             # box = (left, top, width, height)
             boxes.append([s[1].start - border_size, s[0].start - border_size,

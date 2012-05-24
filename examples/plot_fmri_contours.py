@@ -54,3 +54,5 @@ contour dictionary attribute.
 """
 brain.contour['surface'].actor.property.line_width = 1
 brain.contour['surface'].contour.number_of_contours = 10
+
+brain.save_montage('toto.png')
