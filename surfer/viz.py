@@ -961,8 +961,8 @@ class Brain(object):
                                 % " ".join(good_ftypes))
         mlab.savefig(fname)
 
-    def save_imageset(self, prefix, views, filetype='png'):
-        """Convience wrapper for save_image
+    def save_imageset(self, prefix, views,  filetype='png', colorbar_visible=None):
+        """Convenience wrapper for save_image
 
         Files created are prefix+'_$view'+filetype
 
@@ -972,6 +972,8 @@ class Brain(object):
             filename prefix for image to be created
         views: list
             desired views for images
+        colorbar_visible: [int], optional
+            if not None, would reveal colorbar only in the indexed views
         filetype: string
             image type
 
@@ -984,11 +986,17 @@ class Brain(object):
             raise ValueError("Views must be a non-string sequence"
                              "Use show_view & save_image for a single view")
         images_written = []
-        for view in views:
+        for iview, view in enumerate(views):
             try:
                 fname = "%s_%s.%s" % (prefix, view, filetype)
                 images_written.append(fname)
+                if colorbar_visible is not None:
+                    for cb in ['pos_bar', 'neg_bar']:
+                        for overlay in self.overlays.values():
+                            if hasattr(overlay, cb):
+                                setattr(getattr(overlay, cb), 'visible', (iview in colorbar_visible))
                 self.show_view(view)
+
                 try:
                     self.save_image(fname)
                 except ValueError:
@@ -1103,8 +1111,9 @@ class Brain(object):
         self.data["fmax"] = fmax
         self.data["transparent"] = transparent
 
+
     def save_montage(self, filename, order=['lat', 'ven', 'med'],
-                     orientation='h', border_size=15):
+                     orientation='h', border_size=15, colorbar_visible=None):
         """Create a montage from a given order of images
 
         Parameters
@@ -1117,10 +1126,12 @@ class Brain(object):
             montage image orientation (horizontal of vertical alignment)
         border_size: int
             Size of image border (more or less space between images)
+        colorbar_visible: [int], optional
+            if not None, would reveal colorbar only in the indexed views
         """
         assert orientation in ['h', 'v']
         import Image
-        fnames = self.save_imageset("tmp", order)
+        fnames = self.save_imageset("tmp", order, colorbar_visible=colorbar_visible)
         images = map(Image.open, fnames)
         # get bounding box for cropping
         boxes = []
