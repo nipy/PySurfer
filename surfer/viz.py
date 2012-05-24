@@ -1150,14 +1150,27 @@ class Brain(object):
         images = map(Image.open, fnames)
         # get bounding box for cropping
         boxes = []
-        for im in images:
-            red = np.array(im)[:, :, 0]
+        for ix, im in enumerate(images):
+            # sum the RGB dimension so we do not miss G or B-only pieces
+            red = np.sum(np.array(im), axis=-1)
             red[red == red[0, 0]] = 0  # hack for find_objects that wants 0
             labels, n_labels = ndimage.label(red)
-            s = ndimage.find_objects(labels, n_labels)[0]  # slice roi
+            slices = ndimage.find_objects(labels, n_labels) # slice roi
+            if colorbar_visible is not None and ix in colorbar_visible:
+                # we need all pieces so let's compose them into a single min/max
+                slices_a = np.array([[[xy.start, xy.stop] for xy in s] for s in slices])
+                # TODO: ideally gaps could be deduced and cut out with consideration
+                #       of border_size
+                # so we need mins on 0th and maxs on 1th of 1-nd dimension
+                mins = np.min(slices_a[:, :, 0], axis=0)
+                maxs = np.max(slices_a[:, :, 1], axis=0)
+                s = (slice(mins[0], maxs[0]), slice(mins[1], maxs[1]))
+            else:
+                # we need just the first piece
+                s = slices[0]
             # box = (left, top, width, height)
             boxes.append([s[1].start - border_size, s[0].start - border_size,
-                          s[1].stop + border_size, s[0].stop + border_size])
+                          s[1].stop  + border_size, s[0].stop  + border_size])
         if orientation == 'v':
             min_left = min(box[0] for box in boxes)
             max_width = max(box[2] for box in boxes)
