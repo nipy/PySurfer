@@ -45,7 +45,7 @@ if __name__ == '__main__':
         import IPython
         if IPython.__version__ < '0.11':
             flag = '-nobanner '
-            flag += '-wthread'
+            flag += '-wthread '
         else:
             flag = '--no-banner '
             flag += '--gui=wx -i '
