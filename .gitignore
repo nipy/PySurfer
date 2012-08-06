@@ -1,3 +1,24 @@
-*.png
-.gitignore
 *.pyc
+*.log
+*~
+.#*
+*.swp
+build
+
+dist/
+doc/_build/
+doc/build/
+doc/examples/
+doc/example_data
+doc/modules/generated/
+doc/documentation/pysurfer_usage.txt
+pip-log.txt
+.coverage
+tags
+doc/coverages
+doc/samples
+*.jpg
+pysurfer.egg-info
+*.avi
+.tmp/*.png
+>>>>>>> upstream/master

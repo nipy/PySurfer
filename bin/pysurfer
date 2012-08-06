@@ -1,0 +1,103 @@
+#! /usr/bin/env python
+"""
+This is the top-level command-line interface script for PySurfer.
+It accepts all of the relevant arguments, then turns around and calls
+IPython on itself to then drop the user into an IPython environment.
+"""
+import os
+import sys
+from surfer._commandline import parser
+
+if __name__ == '__main__':
+    is_ipython = False
+    try:
+        get_ipython
+        is_ipython = True
+    except NameError:
+        try:  # for old iPython versions
+            _ip
+            is_ipython = True
+        except NameError:
+            pass
+
+    # Make sure this is going to work before we have to
+    # boot up mlab/IPython
+    if len(sys.argv) > 3:
+        subjects_dir = os.environ['SUBJECTS_DIR']
+        surf_file = os.path.join(subjects_dir,
+                                 "%s/surf/%s.%s" % tuple(sys.argv[1:4]))
+        if not os.path.exists(surf_file):
+            sys.exit("ERROR: Could not find %s" % surf_file)
+
+    if not is_ipython:
+        # Parse the args so that --help exits back to the shell
+        # instead of into IPython (this would be cleaner if I
+        # could figure out whether that is possible to do
+        # from with a script IPython is executing on startup
+        if len(sys.argv) < 4:
+            parser.parse_args(["--help"])
+        else:
+            args = parser.parse_args()
+
+        # Start IPython and execute the load script
+        path = os.path.split(__file__)[0]
+        load_file = __file__
+        import IPython
+        if IPython.__version__ < '0.11':
+            flag = '-nobanner '
+            flag += '-wthread '
+        else:
+            flag = '--no-banner '
+            flag += '--gui=wx -i '
+        cmd = 'ipython %s ' % (flag + __file__ +
+                               ' "%s"' % ' '.join(sys.argv[1:]))
+        os.system(cmd)
+    else:
+        args = parser.parse_args(sys.argv[1].split())
+
+        from surfer import Brain
+
+        # Get a dict of config override options
+        confkeys = ["size", "background", "cortex"]
+        argdict = args.__dict__
+        config_opts = dict([(k, v) for k, v in argdict.items()
+                                                if k in confkeys and v])
+
+        # Load  up the figure and underlying brain object
+        b = Brain(args.subject_id, args.hemi, args.surf, args.curv,
+                  args.title, config_opts=config_opts)
+
+        # Maybe load some morphometry
+        if args.morphometry is not None:
+            b.add_morphometry(args.morphometry)
+
+        # Maybe load an overlay
+        if args.overlay is not None:
+            if args.range is not None:
+                args.min, args.max = args.range
+            b.add_overlay(args.overlay, args.min, args.max, args.sign)
+
+        # Maybe load an annot
+        if args.annotation is not None:
+            if not args.borders:
+                args.borders = any([args.overlay, args.morphometry])
+            b.add_annotation(args.annotation, borders=args.borders)
+
+        # Maybe load a label
+        if args.label is not None:
+            if not args.borders:
+                args.borders = any([args.overlay, args.morphometry])
+            b.add_label(args.label, borders=args.borders)
+
+        # Also point brain at the Brain() object
+        brain = b
+
+        # It's nice to have mlab in the namespace, but we'll import it
+        # after the other stuff so getting usage is not interminable
+        try:
+            from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+
+        # Now clean up the namespace a bit
+        del parser, args
