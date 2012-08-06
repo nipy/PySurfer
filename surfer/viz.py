@@ -959,6 +959,7 @@ class Brain(object):
         if not ftype in good_ftypes:
             raise ValueError("Supported image types are %s"
                                 % " ".join(good_ftypes))
+        mlab.draw(self._f)
         mlab.savefig(fname)
 
     def save_imageset(self, prefix, views, filetype='png'):
