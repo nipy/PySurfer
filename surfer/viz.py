@@ -525,6 +525,7 @@ class Brain(object):
         view = mlab.view()
 
         # Figure out where the data is coming from
+
         if os.path.isfile(label):
             filepath = label
             label_name = os.path.basename(filepath).split('.')[1]
@@ -570,6 +571,7 @@ class Brain(object):
 
         mlab.view(*view)
         self._f.scene.disable_render = False
+
 
     def add_morphometry(self, measure, grayscale=False):
         """Add a morphometry overlay to the image.
@@ -704,7 +706,8 @@ class Brain(object):
             name = "foci_%d" % (len(self.foci) + 1)
 
         # Convert the color code
-        color = colorConverter.to_rgb(color)
+        if not isinstance(color, tuple):
+            color = colorConverter.to_rgb(color)
 
         # Create the visualization
         self._f.scene.disable_render = True
@@ -959,6 +962,7 @@ class Brain(object):
         if not ftype in good_ftypes:
             raise ValueError("Supported image types are %s"
                                 % " ".join(good_ftypes))
+        mlab.draw(self._f)
         mlab.savefig(fname)
 
     def save_imageset(self, prefix, views, filetype='png'):

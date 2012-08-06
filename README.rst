@@ -4,12 +4,12 @@ PySurfer
 ========
 
 PySurfer is a Python module for interacting with a cortical surface
-representations of neuroimaging data from Freesurfer. It extends Mayavi’s
+representations of neuroimaging data from Freesurfer. It extends Mayavi's
 powerful visualization engine with a high-level interface for working with
 MRI and MEG data.
 
 PySurfer offers both a command-line interface designed to broadly replicate
-Freesurfer’s Tksurfer program as well as a Python library for writing scripts
+Freesurfer's Tksurfer program as well as a Python library for writing scripts
 to efficiently explore complex datasets.
 
 To goal of the project is to facilitate the production of figures that are
