@@ -93,7 +93,6 @@ class Brain(object):
 
         # Set the lights so they are oriented by hemisphere
         self._orient_lights()
-
         # Initialize a Surface object as the geometry
         self._geo = Surface(subject_id, hemi, surf)
 
@@ -189,10 +188,15 @@ class Brain(object):
 
         if viewargs:
             viewargs['reset_roll'] = True
+            viewargs['figure'] = self._f
             mlab.view(**viewargs)
         if not roll is None:
-            mlab.roll(roll)
-        return mlab.view(), mlab.roll()
+            mlab.roll(roll, figure=self._f)
+
+        view = mlab.view(figure=self._f)
+        roll = mlab.roll(figure=self._f)
+
+        return view, roll
 
     def _read_scalar_data(self, source, name=None, cast=True):
         """Load in scalar data from an image stored in a file or an array
@@ -1573,15 +1577,18 @@ class TimeViewer(HasTraits):
 
         Parameters
         ----------
-        brain : Brain
-            brain to control
+        brain : Brain (or list of Brain)
+            brain(s) to control
         """
         super(TimeViewer, self).__init__()
 
-        self.brain = brain
+        if isinstance(brain, (list, tuple)):
+            self.brains = brain
+        else:
+            self.brains = [brain]
 
-        # Initialize GUI with values from brain
-        props = brain.get_data_properties()
+        # Initialize GUI with values from first brain
+        props = self.brains[0].get_data_properties()
 
         self._disable_updates = True
         self.max_time = len(props["time"]) - 1
@@ -1595,6 +1602,13 @@ class TimeViewer(HasTraits):
         else:
             self.smoothing_steps = props["smoothing_steps"]
         self._disable_updates = False
+
+        # Make sure all brains have the same time points
+        for brain in self.brains[1:]:
+            this_props = brain.get_data_properties()
+            if not np.all(props["time"] == this_props["time"]):
+                raise ValueError("all brains must have the same time"
+                                 "points")
 
         # Show GUI
         self.configure_traits()
@@ -1610,7 +1624,8 @@ class TimeViewer(HasTraits):
         if smoothing_steps < 0:
             smoothing_steps = None
 
-        self.brain.set_data_smoothing_steps(smoothing_steps)
+        for brain in self.brains:
+            brain.set_data_smoothing_steps(self.smoothing_steps)
 
     @on_trait_change("orientation")
     def set_orientation(self):
@@ -1619,7 +1634,8 @@ class TimeViewer(HasTraits):
         if self._disable_updates:
             return
 
-        self.brain.show_view(view=self.orientation)
+        for brain in self.brains:
+            brain.show_view(view=self.orientation)
 
     @on_trait_change("current_time")
     def set_time_point(self):
@@ -1628,7 +1644,8 @@ class TimeViewer(HasTraits):
         if self._disable_updates:
             return
 
-        self.brain.set_data_time_index(self.current_time)
+        for brain in self.brains:
+            brain.set_data_time_index(self.current_time)
 
     @on_trait_change("fmin, fmid, fmax, transparent")
     def scale_colormap(self):
@@ -1637,5 +1654,6 @@ class TimeViewer(HasTraits):
         if self._disable_updates:
             return
 
-        self.brain.scale_data_colormap(self.fmin, self.fmid, self.fmax,
-                                       self.transparent)
+        for brain in self.brains:
+            brain.scale_data_colormap(self.fmin, self.fmid, self.fmax,
+                                      self.transparent)
