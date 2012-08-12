@@ -296,6 +296,13 @@ class Brain(object):
         Note that min sets the low end of the colormap, and is separate
         from thresh (this is a different convention from add_overlay)
 
+        Note: If the data is defined for a subset of vertices (specified
+        by the "vertices" parameter), a smoothing method is used to interpolate
+        the data onto the high resolution surface. If the data is defined for
+        subsampled version of the surface, smoothing_steps can be set to None,
+        in which case only as many smoothing steps are applied until the whole
+        surface is filled with non-zeros.
+
         Parameters
         ----------
         array : numpy array
@@ -312,7 +319,7 @@ class Brain(object):
             alpha level to control opacity
         vertices : numpy array
             vertices for which the data is defined (needed if len(data) < nvtx)
-        smoothing_steps : int
+        smoothing_steps : int or None
             number of smoothing steps (smooting is used if len(data) < nvtx)
             Default : 20
         time : numpy array
@@ -1540,7 +1547,9 @@ class TimeViewer(HasTraits):
     fmid = Float(enter_set=True, auto_set=False)
     fmin = Float(enter_set=True, auto_set=False)
     transparent = Bool(True)
-    smoothing_steps = Int(20, enter_set=True, auto_set=False)
+    smoothing_steps = Int(20, enter_set=True, auto_set=False,
+                          desc="number of smoothing steps. Use -1 for"
+                               "automatic number of steps")
     orientation = Enum("lateral", "medial", "rostral", "caudal",
                        "dorsal", "ventral", "frontal", "parietal")
 
@@ -1581,7 +1590,10 @@ class TimeViewer(HasTraits):
         self.fmid = props["fmid"]
         self.fmax = props["fmax"]
         self.transparent = props["transparent"]
-        self.smoothing_steps = props["smoothing_steps"]
+        if props["smoothing_steps"] is None:
+            self.smoothing_steps = -1
+        else:
+            self.smoothing_steps = props["smoothing_steps"]
         self._disable_updates = False
 
         # Show GUI
@@ -1594,7 +1606,11 @@ class TimeViewer(HasTraits):
         if self._disable_updates:
             return
 
-        self.brain.set_data_smoothing_steps(self.smoothing_steps)
+        smoothing_steps = self.smoothing_steps
+        if smoothing_steps < 0:
+            smoothing_steps = None
+
+        self.brain.set_data_smoothing_steps(smoothing_steps)
 
     @on_trait_change("orientation")
     def set_orientation(self):
