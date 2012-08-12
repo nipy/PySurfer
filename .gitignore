@@ -21,3 +21,4 @@ doc/samples
 pysurfer.egg-info
 *.avi
 .tmp/*.png
+>>>>>>> upstream/master
