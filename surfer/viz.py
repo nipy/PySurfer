@@ -583,7 +583,6 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-
     def add_morphometry(self, measure, grayscale=False):
         """Add a morphometry overlay to the image.
 
@@ -1129,7 +1128,6 @@ class Brain(object):
         self.data["fmax"] = fmax
         self.data["transparent"] = transparent
 
-
     def save_montage(self, filename, order=['lat', 'ven', 'med'],
                      orientation='h', border_size=15, colorbar='auto'):
         """Create a montage from a given order of images
@@ -1162,12 +1160,13 @@ class Brain(object):
             gray = np.sum(np.array(im), axis=-1)
             gray[gray == gray[0, 0]] = 0  # hack for find_objects that wants 0
             labels, n_labels = ndimage.label(gray.astype(np.float))
-            slices = ndimage.find_objects(labels, n_labels) # slice roi
+            slices = ndimage.find_objects(labels, n_labels)  # slice roi
             if colorbar is not None and ix in colorbar:
-                # we need all pieces so let's compose them into a single min/max
-                slices_a = np.array([[[xy.start, xy.stop] for xy in s] for s in slices])
-                # TODO: ideally gaps could be deduced and cut out with consideration
-                #       of border_size
+                # we need all pieces so let's compose them into single min/max
+                slices_a = np.array([[[xy.start, xy.stop] for xy in s]
+                                     for s in slices])
+                # TODO: ideally gaps could be deduced and cut out with
+                #       consideration of border_size
                 # so we need mins on 0th and maxs on 1th of 1-nd dimension
                 mins = np.min(slices_a[:, :, 0], axis=0)
                 maxs = np.max(slices_a[:, :, 1], axis=0)
@@ -1177,7 +1176,7 @@ class Brain(object):
                 s = slices[0]
             # box = (left, top, width, height)
             boxes.append([s[1].start - border_size, s[0].start - border_size,
-                          s[1].stop  + border_size, s[0].stop  + border_size])
+                          s[1].stop + border_size, s[0].stop + border_size])
         if orientation == 'v':
             min_left = min(box[0] for box in boxes)
             max_width = max(box[2] for box in boxes)
