@@ -976,8 +976,8 @@ class Brain(object):
         mlab.draw(self._f)
         mlab.savefig(fname)
 
-    def save_imageset(self, prefix, views, filetype='png'):
-        """Convience wrapper for save_image
+    def save_imageset(self, prefix, views,  filetype='png', colorbar_visible=None):
+        """Convenience wrapper for save_image
 
         Files created are prefix+'_$view'+filetype
 
@@ -987,6 +987,8 @@ class Brain(object):
             filename prefix for image to be created
         views: list
             desired views for images
+        colorbar_visible: [int], optional
+            if not None, would reveal colorbar only in the indexed views
         filetype: string
             image type
 
@@ -999,11 +1001,17 @@ class Brain(object):
             raise ValueError("Views must be a non-string sequence"
                              "Use show_view & save_image for a single view")
         images_written = []
-        for view in views:
+        for iview, view in enumerate(views):
             try:
                 fname = "%s_%s.%s" % (prefix, view, filetype)
                 images_written.append(fname)
+                if colorbar_visible is not None:
+                    for cb in ['pos_bar', 'neg_bar']:
+                        for overlay in self.overlays.values():
+                            if hasattr(overlay, cb):
+                                setattr(getattr(overlay, cb), 'visible', (iview in colorbar_visible))
                 self.show_view(view)
+
                 try:
                     self.save_image(fname)
                 except ValueError:
@@ -1118,8 +1126,9 @@ class Brain(object):
         self.data["fmax"] = fmax
         self.data["transparent"] = transparent
 
+
     def save_montage(self, filename, order=['lat', 'ven', 'med'],
-                     orientation='h', border_size=15):
+                     orientation='h', border_size=15, colorbar_visible=None):
         """Create a montage from a given order of images
 
         Parameters
@@ -1132,21 +1141,36 @@ class Brain(object):
             montage image orientation (horizontal of vertical alignment)
         border_size: int
             Size of image border (more or less space between images)
+        colorbar_visible: [int], optional
+            if not None, would reveal colorbar only in the indexed views
         """
         assert orientation in ['h', 'v']
         import Image
-        fnames = self.save_imageset("tmp", order)
+        fnames = self.save_imageset("tmp", order, colorbar_visible=colorbar_visible)
         images = map(Image.open, fnames)
         # get bounding box for cropping
         boxes = []
-        for im in images:
-            red = np.array(im)[:, :, 0]
+        for ix, im in enumerate(images):
+            # sum the RGB dimension so we do not miss G or B-only pieces
+            red = np.sum(np.array(im), axis=-1)
             red[red == red[0, 0]] = 0  # hack for find_objects that wants 0
             labels, n_labels = ndimage.label(red)
-            s = ndimage.find_objects(labels, n_labels)[0]  # slice roi
+            slices = ndimage.find_objects(labels, n_labels) # slice roi
+            if colorbar_visible is not None and ix in colorbar_visible:
+                # we need all pieces so let's compose them into a single min/max
+                slices_a = np.array([[[xy.start, xy.stop] for xy in s] for s in slices])
+                # TODO: ideally gaps could be deduced and cut out with consideration
+                #       of border_size
+                # so we need mins on 0th and maxs on 1th of 1-nd dimension
+                mins = np.min(slices_a[:, :, 0], axis=0)
+                maxs = np.max(slices_a[:, :, 1], axis=0)
+                s = (slice(mins[0], maxs[0]), slice(mins[1], maxs[1]))
+            else:
+                # we need just the first piece
+                s = slices[0]
             # box = (left, top, width, height)
             boxes.append([s[1].start - border_size, s[0].start - border_size,
-                          s[1].stop + border_size, s[0].stop + border_size])
+                          s[1].stop  + border_size, s[0].stop  + border_size])
         if orientation == 'v':
             min_left = min(box[0] for box in boxes)
             max_width = max(box[2] for box in boxes)
