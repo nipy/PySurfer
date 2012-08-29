@@ -1,5 +1,7 @@
 import os
 from os.path import join as pjoin
+from tempfile import mktemp
+
 from subprocess import call
 import gzip
 import numpy as np
@@ -392,7 +394,7 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         cmd_list.extend(["--trgsubject", target_subject])
 
     # Execute the command
-    out_file = ".tmp-pysurfer.mgz"
+    out_file = mktemp(prefix="pysurfer-v2s", suffix='.mgz')
     cmd_list.extend(["--o", out_file])
     if verbose:
         print " ".join(cmd_list)
