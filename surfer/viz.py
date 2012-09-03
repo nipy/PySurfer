@@ -800,7 +800,7 @@ class Brain(object):
         mlab.view(*view)
         self._f.scene.disable_render = False
 
-    def add_text(self, x, y, text, name, color=(1, 1, 1), opacity=1.0):
+    def add_text(self, x, y, text, name, color=None, opacity=1.0):
         """ Add a text to the visualization
 
         Parameters
