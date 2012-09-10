@@ -380,10 +380,10 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         proj_flag += "-"
         proj_flag += projsum
     if hasattr(projarg, "__iter__"):
-        proj_arg = "%.3f, %.3f, %.3f" % tuple(projarg)
+        proj_arg = map(str, projarg)
     else:
-        proj_arg = str(projarg)
-    cmd_list.extend([proj_flag, proj_arg])
+        proj_arg = [str(projarg)]
+    cmd_list.extend([proj_flag] + proj_arg)
 
     # Set misc args
     if smooth_fwhm:
