@@ -1416,9 +1416,12 @@ class Brain(object):
         if hasattr(self, 'contour') and 'colorbar' in self.contour:
             self.contour['colorbar'].visible = visible
         if hasattr(self, 'overlays'):
-            for overlay in self.overlays:
-                if 'colorbar' in overlay:
-                    overlay['colorbar'] = visible
+            for name, obj in self.overlays.items():
+                for bar in ["pos_bar", "neg_bar"]:
+                    try:
+                        getattr(obj, bar).visible = visible
+                    except AttributeError:
+                        pass
 
     def show_colorbar(self):
         "Show colorbar(s)"
