@@ -1147,10 +1147,16 @@ class Brain(object):
             is only shown in the middle view. Otherwise on the listed
             views when a list of int is passed.
         """
+        try:
+            from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+
         assert orientation in ['h', 'v']
         import Image
         if colorbar == 'auto':
             colorbar = [len(order) // 2]
+        current_view = mlab.view(figure=self._f)
         fnames = self.save_imageset("tmp", order, colorbar=colorbar)
         images = map(Image.open, fnames)
         # get bounding box for cropping
@@ -1217,6 +1223,9 @@ class Brain(object):
             print("Error saving %s" % filename)
         for f in fnames:
             os.remove(f)
+
+        # get back original view
+        mlab.view(*current_view, figure=self._f)
 
     def set_data_time_index(self, time_idx):
         """ Set the data time index to show
