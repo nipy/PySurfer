@@ -1156,7 +1156,14 @@ class Brain(object):
         import Image
         if colorbar == 'auto':
             colorbar = [len(order) // 2]
+
+        # store current view + colorbar visibility
         current_view = mlab.view(figure=self._f)
+        colorbars = self._get_colorbars()
+        colorbars_visibility = dict()
+        for cb in colorbars:
+            colorbars_visibility[cb] = cb.visible
+
         fnames = self.save_imageset("tmp", order, colorbar=colorbar)
         images = map(Image.open, fnames)
         # get bounding box for cropping
@@ -1224,8 +1231,10 @@ class Brain(object):
         for f in fnames:
             os.remove(f)
 
-        # get back original view
+        # get back original view and colorbars
         mlab.view(*current_view, figure=self._f)
+        for cb in colorbars:
+            cb.visible = colorbars_visibility[cb]
 
     def set_data_time_index(self, time_idx):
         """ Set the data time index to show
@@ -1417,20 +1426,26 @@ class Brain(object):
         else:
             return view
 
-    def _colorbar_visibility(self, visible):
+    def _get_colorbars(self):
+        colorbars = []
         if hasattr(self, 'data') and 'colorbar' in self.data:
-            self.data['colorbar'].visible = visible
+            colorbars.append(self.data['colorbar'])
         if hasattr(self, 'morphometry') and 'colorbar' in self.morphometry:
-            self.morphometry['colorbar'].visible = visible
+            colorbars.append(self.morphometry['colorbar'])
         if hasattr(self, 'contour') and 'colorbar' in self.contour:
-            self.contour['colorbar'].visible = visible
+            colorbars.append(self.contour['colorbar'])
         if hasattr(self, 'overlays'):
             for name, obj in self.overlays.items():
                 for bar in ["pos_bar", "neg_bar"]:
                     try:
-                        getattr(obj, bar).visible = visible
+                        colorbars.append(getattr(obj, bar))
                     except AttributeError:
                         pass
+        return colorbars
+
+    def _colorbar_visibility(self, visible):
+        for cb in self._get_colorbars():
+            cb.visible = visible
 
     def show_colorbar(self):
         "Show colorbar(s)"
