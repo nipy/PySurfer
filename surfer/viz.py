@@ -287,8 +287,8 @@ class Brain(object):
         self._f.scene.disable_render = False
 
     def add_data(self, array, min=None, max=None, thresh=None,
-                 colormap="blue-red", alpha=1,
-                 keep_existing=False,
+                 colormap="blue-red", reverse_lut=False,
+                 alpha=1, keep_existing=False,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d"):
         """Display data from a numpy array on the surface.
@@ -320,6 +320,8 @@ class Brain(object):
             if not None, values below thresh will not be visible
         colormap : str
             name of Mayavi colormap to use
+        reverse_lut : boolean
+            if True reverses the colormap lookup table
         alpha : float in [0, 1]
             alpha level to control opacity
         keep_existing : boolean
@@ -403,16 +405,18 @@ class Brain(object):
         bar = mlab.scalarbar(surf)
         self._format_cbar_text(bar)
         bar.scalar_bar_representation.position2 = .8, 0.09
+        bar.reverse_lut = reverse_lut
 
         # Get the original colormap table
         orig_ctable = \
             surf.module_manager.scalar_lut_manager.lut.table.to_array().copy()
 
         # Fill in the data dict
-        self.data = [dict(surface=surf, colorbar=bar, orig_ctable=orig_ctable,
+        self.data[-1].update(dict(
+                          surface=surf, colorbar=bar, orig_ctable=orig_ctable,
                           array=array, smoothing_steps=smoothing_steps,
                           fmin=min, fmid=(min + max) / 2, fmax=max,
-                          transparent=False, time=0, time_idx=0)]
+                          transparent=False, time=0, time_idx=0))
         if vertices != None:
             self.data[-1]["vertices"] = vertices
             self.data[-1]["smooth_mat"] = smooth_mat
