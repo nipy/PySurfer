@@ -371,11 +371,7 @@ class Brain(object):
             array_plot = smooth_mat * array_plot
 
         # Copy and byteswap to deal with Mayavi bug
-        if array_plot.dtype.byteorder == '>':
-            mlab_plot = array_plot.copy()
-            mlab_plot.byteswap(True)
-        else:
-            mlab_plot = array_plot
+        mlab_plot = self._prepare_data(array_plot)
 
         # Set up the visualization pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
@@ -637,8 +633,8 @@ class Brain(object):
             min, max = stats.describe(morph_data[ctx_idx])[1]
 
         # Set up the Mayavi pipeline
-        if morph_data.dtype.byteorder == '>':
-            morph_data.byteswap(True)  # byte swap inplace; due to mayavi bug
+        morph_data = self._prepare_data(morph_data)
+
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
                                                     self._geo.z,
@@ -773,8 +769,7 @@ class Brain(object):
             self.contour['colorbar'].visible = False
 
         # Deal with Mayavi bug
-        if scalar_data.dtype.byteorder == '>':
-            scalar_data.byteswap(True)
+        scalar_data = self._prepare_data(scalar_data)
 
         # Set up the pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y,
@@ -1515,6 +1510,18 @@ class Brain(object):
 
         return min, max
 
+    def _prepare_data(self, data):
+        """Ensure data is float64 and has proper endianness.
+
+        Note: this is largely aimed at working around a Mayavi bug.
+
+        """
+        data = data.copy()
+        data = data.astype(np.float64)
+        if data.dtype.byteorder == '>':
+            data.byteswap(True)
+        return data
+
     def _format_cbar_text(self, cbar):
 
         bg_color = self.scene_properties["bgcolor"]
@@ -1539,6 +1546,7 @@ class Overlay(object):
 
         # Byte swap copy; due to mayavi bug
         mlab_data = scalar_data.copy()
+        mlab_data = mlab_data.astype(np.float64)
         if scalar_data.dtype.byteorder == '>':
             mlab_data.byteswap(True)
 
