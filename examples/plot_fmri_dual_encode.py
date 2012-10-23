@@ -22,7 +22,7 @@ t[var == 0] = 0
 
 # Set the min and max values to be equal
 eff_range = eff.min(), eff.max()
-range_end = .5 * max(map(abs, eff_range))
+range_end = .75 * max(map(abs, eff_range))
 off_range = eff.min() - 1
 
 # Open up the visualization
@@ -30,18 +30,18 @@ b = Brain("fsaverage", "rh", "inflated",
           config_opts=dict(cortex="low_contrast"))
 
 # Set up the percentile bins
-bins = np.linspace(0, 100, 5)
+n_bins = 25
+bins = np.linspace(0, 100, n_bins)
 
 # Iterate through the bins and add data with progressively richer color
-for i, bin_high in enumerate(bins[1:], 1):
-    val_low = scoreatpercentile(t, bins[i - 1])
-    val_high = scoreatpercentile(t, min(bin_high + 2.5, 100))
-    bin_mask = (t >= val_low) * (t <= val_high)
-    eff_bin = eff.copy()
-    eff_bin[np.logical_not(bin_mask)] = off_range - 1
-    b.add_data(eff_bin, min=-range_end, max=range_end,
-               thresh=off_range, alpha=bin_high / 100.,
-               smoothing_steps=1,
+for percentile in bins[1:-1]:
+    sub_thresh_mask = t < scoreatpercentile(t, percentile)
+    eff_thresh = eff.copy()
+    eff_thresh[sub_thresh_mask] = off_range - 1
+    b.add_data(eff_thresh,
+               min=-range_end, max=range_end,
+               thresh=off_range,
+               alpha=1. / (n_bins - 2),
                keep_existing=True)
 
 for data_dict in b.data[:-1]:
