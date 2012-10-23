@@ -288,6 +288,7 @@ class Brain(object):
 
     def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="blue-red", alpha=1,
+                 keep_existing=False,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d"):
         """Display data from a numpy array on the surface.
@@ -321,15 +322,18 @@ class Brain(object):
             name of Mayavi colormap to use
         alpha : float in [0, 1]
             alpha level to control opacity
+        keep_existing : boolean
+            if True, does not remove previous data surfaces when loading
         vertices : numpy array
             vertices for which the data is defined (needed if len(data) < nvtx)
         smoothing_steps : int or None
-            number of smoothing steps (smooting is used if len(data) < nvtx)
+            number of smoothing steps (smoothing is used if len(data) < nvtx)
             Default : 20
         time : numpy array
             time points in the data array (if data is 2D)
         time_label : str
             format of the time label
+
         """
         try:
             from mayavi import mlab
@@ -341,8 +345,15 @@ class Brain(object):
 
         # Possibly remove old data
         if hasattr(self, "data"):
-            self.data["surface"].remove()
-            self.data["colorbar"].remove()
+            if keep_existing:
+                self.data.append(dict())
+            else:
+                for data_dict in self.data:
+                    data_dict["surface"].remove()
+                    data_dict["colorbar"].remove()
+                self.data = [dict()]
+        else:
+            self.data = [dict()]
 
         if min is None:
             min = array.min()
@@ -398,13 +409,13 @@ class Brain(object):
             surf.module_manager.scalar_lut_manager.lut.table.to_array().copy()
 
         # Fill in the data dict
-        self.data = dict(surface=surf, colorbar=bar, orig_ctable=orig_ctable,
-                         array=array, smoothing_steps=smoothing_steps,
-                         fmin=min, fmid=(min + max) / 2, fmax=max,
-                         transparent=False, time=0, time_idx=0)
+        self.data = [dict(surface=surf, colorbar=bar, orig_ctable=orig_ctable,
+                          array=array, smoothing_steps=smoothing_steps,
+                          fmin=min, fmid=(min + max) / 2, fmax=max,
+                          transparent=False, time=0, time_idx=0)]
         if vertices != None:
-            self.data["vertices"] = vertices
-            self.data["smooth_mat"] = smooth_mat
+            self.data[-1]["vertices"] = vertices
+            self.data[-1]["smooth_mat"] = smooth_mat
 
         mlab.view(*view)
 
@@ -412,9 +423,9 @@ class Brain(object):
         if array.ndim == 2:
             if time == None:
                 time = np.arange(array.shape[1])
-            self.data["time_label"] = time_label
-            self.data["time"] = time
-            self.data["time_idx"] = 0
+            self.data[-1]["time_label"] = time_label
+            self.data[-1]["time"] = time
+            self.data[-1]["time_idx"] = 0
             self.add_text(0.05, 0.1, time_label % time[0], name="time_label")
 
         self._f.scene.disable_render = False
@@ -907,8 +918,13 @@ class Brain(object):
 
         return color_data
 
-    def get_data_properties(self):
+    def get_data_properties(self, index=-1):
         """ Get properties of the data shown
+
+        Parameters
+        ----------
+        index : int, optional
+            Index into list of data properties
 
         Returns
         -------
@@ -925,13 +941,13 @@ class Brain(object):
         """
         props = dict()
         try:
-            props["fmin"] = self.data["fmin"]
-            props["fmid"] = self.data["fmid"]
-            props["fmax"] = self.data["fmax"]
-            props["transparent"] = self.data["transparent"]
-            props["time"] = self.data["time"]
-            props["time_idx"] = self.data["time_idx"]
-            props["smoothing_steps"] = self.data["smoothing_steps"]
+            props["fmin"] = self.data[index]["fmin"]
+            props["fmid"] = self.data[index]["fmid"]
+            props["fmax"] = self.data[index]["fmax"]
+            props["transparent"] = self.data[index]["transparent"]
+            props["time"] = self.data[index]["time"]
+            props["time_idx"] = self.data[index]["time_idx"]
+            props["smoothing_steps"] = self.data[index]["smoothing_steps"]
         except KeyError:
             # The user has not added any data
             props["fmin"] = 0
@@ -1017,7 +1033,8 @@ class Brain(object):
                 print("Skipping %s: not in view dict" % view)
         return images_written
 
-    def save_image_sequence(self, time_idx, fname_pattern, use_abs_idx=True):
+    def save_image_sequence(self, time_idx, fname_pattern,
+                            data_index=-1, use_abs_idx=True):
         """Save a temporal image sequence
 
         The files saved are named "fname_pattern % (pos)" where "pos" is a
@@ -1029,6 +1046,8 @@ class Brain(object):
             time indices to save
         fname_pattern : str
             filename pattern, e.g. 'movie-frame_%0.4d.png'
+        data_index : int
+            index into data list (only relevant if temporal data is loaded)
         use_abs_idx : boolean
             if True the indices given by "time_idx" are used in the filename
             if False the index in the filename starts at zero and is
@@ -1040,7 +1059,7 @@ class Brain(object):
             all filenames written
         """
 
-        current_time_idx = self.data["time_idx"]
+        current_time_idx = self.data[data_index]["time_idx"]
 
         images_written = list()
         rel_pos = 0
@@ -1056,7 +1075,7 @@ class Brain(object):
 
         return images_written
 
-    def scale_data_colormap(self, fmin, fmid, fmax, transparent):
+    def scale_data_colormap(self, fmin, fmid, fmax, transparent, index=-1):
         """Scale the data colormap.
 
         Parameters
@@ -1069,6 +1088,8 @@ class Brain(object):
             maximum value for colormap
         transparent : boolean
             if True: use a linear transparency between fmin and fmid
+        index : int, optional
+            index into data list to operate over
         """
 
         if not (fmin < fmid) and (fmid < fmax):
@@ -1083,7 +1104,7 @@ class Brain(object):
               % (fmin, fmid, fmax, transparent)
 
         # Get the original colormap
-        table = self.data["orig_ctable"].copy()
+        table = self.data[index]["orig_ctable"].copy()
 
         # Add transparency if needed
         if  transparent:
@@ -1113,15 +1134,15 @@ class Brain(object):
             table_new[fmid_idx + 1:, i] = part2
 
         # Get the new colormap
-        cmap = self.data["surface"].module_manager.scalar_lut_manager
+        cmap = self.data[index]["surface"].module_manager.scalar_lut_manager
         cmap.lut.table = table_new
         cmap.data_range = np.array([fmin, fmax])
 
         # Update the data properties
-        self.data["fmin"] = fmin
-        self.data["fmid"] = fmid
-        self.data["fmax"] = fmax
-        self.data["transparent"] = transparent
+        self.data[index]["fmin"] = fmin
+        self.data[index]["fmid"] = fmid
+        self.data[index]["fmax"] = fmax
+        self.data[index]["transparent"] = transparent
 
     def save_montage(self, filename, order=['lat', 'ven', 'med'],
                      orientation='h', border_size=15, colorbar='auto'):
@@ -1231,55 +1252,62 @@ class Brain(object):
         for cb in colorbars:
             cb.visible = colorbars_visibility[cb]
 
-    def set_data_time_index(self, time_idx):
+    def set_data_time_index(self, time_idx, data_index=-1):
         """ Set the data time index to show
 
         Parameters
         ----------
         time_idx : int
             time index
+        data_index : int, optional
+            index into data list
         """
-        if time_idx < 0 or time_idx >= self.data["array"].shape[1]:
+        if time_idx < 0 or time_idx >= self.data[data_index]["array"].shape[1]:
             raise ValueError("time index out of range")
 
-        plot_data = self.data["array"][:, time_idx]
+        plot_data = self.data[data_index]["array"][:, time_idx]
 
-        if "smooth_mat" in self.data:
-            plot_data = self.data["smooth_mat"] * plot_data
-        self.data["surface"].mlab_source.scalars = plot_data
-        self.data["time_idx"] = time_idx
+        if "smooth_mat" in self.data[data_index]:
+            plot_data = self.data[data_index]["smooth_mat"] * plot_data
+        self.data[data_index]["surface"].mlab_source.scalars = plot_data
+        self.data[data_index]["time_idx"] = time_idx
 
         # Update time label
-        self.update_text(self.data["time_label"] % self.data["time"][time_idx],
+        self.update_text(self.data[data_index]["time_label"] \
+                         % self.data[data_index]["time"][time_idx],
                          "time_label")
 
-    def set_data_smoothing_steps(self, smoothing_steps):
+    def set_data_smoothing_steps(self, smoothing_steps, index=-1):
         """ Set the number of smoothing steps
 
         Parameters
         ----------
         smoothing_steps : int
             Number of smoothing steps
+        index : int, optional
+            Index into list of data properties
         """
 
         adj_mat = utils.mesh_edges(self._geo.faces)
-        smooth_mat = utils.smoothing_matrix(self.data["vertices"], adj_mat,
+        smooth_mat = utils.smoothing_matrix(self.data[index]["vertices"],
+                                            adj_mat,
                                             smoothing_steps)
 
-        self.data["smooth_mat"] = smooth_mat
+        self.data[index]["smooth_mat"] = smooth_mat
 
         # Redraw
-        if self.data["array"].ndim == 1:
-            plot_data = self.data["array"]
+        if self.data[index]["array"].ndim == 1:
+            plot_data = self.data[index]["array"]
         else:
-            plot_data = self.data["array"][:, self.data["time_idx"]]
+            col_idx = self.data[index]["time_idx"]
+            plot_data = self.data[index]["array"][:, col_idx]
 
-        plot_data = self.data["smooth_mat"] * plot_data
+        plot_data = self.data[index]["smooth_mat"] * plot_data
 
-        self.data["surface"].mlab_source.scalars = plot_data
+        self.data[index]["surface"].mlab_source.scalars = plot_data
 
         # Update data properties
-        self.data["smoothing_steps"] = smoothing_steps
+        self.data[index]["smoothing_steps"] = smoothing_steps
 
     def update_text(self, text, name):
         """ Update text label
@@ -1700,7 +1728,7 @@ class TimeViewer(HasTraits):
 
     @on_trait_change("smoothing_steps")
     def set_smoothing_steps(self):
-        """ Change number of smooting steps
+        """ Change number of smoothing steps
         """
         if self._disable_updates:
             return
