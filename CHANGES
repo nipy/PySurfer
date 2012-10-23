@@ -11,6 +11,9 @@ Enhancements
   an optional argument `keep_existing` that avoids removing previous
   data surfaces when True. Note that this breaks API with respect to the
   Brain.data attribute, which was previously a single dictionary.
+- Added example showing how to create a "dual encode" visualization
+  that shows effect size with the color map and reliability with the
+  opacity of the overlay.
 
 Fixes
 ~~~~~
