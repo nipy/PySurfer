@@ -1,6 +1,26 @@
 PySurfer Changes
 ================
 
+Version 0.4.0
+-------------
+
+Enhancements
+~~~~~~~~~~~~
+
+- Brain.data is now a list of dictionaries, and Brain.add_data takes
+  an optional argument `keep_existing` that avoids removing previous
+  data surfaces when True. Note that this breaks API with respect to the
+  Brain.data attribute, which was previously a single dictionary.
+- Added example showing how to create a "dual encode" visualization
+  that shows effect size with the color map and reliability with the
+  opacity of the overlay.
+
+Fixes
+~~~~~
+
+- More robust/clean fix to Mayavi endian issues that sometimes
+  cause strange display of scalar overlay data
+
 Version 0.3.1
 -------------
 
