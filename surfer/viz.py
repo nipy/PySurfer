@@ -49,7 +49,8 @@ class Brain(object):
     """Brain object for visualizing with mlab."""
 
     def __init__(self, subject_id, hemi, surf,
-                 curv=True, title=None, config_opts={}):
+                 curv=True, title=None, config_opts={},
+                 figure=None):
         """Initialize a Brain object with Freesurfer-specific data.
 
         Parameters
@@ -86,9 +87,11 @@ class Brain(object):
         if title is None:
             title = subject_id
         self._set_scene_properties(config_opts)
-        self._f = mlab.figure(title,
-                              **self.scene_properties)
-        mlab.clf()
+        if figure is None:
+            figure = mlab.figure(title, **self.scene_properties)
+            mlab.clf()
+        self._f = figure
+
         self._f.scene.disable_render = True
 
         # Set the lights so they are oriented by hemisphere
