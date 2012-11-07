@@ -320,8 +320,10 @@ class Brain(object):
             max value in colormap (uses real max if None)
         thresh : None or float
             if not None, values below thresh will not be visible
-        colormap : str
-            name of Mayavi colormap to use
+        colormap : str | array [256x4]
+            name of Mayavi colormap to use, or a custom look up table (a 256x4
+            array, with the columns representing RGBA (red, green, blue, alpha)
+            coded with integers going from 0 to 255).
         alpha : float in [0, 1]
             alpha level to control opacity
         vertices : numpy array
@@ -387,9 +389,25 @@ class Brain(object):
                 warn("Data min is greater than threshold.")
             else:
                 mesh = mlab.pipeline.threshold(mesh, low=thresh)
+
+        # process colormap argument
+        if isinstance(colormap, basestring):
+            lut = None
+        else:
+            lut = np.asarray(colormap)
+            if lut.shape != (256, 4):
+                err = ("colormap argument must be mayavi colormap (string) or"
+                       " look up table (array of shape (256, 4))")
+                raise ValueError(err)
+            colormap = "blue-red"
+
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
                                      opacity=float(alpha))
+
+        # apply look up table if given
+        if lut is not None:
+            surf.module_manager.scalar_lut_manager.lut.table = lut
 
         # Get the colorbar
         bar = mlab.scalarbar(surf)
