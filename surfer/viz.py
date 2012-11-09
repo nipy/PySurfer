@@ -292,7 +292,7 @@ class Brain(object):
     def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="blue-red", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
-                 time_label="time index=%d"):
+                 time_label="time index=%d", colorbar=True):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to add_overlay, but it displays
@@ -335,6 +335,8 @@ class Brain(object):
             time points in the data array (if data is 2D)
         time_label : str
             format of the time label
+        colorbar : bool
+            whether to add a colorbar to the figure
         """
         try:
             from mayavi import mlab
@@ -347,7 +349,8 @@ class Brain(object):
         # Possibly remove old data
         if hasattr(self, "data"):
             self.data["surface"].remove()
-            self.data["colorbar"].remove()
+            if 'colorbar' in self.data:
+                self.data["colorbar"].remove()
 
         if min is None:
             min = array.min()
@@ -409,23 +412,27 @@ class Brain(object):
         if lut is not None:
             surf.module_manager.scalar_lut_manager.lut.table = lut
 
-        # Get the colorbar
-        bar = mlab.scalarbar(surf)
-        self._format_cbar_text(bar)
-        bar.scalar_bar_representation.position2 = .8, 0.09
-
         # Get the original colormap table
         orig_ctable = \
             surf.module_manager.scalar_lut_manager.lut.table.to_array().copy()
 
         # Fill in the data dict
-        self.data = dict(surface=surf, colorbar=bar, orig_ctable=orig_ctable,
+        self.data = dict(surface=surf, orig_ctable=orig_ctable,
                          array=array, smoothing_steps=smoothing_steps,
                          fmin=min, fmid=(min + max) / 2, fmax=max,
                          transparent=False, time=0, time_idx=0)
         if vertices != None:
             self.data["vertices"] = vertices
             self.data["smooth_mat"] = smooth_mat
+
+        # Get the colorbar
+        if colorbar:
+            bar = mlab.scalarbar(surf)
+            self._format_cbar_text(bar)
+            bar.scalar_bar_representation.position2 = .8, 0.09
+            self.data['colorbar'] = bar
+
+
 
         mlab.view(*view)
 
@@ -436,7 +443,8 @@ class Brain(object):
             self.data["time_label"] = time_label
             self.data["time"] = time
             self.data["time_idx"] = 0
-            self.add_text(0.05, 0.1, time_label % time[0], name="time_label")
+            y_txt = 0.05 + 0.05 * bool(colorbar)
+            self.add_text(0.05, y_txt, time_label % time[0], name="time_label")
 
         self._f.scene.disable_render = False
 
