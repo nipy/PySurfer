@@ -49,7 +49,8 @@ class Brain(object):
     """Brain object for visualizing with mlab."""
 
     def __init__(self, subject_id, hemi, surf,
-                 curv=True, title=None, config_opts={}):
+                 curv=True, title=None, config_opts={},
+                 figure=None):
         """Initialize a Brain object with Freesurfer-specific data.
 
         Parameters
@@ -86,9 +87,11 @@ class Brain(object):
         if title is None:
             title = subject_id
         self._set_scene_properties(config_opts)
-        self._f = mlab.figure(title,
-                              **self.scene_properties)
-        mlab.clf()
+        if figure is None:
+            figure = mlab.figure(title, **self.scene_properties)
+            mlab.clf()
+        self._f = figure
+
         self._f.scene.disable_render = True
 
         # Set the lights so they are oriented by hemisphere
@@ -289,7 +292,7 @@ class Brain(object):
     def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="blue-red", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
-                 time_label="time index=%d"):
+                 time_label="time index=%d", colorbar=True):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to add_overlay, but it displays
@@ -317,8 +320,10 @@ class Brain(object):
             max value in colormap (uses real max if None)
         thresh : None or float
             if not None, values below thresh will not be visible
-        colormap : str
-            name of Mayavi colormap to use
+        colormap : str | array [256x4]
+            name of Mayavi colormap to use, or a custom look up table (a 256x4
+            array, with the columns representing RGBA (red, green, blue, alpha)
+            coded with integers going from 0 to 255).
         alpha : float in [0, 1]
             alpha level to control opacity
         vertices : numpy array
@@ -330,6 +335,8 @@ class Brain(object):
             time points in the data array (if data is 2D)
         time_label : str
             format of the time label
+        colorbar : bool
+            whether to add a colorbar to the figure
         """
         try:
             from mayavi import mlab
@@ -342,7 +349,8 @@ class Brain(object):
         # Possibly remove old data
         if hasattr(self, "data"):
             self.data["surface"].remove()
-            self.data["colorbar"].remove()
+            if 'colorbar' in self.data:
+                self.data["colorbar"].remove()
 
         if min is None:
             min = array.min()
@@ -384,27 +392,47 @@ class Brain(object):
                 warn("Data min is greater than threshold.")
             else:
                 mesh = mlab.pipeline.threshold(mesh, low=thresh)
+
+        # process colormap argument
+        if isinstance(colormap, basestring):
+            lut = None
+        else:
+            lut = np.asarray(colormap)
+            if lut.shape != (256, 4):
+                err = ("colormap argument must be mayavi colormap (string) or"
+                       " look up table (array of shape (256, 4))")
+                raise ValueError(err)
+            colormap = "blue-red"
+
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
                                      opacity=float(alpha))
 
-        # Get the colorbar
-        bar = mlab.scalarbar(surf)
-        self._format_cbar_text(bar)
-        bar.scalar_bar_representation.position2 = .8, 0.09
+        # apply look up table if given
+        if lut is not None:
+            surf.module_manager.scalar_lut_manager.lut.table = lut
 
         # Get the original colormap table
         orig_ctable = \
             surf.module_manager.scalar_lut_manager.lut.table.to_array().copy()
 
         # Fill in the data dict
-        self.data = dict(surface=surf, colorbar=bar, orig_ctable=orig_ctable,
+        self.data = dict(surface=surf, orig_ctable=orig_ctable,
                          array=array, smoothing_steps=smoothing_steps,
                          fmin=min, fmid=(min + max) / 2, fmax=max,
                          transparent=False, time=0, time_idx=0)
         if vertices != None:
             self.data["vertices"] = vertices
             self.data["smooth_mat"] = smooth_mat
+
+        # Get the colorbar
+        if colorbar:
+            bar = mlab.scalarbar(surf)
+            self._format_cbar_text(bar)
+            bar.scalar_bar_representation.position2 = .8, 0.09
+            self.data['colorbar'] = bar
+
+
 
         mlab.view(*view)
 
@@ -415,7 +443,8 @@ class Brain(object):
             self.data["time_label"] = time_label
             self.data["time"] = time
             self.data["time_idx"] = 0
-            self.add_text(0.05, 0.1, time_label % time[0], name="time_label")
+            y_txt = 0.05 + 0.05 * bool(colorbar)
+            self.add_text(0.05, y_txt, time_label % time[0], name="time_label")
 
         self._f.scene.disable_render = False
 
