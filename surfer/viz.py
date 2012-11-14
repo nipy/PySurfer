@@ -1476,10 +1476,14 @@ class Brain(object):
         else:
             return view
 
-    def _get_colorbars(self):
+    def _get_colorbars(self, data_layer=None):
+
         colorbars = []
-        if hasattr(self, 'data') and 'colorbar' in self.data:
-            colorbars.append(self.data['colorbar'])
+        if hasattr(self, 'data'):
+            if data_layer is None:
+                data_layer = self._last_data_layer
+            if 'colorbar' in self.data:
+                colorbars.append(self.data['colorbar'][data_layer])
         if hasattr(self, 'morphometry') and 'colorbar' in self.morphometry:
             colorbars.append(self.morphometry['colorbar'])
         if hasattr(self, 'contour') and 'colorbar' in self.contour:
