@@ -336,7 +336,7 @@ class Brain(object):
         time_label : str
             format of the time label
         name : str, optional
-            name to use in data dictionary, "data%02d" by defualt
+            name to use in data dictionary
 
         """
         try:
@@ -350,7 +350,10 @@ class Brain(object):
         # Get the name for this data dictionary
         if name is None:
             if hasattr(self, "data"):
-                name = "data%02d" % (len(self.data) + 1)
+                n = len(self.data) + 1
+                while "data%02d" % n in self.data:
+                    n += 1
+                name = "data%02d" % n
             else:
                 name = "data01"
 
@@ -359,7 +362,7 @@ class Brain(object):
             if keep_existing:
                 self.data[name] = dict()
             else:
-                for data_dict in self.data:
+                for data_name, data_dict in self.data.items():
                     data_dict["surface"].remove()
                     data_dict["colorbar"].remove()
                 self.data = dict(name=dict())
@@ -421,11 +424,11 @@ class Brain(object):
             surf.module_manager.scalar_lut_manager.lut.table.to_array().copy()
 
         # Fill in the data dict
-        self.data[name].update(dict(
-                          surface=surf, colorbar=bar, orig_ctable=orig_ctable,
-                          array=array, smoothing_steps=smoothing_steps,
-                          fmin=min, fmid=(min + max) / 2, fmax=max,
-                          transparent=False, time=0, time_idx=0))
+        self.data[name].update(surface=surf, colorbar=bar,
+                               orig_ctable=orig_ctable,
+                               array=array, smoothing_steps=smoothing_steps,
+                               fmin=min, fmid=(min + max) / 2, fmax=max,
+                               transparent=False, time=0, time_idx=0)
         if vertices != None:
             self.data[name]["vertices"] = vertices
             self.data[name]["smooth_mat"] = smooth_mat
@@ -1476,14 +1479,13 @@ class Brain(object):
         else:
             return view
 
-    def _get_colorbars(self, data_layer=None):
+    def _get_colorbars(self):
 
         colorbars = []
         if hasattr(self, 'data'):
-            if data_layer is None:
-                data_layer = self._last_data_layer
-            if 'colorbar' in self.data:
-                colorbars.append(self.data['colorbar'][data_layer])
+            for name, data_dict in self.data.items():
+                if 'colorbar' in data_dict:
+                    colorbars.append(data_dict['colorbar'])
         if hasattr(self, 'morphometry') and 'colorbar' in self.morphometry:
             colorbars.append(self.morphometry['colorbar'])
         if hasattr(self, 'contour') and 'colorbar' in self.contour:
