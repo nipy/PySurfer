@@ -290,7 +290,7 @@ class Brain(object):
                  colormap="blue-red", reverse_lut=False,
                  alpha=1, keep_existing=False,
                  vertices=None, smoothing_steps=20, time=None,
-                 time_label="time index=%d"):
+                 time_label="time index=%d", name=None):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to add_overlay, but it displays
@@ -335,6 +335,8 @@ class Brain(object):
             time points in the data array (if data is 2D)
         time_label : str
             format of the time label
+        name : str, optional
+            name to use in data dictionary, "data%02d" by defualt
 
         """
         try:
@@ -345,17 +347,24 @@ class Brain(object):
         self._f.scene.disable_render = True
         view = mlab.view()
 
+        # Get the name for this data dictionary
+        if name is None:
+            if hasattr(self, "data"):
+                name = "data%02d" % (len(self.data) + 1)
+            else:
+                name = "data01"
+
         # Possibly remove old data
         if hasattr(self, "data"):
             if keep_existing:
-                self.data.append(dict())
+                self.data[name] = dict()
             else:
                 for data_dict in self.data:
                     data_dict["surface"].remove()
                     data_dict["colorbar"].remove()
-                self.data = [dict()]
+                self.data = dict(name=dict())
         else:
-            self.data = [dict()]
+            self.data = dict(name=dict())
 
         if min is None:
             min = array.min()
@@ -412,14 +421,17 @@ class Brain(object):
             surf.module_manager.scalar_lut_manager.lut.table.to_array().copy()
 
         # Fill in the data dict
-        self.data[-1].update(dict(
+        self.data[name].update(dict(
                           surface=surf, colorbar=bar, orig_ctable=orig_ctable,
                           array=array, smoothing_steps=smoothing_steps,
                           fmin=min, fmid=(min + max) / 2, fmax=max,
                           transparent=False, time=0, time_idx=0))
         if vertices != None:
-            self.data[-1]["vertices"] = vertices
-            self.data[-1]["smooth_mat"] = smooth_mat
+            self.data[name]["vertices"] = vertices
+            self.data[name]["smooth_mat"] = smooth_mat
+
+        # Update the most recent data attribute
+        self._last_data_layer = name
 
         mlab.view(*view)
 
@@ -427,9 +439,9 @@ class Brain(object):
         if array.ndim == 2:
             if time == None:
                 time = np.arange(array.shape[1])
-            self.data[-1]["time_label"] = time_label
-            self.data[-1]["time"] = time
-            self.data[-1]["time_idx"] = 0
+            self.data[name]["time_label"] = time_label
+            self.data[name]["time"] = time
+            self.data[name]["time_idx"] = 0
             self.add_text(0.05, 0.1, time_label % time[0], name="time_label")
 
         self._f.scene.disable_render = False
@@ -922,13 +934,13 @@ class Brain(object):
 
         return color_data
 
-    def get_data_properties(self, index=-1):
+    def get_data_properties(self, layer=None):
         """ Get properties of the data shown
 
         Parameters
         ----------
-        index : int, optional
-            Index into list of data properties
+        layer : string, optional
+            Key for data dictionary, or use most recently added
 
         Returns
         -------
@@ -943,15 +955,18 @@ class Brain(object):
             props["time_idx"] : current time index
             props["smoothing_steps"] : number of smoothing steps
         """
+        if layer is None and hasattr(self, "_last_data_layer"):
+            layer = self._last_data_layer
+
         props = dict()
         try:
-            props["fmin"] = self.data[index]["fmin"]
-            props["fmid"] = self.data[index]["fmid"]
-            props["fmax"] = self.data[index]["fmax"]
-            props["transparent"] = self.data[index]["transparent"]
-            props["time"] = self.data[index]["time"]
-            props["time_idx"] = self.data[index]["time_idx"]
-            props["smoothing_steps"] = self.data[index]["smoothing_steps"]
+            props["fmin"] = self.data[layer]["fmin"]
+            props["fmid"] = self.data[layer]["fmid"]
+            props["fmax"] = self.data[layer]["fmax"]
+            props["transparent"] = self.data[layer]["transparent"]
+            props["time"] = self.data[layer]["time"]
+            props["time_idx"] = self.data[layer]["time_idx"]
+            props["smoothing_steps"] = self.data[layer]["smoothing_steps"]
         except KeyError:
             # The user has not added any data
             props["fmin"] = 0
@@ -1038,7 +1053,7 @@ class Brain(object):
         return images_written
 
     def save_image_sequence(self, time_idx, fname_pattern,
-                            data_index=-1, use_abs_idx=True):
+                            data_layer=None, use_abs_idx=True):
         """Save a temporal image sequence
 
         The files saved are named "fname_pattern % (pos)" where "pos" is a
@@ -1050,8 +1065,8 @@ class Brain(object):
             time indices to save
         fname_pattern : str
             filename pattern, e.g. 'movie-frame_%0.4d.png'
-        data_index : int
-            index into data list (only relevant if temporal data is loaded)
+        data_layer : str
+            key into data dictionary (only relevant if temporal data is loaded)
         use_abs_idx : boolean
             if True the indices given by "time_idx" are used in the filename
             if False the index in the filename starts at zero and is
@@ -1063,7 +1078,9 @@ class Brain(object):
             all filenames written
         """
 
-        current_time_idx = self.data[data_index]["time_idx"]
+        if data_layer is None:
+            data_layer = self._last_data_layer
+        current_time_idx = self.data[data_layer]["time_idx"]
 
         images_written = list()
         rel_pos = 0
@@ -1079,7 +1096,7 @@ class Brain(object):
 
         return images_written
 
-    def scale_data_colormap(self, fmin, fmid, fmax, transparent, index=-1):
+    def scale_data_colormap(self, fmin, fmid, fmax, transparent, layer=None):
         """Scale the data colormap.
 
         Parameters
@@ -1092,8 +1109,8 @@ class Brain(object):
             maximum value for colormap
         transparent : boolean
             if True: use a linear transparency between fmin and fmid
-        index : int, optional
-            index into data list to operate over
+        layer : str, optional
+            index into data dictionary
         """
 
         if not (fmin < fmid) and (fmid < fmax):
@@ -1107,8 +1124,12 @@ class Brain(object):
         print "colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e transparent=%d" \
               % (fmin, fmid, fmax, transparent)
 
+        # Get the layer name
+        if layer is None:
+            layer = self._last_data_layer
+
         # Get the original colormap
-        table = self.data[index]["orig_ctable"].copy()
+        table = self.data[layer]["orig_ctable"].copy()
 
         # Add transparency if needed
         if  transparent:
@@ -1138,15 +1159,15 @@ class Brain(object):
             table_new[fmid_idx + 1:, i] = part2
 
         # Get the new colormap
-        cmap = self.data[index]["surface"].module_manager.scalar_lut_manager
+        cmap = self.data[layer]["surface"].module_manager.scalar_lut_manager
         cmap.lut.table = table_new
         cmap.data_range = np.array([fmin, fmax])
 
         # Update the data properties
-        self.data[index]["fmin"] = fmin
-        self.data[index]["fmid"] = fmid
-        self.data[index]["fmax"] = fmax
-        self.data[index]["transparent"] = transparent
+        self.data[layer]["fmin"] = fmin
+        self.data[layer]["fmid"] = fmid
+        self.data[layer]["fmax"] = fmax
+        self.data[layer]["transparent"] = transparent
 
     def save_montage(self, filename, order=['lat', 'ven', 'med'],
                      orientation='h', border_size=15, colorbar='auto'):
@@ -1256,29 +1277,31 @@ class Brain(object):
         for cb in colorbars:
             cb.visible = colorbars_visibility[cb]
 
-    def set_data_time_index(self, time_idx, data_index=-1):
+    def set_data_time_index(self, time_idx, data_layer=None):
         """ Set the data time index to show
 
         Parameters
         ----------
         time_idx : int
             time index
-        data_index : int, optional
-            index into data list
+        data_layer : int, optional
+            key into data list
         """
-        if time_idx < 0 or time_idx >= self.data[data_index]["array"].shape[1]:
+        if data_layer is None:
+            data_layer = self._last_data_layer
+        if time_idx < 0 or time_idx >= self.data[data_layer]["array"].shape[1]:
             raise ValueError("time index out of range")
 
-        plot_data = self.data[data_index]["array"][:, time_idx]
+        plot_data = self.data[data_layer]["array"][:, time_idx]
 
-        if "smooth_mat" in self.data[data_index]:
-            plot_data = self.data[data_index]["smooth_mat"] * plot_data
-        self.data[data_index]["surface"].mlab_source.scalars = plot_data
-        self.data[data_index]["time_idx"] = time_idx
+        if "smooth_mat" in self.data[data_layer]:
+            plot_data = self.data[data_layer]["smooth_mat"] * plot_data
+        self.data[data_layer]["surface"].mlab_source.scalars = plot_data
+        self.data[data_layer]["time_idx"] = time_idx
 
         # Update time label
-        self.update_text(self.data[data_index]["time_label"] \
-                         % self.data[data_index]["time"][time_idx],
+        self.update_text(self.data[data_layer]["time_label"] \
+                         % self.data[data_layer]["time"][time_idx],
                          "time_label")
 
     def set_data_smoothing_steps(self, smoothing_steps, index=-1):

@@ -7,10 +7,15 @@ Version 0.4.0
 Enhancements
 ~~~~~~~~~~~~
 
-- Brain.data is now a list of dictionaries, and Brain.add_data takes
+- Brain.data is now a set of nested dictionaries, and Brain.add_data takes
   an optional argument `keep_existing` that avoids removing previous
   data surfaces when True. Note that this breaks API with respect to the
   Brain.data attribute, which was previously a single dictionary.
+  Brain.add_data takes an optional `name` argument, to use as a key
+  into the data dict, and all methods that interact with Brain.data
+  take either a `layer` or `data_layer` argument to control which
+  data layer is operated on. By default, it is the last set of data
+  added.
 - Added example showing how to create a "dual encode" visualization
   that shows effect size with the color map and reliability with the
   opacity of the overlay.
