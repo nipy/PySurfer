@@ -45,6 +45,90 @@ rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
                 'parietal': {'v': (-60., 60.), 'r': -49.106}}
 
 
+def make_montage(filename, fnames, orientation='h', colorbar=None,
+                 border_size=15):
+    """Save montage of current figure
+
+    Parameters
+    ----------
+    filename : str
+        The name of the file, e.g, 'montage.png'
+    fnames : list of str
+        The images to make the montage off.
+    orientation : 'h' | 'v'
+        The orientation of the montage: horizontal or vertical
+    colorbar : None | list of int
+        If None remove colorbars, else keep the ones whose index
+        is present.
+    border_size : int
+        The size of the border to keep.
+    """
+    import Image
+    images = map(Image.open, fnames)
+    # get bounding box for cropping
+    boxes = []
+    for ix, im in enumerate(images):
+        # sum the RGB dimension so we do not miss G or B-only pieces
+        gray = np.sum(np.array(im), axis=-1)
+        gray[gray == gray[0, 0]] = 0  # hack for find_objects that wants 0
+        labels, n_labels = ndimage.label(gray.astype(np.float))
+        slices = ndimage.find_objects(labels, n_labels)  # slice roi
+        if colorbar is not None and ix in colorbar:
+            # we need all pieces so let's compose them into single min/max
+            slices_a = np.array([[[xy.start, xy.stop] for xy in s]
+                                 for s in slices])
+            # TODO: ideally gaps could be deduced and cut out with
+            #       consideration of border_size
+            # so we need mins on 0th and maxs on 1th of 1-nd dimension
+            mins = np.min(slices_a[:, :, 0], axis=0)
+            maxs = np.max(slices_a[:, :, 1], axis=0)
+            s = (slice(mins[0], maxs[0]), slice(mins[1], maxs[1]))
+        else:
+            # we need just the first piece
+            s = slices[0]
+        # box = (left, top, width, height)
+        boxes.append([s[1].start - border_size, s[0].start - border_size,
+                      s[1].stop + border_size, s[0].stop + border_size])
+    if orientation == 'v':
+        min_left = min(box[0] for box in boxes)
+        max_width = max(box[2] for box in boxes)
+        for box in boxes:
+            box[0] = min_left
+            box[2] = max_width
+    else:
+        min_top = min(box[1] for box in boxes)
+        max_height = max(box[3] for box in boxes)
+        for box in boxes:
+            box[1] = min_top
+            box[3] = max_height
+    # crop images
+    cropped_images = []
+    for im, box in zip(images, boxes):
+        cropped_images.append(im.crop(box))
+    images = cropped_images
+    # Get full image size
+    if orientation == 'h':
+        w = sum(i.size[0] for i in images)
+        h = max(i.size[1] for i in images)
+    else:
+        h = sum(i.size[1] for i in images)
+        w = max(i.size[0] for i in images)
+    new = Image.new("RGBA", (w, h))
+    x = 0
+    for i in images:
+        if orientation == 'h':
+            pos = (x, 0)
+            x += i.size[0]
+        else:
+            pos = (0, x)
+            x += i.size[1]
+        new.paste(i, pos)
+    try:
+        new.save(filename)
+    except Exception:
+        print("Error saving %s" % filename)
+
+
 class Brain(object):
     """Brain object for visualizing with mlab."""
 
@@ -1177,7 +1261,6 @@ class Brain(object):
             from enthought.mayavi import mlab
 
         assert orientation in ['h', 'v']
-        import Image
         if colorbar == 'auto':
             colorbar = [len(order) // 2]
 
@@ -1189,69 +1272,7 @@ class Brain(object):
             colorbars_visibility[cb] = cb.visible
 
         fnames = self.save_imageset("tmp", order, colorbar=colorbar)
-        images = map(Image.open, fnames)
-        # get bounding box for cropping
-        boxes = []
-        for ix, im in enumerate(images):
-            # sum the RGB dimension so we do not miss G or B-only pieces
-            gray = np.sum(np.array(im), axis=-1)
-            gray[gray == gray[0, 0]] = 0  # hack for find_objects that wants 0
-            labels, n_labels = ndimage.label(gray.astype(np.float))
-            slices = ndimage.find_objects(labels, n_labels)  # slice roi
-            if colorbar is not None and ix in colorbar:
-                # we need all pieces so let's compose them into single min/max
-                slices_a = np.array([[[xy.start, xy.stop] for xy in s]
-                                     for s in slices])
-                # TODO: ideally gaps could be deduced and cut out with
-                #       consideration of border_size
-                # so we need mins on 0th and maxs on 1th of 1-nd dimension
-                mins = np.min(slices_a[:, :, 0], axis=0)
-                maxs = np.max(slices_a[:, :, 1], axis=0)
-                s = (slice(mins[0], maxs[0]), slice(mins[1], maxs[1]))
-            else:
-                # we need just the first piece
-                s = slices[0]
-            # box = (left, top, width, height)
-            boxes.append([s[1].start - border_size, s[0].start - border_size,
-                          s[1].stop + border_size, s[0].stop + border_size])
-        if orientation == 'v':
-            min_left = min(box[0] for box in boxes)
-            max_width = max(box[2] for box in boxes)
-            for box in boxes:
-                box[0] = min_left
-                box[2] = max_width
-        else:
-            min_top = min(box[1] for box in boxes)
-            max_height = max(box[3] for box in boxes)
-            for box in boxes:
-                box[1] = min_top
-                box[3] = max_height
-        # crop images
-        cropped_images = []
-        for im, box in zip(images, boxes):
-            cropped_images.append(im.crop(box))
-        images = cropped_images
-        # Get full image size
-        if orientation == 'h':
-            w = sum(i.size[0] for i in images)
-            h = max(i.size[1] for i in images)
-        else:
-            h = sum(i.size[1] for i in images)
-            w = max(i.size[0] for i in images)
-        new = Image.new("RGBA", (w, h))
-        x = 0
-        for i in images:
-            if orientation == 'h':
-                pos = (x, 0)
-                x += i.size[0]
-            else:
-                pos = (0, x)
-                x += i.size[1]
-            new.paste(i, pos)
-        try:
-            new.save(filename)
-        except Exception:
-            print("Error saving %s" % filename)
+        make_montage(filename, fnames, orientation, colorbar, border_size)
         for f in fnames:
             os.remove(f)
 
