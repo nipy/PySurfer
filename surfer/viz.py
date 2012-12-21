@@ -9,7 +9,7 @@ from matplotlib.colors import colorConverter
 
 from . import io
 from . import utils
-from .io import Surface
+from .io import Surface, _get_subjects_dir
 from .config import config
 
 try:
@@ -134,7 +134,7 @@ class Brain(object):
 
     def __init__(self, subject_id, hemi, surf,
                  curv=True, title=None, config_opts={},
-                 figure=None):
+                 figure=None, subjects_dir=None):
         """Initialize a Brain object with Freesurfer-specific data.
 
         Parameters
@@ -152,6 +152,10 @@ class Brain(object):
             title for the mayavi figure
         config_opts : dict
             options to override visual options in config file
+        subjects_dir : str | None
+            If not None, this directory will be used as the subjects directory
+            instead of the value set using the SUBJECTS_DIR environment
+            variable.
         """
         try:
             from mayavi import mlab
@@ -176,12 +180,16 @@ class Brain(object):
             mlab.clf()
         self._f = figure
 
+        # Get the subjects directory from parameter or env. var
+        self.subjects_dir = _get_subjects_dir(subjects_dir=subjects_dir)
+
         self._f.scene.disable_render = True
 
         # Set the lights so they are oriented by hemisphere
         self._orient_lights()
         # Initialize a Surface object as the geometry
-        self._geo = Surface(subject_id, hemi, surf)
+        self._geo = Surface(subject_id, hemi, surf,
+                            subjects_dir=self.subjects_dir)
 
         # Load in the geometry and (maybe) curvature
         self._geo.load_geometry()
@@ -558,7 +566,7 @@ class Brain(object):
             filepath = annot
             annot = os.path.basename(filepath).split('.')[1]
         else:
-            filepath = pjoin(os.environ['SUBJECTS_DIR'],
+            filepath = pjoin(self.subjects_dir,
                              self.subject_id,
                              'label',
                              ".".join([self.hemi, annot, 'annot']))
@@ -651,7 +659,7 @@ class Brain(object):
             label_name = os.path.basename(filepath).split('.')[1]
         else:
             label_name = label
-            filepath = pjoin(os.environ['SUBJECTS_DIR'],
+            filepath = pjoin(self.subjects_dir,
                              self.subject_id,
                              'label',
                              ".".join([self.hemi, label_name, 'label']))
@@ -709,7 +717,7 @@ class Brain(object):
             from enthought.mayavi import mlab
 
         # Find the source data
-        surf_dir = pjoin(os.environ['SUBJECTS_DIR'], self.subject_id, 'surf')
+        surf_dir = pjoin(self.subjects_dir, self.subject_id, 'surf')
         morph_file = pjoin(surf_dir, '.'.join([self.hemi, measure]))
         if not os.path.exists(morph_file):
             raise ValueError(
@@ -815,7 +823,8 @@ class Brain(object):
         if map_surface is None:
             foci_coords = np.atleast_2d(coords)
         else:
-            foci_surf = io.Surface(self.subject_id, self.hemi, map_surface)
+            foci_surf = io.Surface(self.subject_id, self.hemi, map_surface,
+                                   subjects_dir=self.subjects_dir)
             foci_surf.load_geometry()
             foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
             foci_coords = self._geo.coords[foci_vtxs]
