@@ -64,4 +64,4 @@ brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
 """
 uncomment this line to use the interactive TimeViewer GUI
 """
-#viewer = TimeViewer(brain)
+viewer = TimeViewer(brain)
