@@ -9,6 +9,37 @@ import nibabel as nib
 from nibabel.spatialimages import ImageFileError
 
 
+def _get_subjects_dir(subjects_dir=None):
+    """Get the subjects directory from parameter or environment variable
+
+    Parameters
+    ----------
+    subjects_dir : str | None
+        The subjects directory.
+
+    Returns
+    -------
+    subjects_dir : str
+        The subjects directory. If the subjects_dir input parameter is not
+        None, its value will be returned, otherwise it will be obtained from
+        the SUBJECTS_DIR environment variable.
+    """
+
+    if subjects_dir is None:
+        if 'SUBJECTS_DIR' in os.environ:
+            subjects_dir = os.environ['SUBJECTS_DIR']
+        else:
+            raise ValueError('The subjects directory has to be specified using '
+                             'either the subjects_dir parameter or the '
+                             'SUBJECTS_DIR environment variable.')
+
+    if not os.path.exists(subjects_dir):
+        raise ValueError('The subjects directory %s does not exist.'
+                         % subjects_dir)
+
+    return subjects_dir
+
+
 def _fread3(fobj):
     """Read a 3-byte int from an open binary file object."""
     b1, b2, b3 = np.fromfile(fobj, ">u1", 3)
@@ -432,9 +463,12 @@ class Surface(object):
         The vertices coordinates
     faces : 2d array
         The faces ie. the triangles
+    subjects_dir : str | None
+        If not None, this directory will be used as the subjects directory
+        instead of the value set using the SUBJECTS_DIR environment variable.
     """
 
-    def __init__(self, subject_id, hemi, surf):
+    def __init__(self, subject_id, hemi, surf, subjects_dir=None):
         """Surface
 
         Parameters
@@ -450,12 +484,8 @@ class Surface(object):
         self.hemi = hemi
         self.surf = surf
 
-        if 'SUBJECTS_DIR' not in os.environ:
-            raise ValueError('Surface relies on the definition of the '
-                             'of the SUBJECTS_DIR environment variable')
-
-        subj_dir = os.environ["SUBJECTS_DIR"]
-        self.data_path = pjoin(subj_dir, subject_id)
+        subjects_dir = _get_subjects_dir(subjects_dir)
+        self.data_path = pjoin(subjects_dir, subject_id)
 
     def load_geometry(self):
         surf_path = pjoin(self.data_path, "surf",

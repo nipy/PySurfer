@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from scipy import sparse
 from scipy.spatial.distance import cdist
