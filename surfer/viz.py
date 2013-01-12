@@ -532,12 +532,15 @@ class Brain(object):
         if array.ndim == 2:
             if time == None:
                 time = np.arange(array.shape[1])
+            self._times = time
             self.data["time_label"] = time_label
             self.data["time"] = time
             self.data["time_idx"] = 0
             y_txt = 0.05 + 0.05 * bool(colorbar)
             if time_label is not None:
                 self.add_text(0.05, y_txt, time_label % time[0], name="time_label")
+        else:
+            self._times = None
 
         self._f.scene.disable_render = False
 
@@ -1341,6 +1344,50 @@ class Brain(object):
 
         # Update data properties
         self.data["smoothing_steps"] = smoothing_steps
+
+    def set_time(self, time):
+        """Set the data time index to the time point closest to time
+
+        Parameters
+        ----------
+        time : scalar
+            Time.
+        """
+        times = getattr(self, '_times', None)
+        if times is None:
+            raise RuntimeError("Brain has no time axis")
+
+        # find closest time index
+        if time in times:
+            i = np.nonzero(times == time)[0][0]
+        else:
+            tmin = times[0]
+            tmax = times[-1]
+
+            gr = (times > time)
+            if np.all(gr):
+                if tmin - time <= (times[1] - tmin) / 2:
+                    i = 0
+                else:
+                    err = ("time = %s lies outside array brain time axis "
+                           "[%s, %s]" % (time, tmin, tmax))
+                    raise ValueError(err)
+            elif np.any(gr):
+                i_next = np.nonzero(gr)[0][0]
+                dt_next = times[i_next] - time
+                dt_prev = time - times[i_next - 1]
+                if dt_next < dt_prev:
+                    i = i_next
+                else:
+                    i = i_next - 1
+            elif time - tmax <= (tmax - times[-2]) / 2:
+                i = len(times) - 1
+            else:
+                    err = ("time = %s lies outside array brain time axis "
+                           "[%s, %s]" % (time, tmin, tmax))
+                    raise ValueError(err)
+
+        self.set_data_time_index(i)
 
     def update_text(self, text, name):
         """ Update text label
