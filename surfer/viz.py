@@ -536,7 +536,7 @@ class Brain(object):
             self.data["time"] = time
             self.data["time_idx"] = 0
             y_txt = 0.05 + 0.05 * bool(colorbar)
-            if time_label:
+            if time_label is not None:
                 self.add_text(0.05, y_txt, time_label % time[0], name="time_label")
 
         self._f.scene.disable_render = False
