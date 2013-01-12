@@ -425,8 +425,8 @@ class Brain(object):
             Default : 20
         time : numpy array
             time points in the data array (if data is 2D)
-        time_label : str
-            format of the time label
+        time_label : str | None
+            format of the time label (or None for no label)
         colorbar : bool
             whether to add a colorbar to the figure
         """
@@ -536,7 +536,8 @@ class Brain(object):
             self.data["time"] = time
             self.data["time_idx"] = 0
             y_txt = 0.05 + 0.05 * bool(colorbar)
-            self.add_text(0.05, y_txt, time_label % time[0], name="time_label")
+            if time_label is not None:
+                self.add_text(0.05, y_txt, time_label % time[0], name="time_label")
 
         self._f.scene.disable_render = False
 
@@ -1309,8 +1310,9 @@ class Brain(object):
         self.data["time_idx"] = time_idx
 
         # Update time label
-        self.update_text(self.data["time_label"] % self.data["time"][time_idx],
-                         "time_label")
+        if self.data["time_label"]:
+            time = self.data["time"][time_idx]
+            self.update_text(self.data["time_label"] % time, "time_label")
 
     def set_data_smoothing_steps(self, smoothing_steps):
         """ Set the number of smoothing steps
