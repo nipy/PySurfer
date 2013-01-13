@@ -1357,37 +1357,20 @@ class Brain(object):
         if times is None:
             raise RuntimeError("Brain has no time axis")
 
-        # find closest time index
-        if time in times:
-            i = np.nonzero(times == time)[0][0]
-        else:
-            tmin = times[0]
-            tmax = times[-1]
+        # Check that time is in range
+        tmin = times[0]
+        tmax = times[-1]
+        if tmin - time > (times[1] - tmin) / 2:
+            err = ("time = %s lies outside of the time axis "
+                   "[%s, %s]" % (time, tmin, tmax))
+            raise ValueError(err)
+        elif time - tmax > (tmax - times[-2]) / 2:
+            err = ("time = %s lies outside of the time axis "
+                   "[%s, %s]" % (time, tmin, tmax))
+            raise ValueError(err)
 
-            gr = (times > time)
-            if np.all(gr):
-                if tmin - time <= (times[1] - tmin) / 2:
-                    i = 0
-                else:
-                    err = ("time = %s lies outside array brain time axis "
-                           "[%s, %s]" % (time, tmin, tmax))
-                    raise ValueError(err)
-            elif np.any(gr):
-                i_next = np.nonzero(gr)[0][0]
-                dt_next = times[i_next] - time
-                dt_prev = time - times[i_next - 1]
-                if dt_next < dt_prev:
-                    i = i_next
-                else:
-                    i = i_next - 1
-            elif time - tmax <= (tmax - times[-2]) / 2:
-                i = len(times) - 1
-            else:
-                    err = ("time = %s lies outside array brain time axis "
-                           "[%s, %s]" % (time, tmin, tmax))
-                    raise ValueError(err)
-
-        self.set_data_time_index(i)
+        idx = np.argmin(np.abs(times - time))
+        self.set_data_time_index(idx)
 
     def update_text(self, text, name):
         """ Update text label
