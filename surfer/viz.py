@@ -1358,8 +1358,8 @@ class Brain(object):
             raise RuntimeError("Brain has no time axis")
 
         # Check that time is in range
-        tmin = min(times)
-        tmax = max(times)
+        tmin = np.min(times)
+        tmax = np.max(times)
         max_diff = (tmax - tmin) / (len(times) - 1) / 2
         if time < tmin - max_diff or time > tmax + max_diff:
             err = ("time = %s lies outside of the time axis "
