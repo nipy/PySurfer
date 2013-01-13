@@ -532,12 +532,15 @@ class Brain(object):
         if array.ndim == 2:
             if time == None:
                 time = np.arange(array.shape[1])
+            self._times = time
             self.data["time_label"] = time_label
             self.data["time"] = time
             self.data["time_idx"] = 0
             y_txt = 0.05 + 0.05 * bool(colorbar)
             if time_label is not None:
                 self.add_text(0.05, y_txt, time_label % time[0], name="time_label")
+        else:
+            self._times = None
 
         self._f.scene.disable_render = False
 
@@ -1341,6 +1344,30 @@ class Brain(object):
 
         # Update data properties
         self.data["smoothing_steps"] = smoothing_steps
+
+    def set_time(self, time):
+        """Set the data time index to the time point closest to time
+
+        Parameters
+        ----------
+        time : scalar
+            Time.
+        """
+        times = getattr(self, '_times', None)
+        if times is None:
+            raise RuntimeError("Brain has no time axis")
+
+        # Check that time is in range
+        tmin = np.min(times)
+        tmax = np.max(times)
+        max_diff = (tmax - tmin) / (len(times) - 1) / 2
+        if time < tmin - max_diff or time > tmax + max_diff:
+            err = ("time = %s lies outside of the time axis "
+                   "[%s, %s]" % (time, tmin, tmax))
+            raise ValueError(err)
+
+        idx = np.argmin(np.abs(times - time))
+        self.set_data_time_index(idx)
 
     def update_text(self, text, name):
         """ Update text label
