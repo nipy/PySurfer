@@ -183,7 +183,9 @@ class Brain(object):
         # Get the subjects directory from parameter or env. var
         self.subjects_dir = _get_subjects_dir(subjects_dir=subjects_dir)
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
 
         # Set the lights so they are oriented by hemisphere
         self._orient_lights()
@@ -228,8 +230,10 @@ class Brain(object):
         # Bring up the lateral view
         self.show_view(config.get("visual", "default_view"))
 
-        # Turn disable render off so that it displays
-        self._f.scene.disable_render = False
+        # Turn disable render off so that it displays (option doesn't exist
+        # in testing mode)
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = False
 
     def show_view(self, view=None, roll=None):
         """Orient camera to display view
@@ -369,7 +373,9 @@ class Brain(object):
         if not sign in ["abs", "pos", "neg"]:
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
         self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign)
         for bar in ["pos_bar", "neg_bar"]:
@@ -378,8 +384,10 @@ class Brain(object):
             except AttributeError:
                 pass
 
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render, option view == None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
     def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="blue-red", alpha=1,
@@ -435,7 +443,9 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
 
         # Possibly remove old data
@@ -526,7 +536,9 @@ class Brain(object):
 
 
 
-        mlab.view(*view)
+        # view = None on testing backend
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
 
         # Create time array and add label if 2D
         if array.ndim == 2:
@@ -542,7 +554,9 @@ class Brain(object):
         else:
             self._times = None
 
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = False
 
     def add_annotation(self, annot, borders=True, alpha=1):
         """Add an annotation file.
@@ -562,7 +576,9 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
 
         # Figure out where the data is coming from
@@ -625,8 +641,10 @@ class Brain(object):
         # Set the brain attributes
         self.annot = dict(surface=surf, name=annot, colormap=cmap)
 
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render option, view = None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
     def add_label(self, label, color="crimson", alpha=1,
                   scalar_thresh=None, borders=False):
@@ -653,7 +671,9 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
 
         # Figure out where the data is coming from
@@ -701,8 +721,10 @@ class Brain(object):
 
         self.labels[label_name] = surf
 
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render option, view = None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
     def add_morphometry(self, measure, grayscale=False):
         """Add a morphometry overlay to the image.
@@ -734,7 +756,9 @@ class Brain(object):
                          sulc="RdBu",
                          thickness="pink")
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
 
         # Maybe get rid of an old overlay
         if hasattr(self, "morphometry"):
@@ -782,8 +806,10 @@ class Brain(object):
         self.morphometry = dict(surface=surf,
                                 colorbar=bar,
                                 measure=measure)
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render option, view = None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
                  scale_factor=1, color="white", alpha=1, name=None):
@@ -842,7 +868,9 @@ class Brain(object):
             color = colorConverter.to_rgb(color)
 
         # Create the visualization
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
         points = mlab.points3d(foci_coords[:, 0],
                                foci_coords[:, 1],
@@ -851,8 +879,10 @@ class Brain(object):
                                scale_factor=(10. * scale_factor),
                                color=color, opacity=alpha, name=name)
         self.foci[name] = points
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render option, view = None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
     def add_contour_overlay(self, source, min=None, max=None,
                             n_contours=7, line_width=1.5):
@@ -886,7 +916,9 @@ class Brain(object):
         min, max = self._get_display_range(scalar_data, min, max, "pos")
 
         # Prep the viz
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
 
         # Maybe get rid of an old overlay
@@ -917,8 +949,10 @@ class Brain(object):
         self.contour = dict(surface=surf, colorbar=bar)
 
         # Show the new overlay
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render option, view = None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0):
         """ Add a text to the visualization
