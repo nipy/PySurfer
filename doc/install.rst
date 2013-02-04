@@ -26,5 +26,10 @@ Python Distribution (EPD_) which is free for academic use.
 
 .. include:: links_names.txt
 
-Notice. For optimal results and performance make sure IPython is invoked using the specfic back end the visualization libraries PySurfer depends on were compiled against.  
-In an EPD environment on Mac OS X this would be WX, so `ipython --pylab wx`. On Linux Debian / Ubuntu (Neurodebian) QT seems to be appropriate, so `ipython --pylab qt`. Reports for other platforms and distributions are appreciated.
+.. note::
+
+    For optimal results and performance make sure IPython is invoked using the
+    best GUI back end. In an EPD environment on Mac OS X this would be WX,
+    so `ipython --pylab wx`. On Linux Debian / Ubuntu (Neurodebian) QT seems
+    to be more appropriate, so `ipython --pylab qt`. Reports for other platforms
+    and distributions are appreciated.
