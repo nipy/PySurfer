@@ -44,4 +44,4 @@ brain.show_view("medial")
 # Use any valid matplotlib color.
 brain.add_label("V1", color="steelblue", alpha=.6)
 brain.add_label("V2", color="#FF6347", alpha=.6)
-brain.add_label("entorhinal", color=(.2, 1, .5), alpha=.6)
+brain.add_label("entorhinal_exvivo", color=(.2, 1, .5), alpha=.6)
