@@ -652,8 +652,10 @@ class Brain(object):
 
         Parameters
         ----------
-        label : str
-            label filepath or name
+        label : str | instance of Label
+            label filepath or name. Can also be an instance of
+            an object with attributes "hemi", "vertices", "name",
+            and (if scalar_thresh is not None) "values".
         color : matplotlib-style color
             anything matplotlib accepts: string, RGB, hex, etc.
         alpha : float in [0, 1]
@@ -678,25 +680,45 @@ class Brain(object):
 
         # Figure out where the data is coming from
 
-        if os.path.isfile(label):
-            filepath = label
-            label_name = os.path.basename(filepath).split('.')[1]
+        if isinstance(label, basestring):
+            if os.path.isfile(label):
+                filepath = label
+                label_name = os.path.basename(filepath).split('.')[1]
+            else:
+                label_name = label
+                filepath = pjoin(self.subjects_dir,
+                                 self.subject_id,
+                                 'label',
+                                 ".".join([self.hemi, label_name, 'label']))
+                if not os.path.exists(filepath):
+                    raise ValueError('Label file %s does not exist'
+                                     % filepath)
+            # Load the label data and create binary overlay
+            if scalar_thresh is None:
+                ids = io.read_label(filepath)
+            else:
+                ids, scalars = io.read_label(filepath, read_scalars=True)
+                ids = ids[scalars >= scalar_thresh]
         else:
-            label_name = label
-            filepath = pjoin(self.subjects_dir,
-                             self.subject_id,
-                             'label',
-                             ".".join([self.hemi, label_name, 'label']))
-            if not os.path.exists(filepath):
-                raise ValueError('Label file %s does not exist'
-                                 % filepath)
+            # try to extract parameters from label instance
+            try:
+                hemi = label.hemi
+                ids = label.vertices
+                label_name = label.name
+                if scalar_thresh is not None:
+                    scalars = label.values
+            except Exception:
+                raise ValueError('Label was not a filename (str), and could '
+                                 'not be understood as a class. The class '
+                                 'must have attributes "hemi", "vertices", '
+                                 '"name", and (if scalar_thresh is not None)'
+                                 '"values"')
+            if not hemi == self.hemi:
+                raise ValueError('label hemisphere (%s) and brain hemisphere '
+                                 '(%s) must match' % (label.hemi, self.hemi))
+            if scalar_thresh is not None:
+                ids = ids[scalars >= scalar_thresh]
 
-        # Load the label data and create binary overlay
-        if scalar_thresh is None:
-            ids = io.read_label(filepath)
-        else:
-            ids, scalars = io.read_label(filepath, read_scalars=True)
-            ids = ids[scalars >= scalar_thresh]
         label = np.zeros(self._geo.coords.shape[0])
         label[ids] = 1
 
