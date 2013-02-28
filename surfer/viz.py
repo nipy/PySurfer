@@ -654,7 +654,8 @@ class Brain(object):
         ----------
         label : str | instance of Label
             label filepath or name. Can also be an instance of
-            an object with
+            an object with attributes "hemi", "vertices", "name",
+            and (if scalar_thresh is not None) "values".
         color : matplotlib-style color
             anything matplotlib accepts: string, RGB, hex, etc.
         alpha : float in [0, 1]
