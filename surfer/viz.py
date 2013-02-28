@@ -1024,7 +1024,10 @@ class Brain(object):
             bg_color_name = config_opts['background']
         except KeyError:
             bg_color_name = config.get("visual", "background")
-        bg_color_code = colorConverter.to_rgb(bg_color_name)
+        if bg_color_name is not None:
+            bg_color_code = colorConverter.to_rgb(bg_color_name)
+        else:
+            bg_color_code = None
 
         try:
             fg_color_name = config_opts['foreground']
@@ -1136,7 +1139,6 @@ class Brain(object):
         ----------
         filename: string
             path to new image file
-
         """
         try:
             from mayavi import mlab
@@ -1150,7 +1152,30 @@ class Brain(object):
             raise ValueError("Supported image types are %s"
                                 % " ".join(good_ftypes))
         mlab.draw(self._f)
-        mlab.savefig(fname)
+        mlab.savefig(fname, figure=self._f)
+
+    def screenshot(self, mode='rgb', antialiased=False):
+        """Generate a screenshot of current view
+
+        Wraps to mlab.screenshot for ease of use.
+
+        Parameters
+        ----------
+        mode: string
+            Either 'rgb' or 'rgba' for values to return
+        antialiased: bool
+            Antialias the image (see mlab.screenshot() for details)
+
+        Returns
+        -------
+        screenshot: array
+            Image pixel values
+        """
+        try:
+            from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+        return mlab.screenshot(self._f, mode, antialiased)
 
     def save_imageset(self, prefix, views,  filetype='png', colorbar='auto'):
         """Convenience wrapper for save_image
@@ -1669,7 +1694,10 @@ class Brain(object):
     def _format_cbar_text(self, cbar):
 
         bg_color = self.scene_properties["bgcolor"]
-        text_color = (1., 1., 1.) if sum(bg_color) < 2 else (0., 0., 0.)
+        if bg_color is None or sum(bg_color) < 2:
+            text_color = (1., 1., 1.)
+        else:
+            text_color = (0., 0., 0.)
         cbar.label_text_property.color = text_color
 
 
