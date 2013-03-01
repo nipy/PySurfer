@@ -152,6 +152,9 @@ class Brain(object):
             title for the mayavi figure
         config_opts : dict
             options to override visual options in config file
+        figure : instance of mayavi.core.scene.Scene | None
+            If None, the last figure will be cleaned and a new figure will
+            be created.
         subjects_dir : str | None
             If not None, this directory will be used as the subjects directory
             instead of the value set using the SUBJECTS_DIR environment
