@@ -707,7 +707,7 @@ class Brain(object):
             try:
                 hemi = label.hemi
                 ids = label.vertices
-                label_name = label.name
+                label_name = str(label.name)
                 if scalar_thresh is not None:
                     scalars = label.values
             except Exception:
