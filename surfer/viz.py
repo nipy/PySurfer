@@ -670,6 +670,10 @@ class Brain(object):
         borders : bool
             show only label borders
 
+        Notes
+        -----
+        To remove previously added labels, run Brain.remove_labels().
+
         """
         try:
             from mayavi import mlab
@@ -761,6 +765,25 @@ class Brain(object):
         if mlab.options.backend != 'test':
             mlab.view(*view)
             self._f.scene.disable_render = False
+
+    def remove_labels(self, labels=None):
+        """Remove one or more previously added labels from the image.
+
+        Parameters
+        ----------
+        labels : None | str | list of str
+            Labels to remove. Can be a string naming a single label, or None to
+            remove all labels. Possible names can be found in the Brain.labels
+            attribute.
+        """
+        if labels is None:
+            labels = self.labels.keys()
+        elif isinstance(labels, str):
+            labels = [labels]
+
+        for key in labels:
+            label = self.labels.pop(key)
+            label.remove()
 
     def add_morphometry(self, measure, grayscale=False):
         """Add a morphometry overlay to the image.
