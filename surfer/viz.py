@@ -707,7 +707,10 @@ class Brain(object):
             try:
                 hemi = label.hemi
                 ids = label.vertices
-                label_name = str(label.name)
+                if label.name is None:
+                    label_name = 'unnamed'
+                else:
+                    label_name = str(label.name)
                 if scalar_thresh is not None:
                     scalars = label.values
             except Exception:
@@ -724,6 +727,14 @@ class Brain(object):
 
         label = np.zeros(self._geo.coords.shape[0])
         label[ids] = 1
+
+        # make sure we have a unique name
+        if label_name in self.labels:
+            i = 2
+            name = label_name + '_%i'
+            while name % i in self.labels:
+                i += 1
+            label_name = name % i
 
         if borders:
             n_vertices = label.size
