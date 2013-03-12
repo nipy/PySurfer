@@ -670,6 +670,10 @@ class Brain(object):
         borders : bool
             show only label borders
 
+        Notes
+        -----
+        To remove previously added labels, run Brain.remove_labels().
+
         """
         try:
             from mayavi import mlab
@@ -707,7 +711,10 @@ class Brain(object):
             try:
                 hemi = label.hemi
                 ids = label.vertices
-                label_name = label.name
+                if label.name is None:
+                    label_name = 'unnamed'
+                else:
+                    label_name = str(label.name)
                 if scalar_thresh is not None:
                     scalars = label.values
             except Exception:
@@ -724,6 +731,14 @@ class Brain(object):
 
         label = np.zeros(self._geo.coords.shape[0])
         label[ids] = 1
+
+        # make sure we have a unique name
+        if label_name in self.labels:
+            i = 2
+            name = label_name + '_%i'
+            while name % i in self.labels:
+                i += 1
+            label_name = name % i
 
         if borders:
             n_vertices = label.size
@@ -750,6 +765,25 @@ class Brain(object):
         if mlab.options.backend != 'test':
             mlab.view(*view)
             self._f.scene.disable_render = False
+
+    def remove_labels(self, labels=None):
+        """Remove one or more previously added labels from the image.
+
+        Parameters
+        ----------
+        labels : None | str | list of str
+            Labels to remove. Can be a string naming a single label, or None to
+            remove all labels. Possible names can be found in the Brain.labels
+            attribute.
+        """
+        if labels is None:
+            labels = self.labels.keys()
+        elif isinstance(labels, str):
+            labels = [labels]
+
+        for key in labels:
+            label = self.labels.pop(key)
+            label.remove()
 
     def add_morphometry(self, measure, grayscale=False):
         """Add a morphometry overlay to the image.
