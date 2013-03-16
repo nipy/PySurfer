@@ -251,14 +251,14 @@ class Brain(object):
             from enthought.mayavi import mlab
 
         if state is False and view is None:
-            view = mlab.view()
+            view = mlab.view(figure=self._f)
 
         # Testing backend doesn't have this option
         if mlab.options.backend != 'test':
             self._f.scene.disable_render = not state
 
         if state is True and view is not None:
-            mlab.view(*view)
+            mlab.view(*view, figure=self._f)
             return
         else:
             return view
@@ -402,7 +402,8 @@ class Brain(object):
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
 
         view = self._toggle_render(False)
-        self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign)
+        self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign,
+                                      figure=self._f)
         for bar in ["pos_bar", "neg_bar"]:
             try:
                 self._format_cbar_text(getattr(self.overlays[name], bar))
@@ -506,7 +507,8 @@ class Brain(object):
                                                     self._geo.y,
                                                     self._geo.z,
                                                     self._geo.faces,
-                                                    scalars=mlab_plot)
+                                                    scalars=mlab_plot,
+                                                    figure=self._f)
         if thresh is not None:
             if array_plot.min() >= thresh:
                 warn("Data min is greater than threshold.")
@@ -526,7 +528,7 @@ class Brain(object):
 
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
-                                     opacity=float(alpha))
+                                     opacity=float(alpha), figure=self._f)
 
         # apply look up table if given
         if lut is not None:
@@ -551,12 +553,6 @@ class Brain(object):
             self._format_cbar_text(bar)
             bar.scalar_bar_representation.position2 = .8, 0.09
             self.data['colorbar'] = bar
-
-
-
-        # view = None on testing backend
-        if mlab.options.backend != 'test':
-            mlab.view(*view)
 
         # Create time array and add label if 2D
         if array.ndim == 2:
@@ -645,8 +641,9 @@ class Brain(object):
                                                    self._geo.y,
                                                    self._geo.z,
                                                    self._geo.faces,
-                                                   scalars=ids)
-        surf = mlab.pipeline.surface(mesh, name=annot)
+                                                   scalars=ids,
+                                                   figure=self._f)
+        surf = mlab.pipeline.surface(mesh, name=annot, figure=self._f)
 
         # Set the color table
         surf.module_manager.scalar_lut_manager.lut.table = cmap
@@ -756,8 +753,9 @@ class Brain(object):
                                                    self._geo.y,
                                                    self._geo.z,
                                                    self._geo.faces,
-                                                   scalars=label)
-        surf = mlab.pipeline.surface(mesh, name=label_name)
+                                                   scalars=label,
+                                                   figure=self._f)
+        surf = mlab.pipeline.surface(mesh, name=label_name, figure=self._f)
 
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color]) * 255
@@ -843,14 +841,15 @@ class Brain(object):
                                                     self._geo.y,
                                                     self._geo.z,
                                                     self._geo.faces,
-                                                    scalars=morph_data)
+                                                    scalars=morph_data,
+                                                    figure=self._f)
         if grayscale:
             colormap = "gray"
         else:
             colormap = cmap_dict[measure]
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
-                                     name=measure)
+                                     name=measure, figure=self._f)
 
         # Get the colorbar
         bar = mlab.scalarbar(surf)
@@ -927,7 +926,8 @@ class Brain(object):
                                foci_coords[:, 2],
                                np.ones(foci_coords.shape[0]),
                                scale_factor=(10. * scale_factor),
-                               color=color, opacity=alpha, name=name)
+                               color=color, opacity=alpha, name=name,
+                               figure=self._f)
         self.foci[name] = points
         self._toggle_render(True, view)
 
@@ -976,7 +976,8 @@ class Brain(object):
         # Set up the pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y,
                                                   self._geo.z, self._geo.faces,
-                                                  scalars=scalar_data)
+                                                  scalars=scalar_data,
+                                                  figure=self._f)
         thresh = mlab.pipeline.threshold(mesh, low=min)
         surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
                                              line_width=line_width)
@@ -1019,8 +1020,8 @@ class Brain(object):
             from enthought.mayavi import mlab
 
         view = self._toggle_render(False)
-        text = mlab.text(x, y, text, figure=None, name=name,
-                         color=color, opacity=opacity)
+        text = mlab.text(x, y, text, name=name, color=color,
+                         opacity=opacity, figure=self._f)
 
         self.texts[name] = text
         self._toggle_render(True, view)
@@ -1726,7 +1727,7 @@ class Brain(object):
 class Overlay(object):
     """Encapsulation of statistical neuroimaging overlay visualization."""
 
-    def __init__(self, scalar_data, geo, min, max, sign):
+    def __init__(self, scalar_data, geo, min, max, sign, figure=None):
         try:
             from mayavi import mlab
         except ImportError:
@@ -1749,7 +1750,8 @@ class Overlay(object):
                                                            geo.y,
                                                            geo.z,
                                                            geo.faces,
-                                                           scalars=mlab_data)
+                                                           scalars=mlab_data,
+                                                           figure=figure)
 
             # Figure out the correct threshold to avoid TraitErrors
             # This seems like not the cleanest way to do this
@@ -1764,7 +1766,8 @@ class Overlay(object):
                 thresh_low = min
             pos_thresh = mlab.pipeline.threshold(pos_mesh, low=thresh_low)
             pos_surf = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
-                                             vmin=min, vmax=max)
+                                             vmin=min, vmax=max,
+                                             figure=self._f)
             pos_bar = mlab.scalarbar(pos_surf, nb_labels=5)
             pos_bar.reverse_lut = True
 
@@ -1776,7 +1779,8 @@ class Overlay(object):
                                                            geo.y,
                                                            geo.z,
                                                            geo.faces,
-                                                           scalars=mlab_data)
+                                                           scalars=mlab_data,
+                                                           figure=figure)
 
             # Figure out the correct threshold to avoid TraitErrors
             # This seems even less clean due to negative convolutedness
@@ -1791,7 +1795,8 @@ class Overlay(object):
                 thresh_up = -min
             neg_thresh = mlab.pipeline.threshold(neg_mesh, up=thresh_up)
             neg_surf = mlab.pipeline.surface(neg_thresh, colormap="PuBu",
-                                             vmin=-max, vmax=-min)
+                                             vmin=-max, vmax=-min,
+                                             figure=self._f)
             neg_bar = mlab.scalarbar(neg_surf, nb_labels=5)
 
             self.neg = neg_surf
@@ -1938,15 +1943,6 @@ class TimeViewer(HasTraits):
                                       self.transparent)
 
 
-class _BrainView(HasTraits):
-    """Helper class for multiple scenes in one window"""
-    try:
-        from mayavi.core.ui.api import MlabSceneModel
-    except:
-        from enthought.mayavi.core.ui.api import MlabSceneModel
-    scene = Instance(MlabSceneModel, ())
-
-
 class MultiBrain(HasTraits):
     """Class that spawns multiple Brain instances"""
 
@@ -2011,6 +2007,15 @@ class MultiBrain(HasTraits):
         self._scenes = scenes
         self._v = v
         return
+
+
+class _BrainView(HasTraits):
+    """Helper class for multiple scenes in one window"""
+    try:
+        from mayavi.core.ui.api import MlabSceneModel
+    except:
+        from enthought.mayavi.core.ui.api import MlabSceneModel
+    scene = Instance(MlabSceneModel, ())
 
 
 def _make_scenes(n_row=1, n_col=1, title='brain', height=800, width=600):
