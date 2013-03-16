@@ -14,18 +14,23 @@ from .config import config
 
 try:
     from traits.api import (HasTraits, Range, Int, Float,
-                            Bool, Enum, on_trait_change)
+                            Bool, Enum, on_trait_change,
+                            Instance)
 except ImportError:
     from enthought.traits.api import (HasTraits, Range, Int, Float, \
-                                      Bool, Enum, on_trait_change)
+                                      Bool, Enum, on_trait_change,
+                                      Instance)
 
 try:
-    from traitsui.api import View, Item, VSplit, HSplit, Group
+    from traitsui.api import (View, Item, VSplit, HSplit, Group,
+                              VGroup, HGroup)
 except ImportError:
     try:
-        from traits.ui.api import View, Item, VSplit, HSplit, Group
+        from traits.ui.api import (View, Item, VSplit, HSplit, Group,
+                                   VGroup, HGroup)
     except ImportError:
-        from enthought.traits.ui.api import View, Item, VSplit, HSplit, Group
+        from enthought.traits.ui.api import (View, Item, VSplit, HSplit, Group,
+                                             VGroup, HGroup)
 
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
                 'medial': {'v': (0., 90.), 'r': -90.},
@@ -130,7 +135,7 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
 
 
 class Brain(object):
-    """Brain object for visualizing with mlab."""
+    """Brain object for visualizing with mlab"""
 
     def __init__(self, subject_id, hemi, surf,
                  curv=True, title=None, config_opts={},
@@ -180,15 +185,14 @@ class Brain(object):
         self._set_scene_properties(config_opts)
         if figure is None:
             figure = mlab.figure(title, **self.scene_properties)
-            mlab.clf()
+            mlab.clf(figure=figure)
         self._f = figure
 
         # Get the subjects directory from parameter or env. var
         self.subjects_dir = _get_subjects_dir(subjects_dir=subjects_dir)
 
-        # Testing backend doesn't have this option
-        if mlab.options.backend != 'test':
-            self._f.scene.disable_render = True
+        # Turn rendering off for speed
+        self._toggle_render(False, {})
 
         # Set the lights so they are oriented by hemisphere
         self._orient_lights()
@@ -207,6 +211,7 @@ class Brain(object):
             meshargs = dict()
 
         # mlab pipeline mesh for geomtery
+        meshargs['figure'] = self._f
         self._geo_mesh = mlab.pipeline.triangular_mesh_source(
                                         self._geo.x, self._geo.y, self._geo.z,
                                         self._geo.faces, **meshargs)
@@ -215,14 +220,16 @@ class Brain(object):
         if curv:
             colormap, vmin, vmax, reverse = self._get_geo_colors(config_opts)
             self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
-                                colormap=colormap, vmin=vmin, vmax=vmax)
+                                colormap=colormap, vmin=vmin, vmax=vmax,
+                                figure=self._f)
             if reverse:
                 curv_bar = mlab.scalarbar(self._geo_surf)
                 curv_bar.reverse_lut = True
                 curv_bar.visible = False
         else:
             self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
-                                                   color=(.5, .5, .5))
+                                                   color=(.5, .5, .5),
+                                                   figure=self._f)
 
         # Initialize the overlay and label dictionaries
         self.overlays = dict()
@@ -233,10 +240,28 @@ class Brain(object):
         # Bring up the lateral view
         self.show_view(config.get("visual", "default_view"))
 
-        # Turn disable render off so that it displays (option doesn't exist
-        # in testing mode)
+        # Turn disable render off so that it displays
+        self._toggle_render(True)
+
+    def _toggle_render(self, state, view=None):
+        """Turn rendering on (True) or off (False)"""
+        try:
+            from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+
+        if state is False and view is None:
+            view = mlab.view()
+
+        # Testing backend doesn't have this option
         if mlab.options.backend != 'test':
-            self._f.scene.disable_render = False
+            self._f.scene.disable_render = not state
+
+        if state is True and view is not None:
+            mlab.view(*view)
+            return
+        else:
+            return view
 
     def show_view(self, view=None, roll=None):
         """Orient camera to display view
@@ -376,21 +401,14 @@ class Brain(object):
         if not sign in ["abs", "pos", "neg"]:
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
 
-        # Testing backend doesn't have this option
-        if mlab.options.backend != 'test':
-            self._f.scene.disable_render = True
-        view = mlab.view()
+        view = self._toggle_render(False)
         self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign)
         for bar in ["pos_bar", "neg_bar"]:
             try:
                 self._format_cbar_text(getattr(self.overlays[name], bar))
             except AttributeError:
                 pass
-
-        # Testing backend doesn't have disable_render, option view == None
-        if mlab.options.backend != 'test':
-            mlab.view(*view)
-            self._f.scene.disable_render = False
+        self._toggle_render(True, view)
 
     def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="blue-red", alpha=1,
@@ -446,10 +464,7 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        # Testing backend doesn't have this option
-        if mlab.options.backend != 'test':
-            self._f.scene.disable_render = True
-        view = mlab.view()
+        view = self._toggle_render(False)
 
         # Possibly remove old data
         if hasattr(self, "data"):
@@ -557,9 +572,7 @@ class Brain(object):
         else:
             self._times = None
 
-        # Testing backend doesn't have this option
-        if mlab.options.backend != 'test':
-            self._f.scene.disable_render = False
+        self._toggle_render(True, view)
 
     def add_annotation(self, annot, borders=True, alpha=1):
         """Add an annotation file.
@@ -579,10 +592,7 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        # Testing backend doesn't have this option
-        if mlab.options.backend != 'test':
-            self._f.scene.disable_render = True
-        view = mlab.view()
+        view = self._toggle_render(False)
 
         # Figure out where the data is coming from
         if os.path.isfile(annot):
@@ -644,10 +654,7 @@ class Brain(object):
         # Set the brain attributes
         self.annot = dict(surface=surf, name=annot, colormap=cmap)
 
-        # Testing backend doesn't have disable_render option, view = None
-        if mlab.options.backend != 'test':
-            mlab.view(*view)
-            self._f.scene.disable_render = False
+        self._toggle_render(True, view)
 
     def add_label(self, label, color="crimson", alpha=1,
                   scalar_thresh=None, borders=False):
@@ -680,10 +687,7 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        # Testing backend doesn't have this option
-        if mlab.options.backend != 'test':
-            self._f.scene.disable_render = True
-        view = mlab.view()
+        view = self._toggle_render(False)
 
         # Figure out where the data is coming from
 
@@ -761,10 +765,7 @@ class Brain(object):
 
         self.labels[label_name] = surf
 
-        # Testing backend doesn't have disable_render option, view = None
-        if mlab.options.backend != 'test':
-            mlab.view(*view)
-            self._f.scene.disable_render = False
+        self._toggle_render(True, view)
 
     def remove_labels(self, labels=None):
         """Remove one or more previously added labels from the image.
@@ -815,17 +816,12 @@ class Brain(object):
                          sulc="RdBu",
                          thickness="pink")
 
-        # Testing backend doesn't have this option
-        if mlab.options.backend != 'test':
-            self._f.scene.disable_render = True
+        view = self._toggle_render(False)
 
         # Maybe get rid of an old overlay
         if hasattr(self, "morphometry"):
             self.morphometry['surface'].remove()
             self.morphometry['colorbar'].visible = False
-
-        # Save the inital view
-        view = mlab.view()
 
         # Read in the morphometric data
         morph_data = io.read_morph_data(morph_file)
@@ -865,10 +861,8 @@ class Brain(object):
         self.morphometry = dict(surface=surf,
                                 colorbar=bar,
                                 measure=measure)
-        # Testing backend doesn't have disable_render option, view = None
-        if mlab.options.backend != 'test':
-            mlab.view(*view)
-            self._f.scene.disable_render = False
+
+        self._toggle_render(True, view)
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
                  scale_factor=1, color="white", alpha=1, name=None):
@@ -927,10 +921,7 @@ class Brain(object):
             color = colorConverter.to_rgb(color)
 
         # Create the visualization
-        # Testing backend doesn't have this option
-        if mlab.options.backend != 'test':
-            self._f.scene.disable_render = True
-        view = mlab.view()
+        view = self._toggle_render(False)
         points = mlab.points3d(foci_coords[:, 0],
                                foci_coords[:, 1],
                                foci_coords[:, 2],
@@ -938,10 +929,7 @@ class Brain(object):
                                scale_factor=(10. * scale_factor),
                                color=color, opacity=alpha, name=name)
         self.foci[name] = points
-        # Testing backend doesn't have disable_render option, view = None
-        if mlab.options.backend != 'test':
-            mlab.view(*view)
-            self._f.scene.disable_render = False
+        self._toggle_render(True, view)
 
     def add_contour_overlay(self, source, min=None, max=None,
                             n_contours=7, line_width=1.5):
@@ -975,10 +963,7 @@ class Brain(object):
         min, max = self._get_display_range(scalar_data, min, max, "pos")
 
         # Prep the viz
-        # Testing backend doesn't have this option
-        if mlab.options.backend != 'test':
-            self._f.scene.disable_render = True
-        view = mlab.view()
+        view = self._toggle_render(False)
 
         # Maybe get rid of an old overlay
         if hasattr(self, "contour"):
@@ -1008,10 +993,7 @@ class Brain(object):
         self.contour = dict(surface=surf, colorbar=bar)
 
         # Show the new overlay
-        # Testing backend doesn't have disable_render option, view = None
-        if mlab.options.backend != 'test':
-            mlab.view(*view)
-            self._f.scene.disable_render = False
+        self._toggle_render(True, view)
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0):
         """ Add a text to the visualization
@@ -1036,10 +1018,12 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
+        view = self._toggle_render(False)
         text = mlab.text(x, y, text, figure=None, name=name,
                          color=color, opacity=opacity)
 
         self.texts[name] = text
+        self._toggle_render(True, view)
 
     def _set_scene_properties(self, config_opts):
         """Set the scene_prop dict from the config parser.
@@ -1331,7 +1315,7 @@ class Brain(object):
         table = self.data["orig_ctable"].copy()
 
         # Add transparency if needed
-        if  transparent:
+        if transparent:
             n_colors = table.shape[0]
             n_colors2 = int(n_colors / 2)
             table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
@@ -1952,3 +1936,107 @@ class TimeViewer(HasTraits):
         for brain in self.brains:
             brain.scale_data_colormap(self.fmin, self.fmid, self.fmax,
                                       self.transparent)
+
+
+class _BrainView(HasTraits):
+    """Helper class for multiple scenes in one window"""
+    try:
+        from mayavi.core.ui.api import MlabSceneModel
+    except:
+        from enthought.mayavi.core.ui.api import MlabSceneModel
+    scene = Instance(MlabSceneModel, ())
+
+
+class MultiBrain(HasTraits):
+    """Class that spawns multiple Brain instances"""
+
+    def __init__(self, subject_id, hemi, surf, views=['lat', 'med', 'ven'],
+                 curv=True, title=None, config_opts={}, subjects_dir=None):
+        """Initialize a MultiBrain object with Freesurfer-specific data.
+
+        Parameters
+        ----------
+        subject_id : str
+            subject name in Freesurfer subjects dir
+        hemi : str
+            hemisphere id (ie 'lh', 'rh', or 'split')
+        surf :  geometry name
+            freesurfer surface mesh name (ie 'white', 'inflated', etc.)
+        views : list (or str)
+            views to use
+        curv : boolean
+            if true, loads curv file and displays binary curvature
+            (default: True)
+        title : str
+            title for the window
+        config_opts : dict
+            options to override visual options in config file
+        subjects_dir : str | None
+            If not None, this directory will be used as the subjects directory
+            instead of the value set using the SUBJECTS_DIR environment
+            variable.
+
+        Attributes
+        ----------
+        brains : list
+            List of the underlying brain instances.
+        """
+        if not hemi in ['lh', 'rh', 'split', 'both']:
+            raise ValueError('hemi must be "lh", "rh", "split", or "both"')
+        n_col = dict(lh=1, rh=1, both=1, split=2)[hemi]
+        if title is None:
+            title = subject_id
+        if not isinstance(views, list):
+            views = [views]
+        n_row = len(views)
+        # spawn scenes
+        # XXX Need to parse size
+        h, w = 800, 600
+        scenes, v = _make_scenes(n_row, n_col, title=title, height=h, width=w)
+        # fill scenes with brains
+        kwargs = dict(surf=surf, curv=curv, title=None,
+                      config_opts=config_opts, subjects_dir=subjects_dir)
+        brains = []
+        for ri, view in enumerate(views):
+            for hi, h in enumerate(['lh', 'rh']):
+                if not (hemi in ['lh', 'rh'] and h != hemi):
+                    ci = hi if hemi == 'split' else 0
+                    kwargs['hemi'] = h
+                    kwargs['figure'] = scenes[ri][ci].mayavi_scene
+                    brain = Brain(subject_id, **kwargs)
+                    brain.show_view(view)
+                    brains += [dict(row=ri, col=ci, brain=brain, hemi=h)]
+        self._brain_list = brains
+        self.brains = [b['brain'] for b in brains]
+        self._scenes = scenes
+        self._v = v
+        return
+
+
+def _make_scenes(n_row=1, n_col=1, title='brain', height=800, width=600):
+    """Make one window with multiple brain viewers"""
+    try:
+        from mayavi.core.ui.api import SceneEditor
+        from mayavi.core.ui.mayavi_scene import MayaviScene
+    except:
+        from enthought.mayavi.core.ui.api import SceneEditor
+        from enthought.mayavi.core.ui.mayavi_scene import MayaviScene
+    context = {}
+    va = []
+    scenes = []
+    for ri in xrange(n_row):
+        ha = []
+        hscenes = []
+        for ci in xrange(n_col):
+            name = 'brain_view' + str(ci + n_col * ri) + '.scene'
+            ha += [Item(name, editor=SceneEditor(scene_class=MayaviScene),
+                        padding=0)]
+            context.update({name[:-6]: _BrainView()})
+            hscenes += [context[name[:-6]].scene]
+        va += [HGroup(*ha, show_labels=False)]
+        scenes += [hscenes]
+    view = View(VGroup(*va), resizable=True, height=height, width=width)
+    # use kind='panel' so that these can eventually be embedded, as well
+    v = view.ui(context=context, kind='panel')
+    v.title = title
+    return scenes, v
