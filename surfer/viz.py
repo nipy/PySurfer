@@ -167,6 +167,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -247,6 +248,7 @@ class Brain(object):
         """Turn rendering on (True) or off (False)"""
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -310,6 +312,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -386,11 +389,6 @@ class Brain(object):
             name for the overlay in the internal dictionary
 
         """
-        try:
-            from mayavi import mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         scalar_data, name = self._read_scalar_data(source, name)
 
         min, max = self._get_display_range(scalar_data, min, max, sign)
@@ -462,6 +460,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -564,7 +563,8 @@ class Brain(object):
             self.data["time_idx"] = 0
             y_txt = 0.05 + 0.05 * bool(colorbar)
             if time_label is not None:
-                self.add_text(0.05, y_txt, time_label % time[0], name="time_label")
+                self.add_text(0.05, y_txt, time_label % time[0],
+                              name="time_label")
         else:
             self._times = None
 
@@ -585,6 +585,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -681,6 +682,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -797,6 +799,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -893,6 +896,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -954,6 +958,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -1016,6 +1021,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -1035,13 +1041,6 @@ class Brain(object):
             dictionary of config file "visual" options
 
         """
-        colors = dict(black=[0, 0, 0],
-                      white=[256, 256, 256],
-                      midnight=[12, 7, 32],
-                      slate=[112, 128, 144],
-                      charcoal=[59, 69, 79],
-                      sand=[245, 222, 179])
-
         try:
             bg_color_name = config_opts['background']
         except KeyError:
@@ -1165,6 +1164,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -1196,6 +1196,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
         return mlab.screenshot(self._f, mode, antialiased)
@@ -1375,6 +1376,7 @@ class Brain(object):
         """
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -1647,6 +1649,7 @@ class Brain(object):
         """Close the figure and cleanup data structure."""
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -1731,6 +1734,7 @@ class Overlay(object):
     def __init__(self, scalar_data, geo, min, max, sign, figure=None):
         try:
             from mayavi import mlab
+            assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
@@ -2033,6 +2037,8 @@ def _make_scenes(n_row=1, n_col=1, title='brain', height=800, width=600):
     try:
         from mayavi.core.ui.api import SceneEditor
         from mayavi.core.ui.mayavi_scene import MayaviScene
+        assert SceneEditor
+        assert MayaviScene
     except:
         from enthought.mayavi.core.ui.api import SceneEditor
         from enthought.mayavi.core.ui.mayavi_scene import MayaviScene
@@ -2044,8 +2050,8 @@ def _make_scenes(n_row=1, n_col=1, title='brain', height=800, width=600):
         hscenes = []
         for ci in xrange(n_col):
             name = 'brain_view' + str(ci + n_col * ri) + '.scene'
-            ha += [Item(name, editor=SceneEditor(scene_class=MayaviScene),
-                        padding=0)]
+            editor = SceneEditor(scene_class=MayaviScene)
+            ha += [Item(name, editor=editor, padding=0)]
             context.update({name[:-6]: _BrainView()})
             hscenes += [context[name[:-6]].scene]
         va += [HGroup(*ha, show_labels=False)]
