@@ -2,7 +2,7 @@ import os
 from os.path import join as pjoin
 from tempfile import mktemp
 
-from subprocess import call
+from subprocess import Popen, PIPE
 import gzip
 import numpy as np
 import nibabel as nib
@@ -331,13 +331,13 @@ def read_stc(filepath):
     stc['tstep'] /= 1000.0
 
     # read number of vertices/sources
-    vertices_n = int(np.fromfile(fid, dtype=">I4", count=1))
+    vertices_n = int(np.fromfile(fid, dtype=">u4", count=1))
 
     # read the source vector
-    stc['vertices'] = np.fromfile(fid, dtype=">I4", count=vertices_n)
+    stc['vertices'] = np.fromfile(fid, dtype=">u4", count=vertices_n)
 
     # read the number of timepts
-    data_n = int(np.fromfile(fid, dtype=">I4", count=1))
+    data_n = int(np.fromfile(fid, dtype=">u4", count=1))
 
     if ((file_length / 4 - 4 - vertices_n) % (data_n * vertices_n)) != 0:
         raise ValueError('incorrect stc file size')
@@ -429,7 +429,9 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
     cmd_list.extend(["--o", out_file])
     if verbose:
         print " ".join(cmd_list)
-    out = call(cmd_list)
+    p = Popen(cmd_list, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
+    out = p.returncode
     if out:
         raise RuntimeError(("mri_vol2surf command failed "
                             "with command-line: ") + " ".join(cmd_list))
