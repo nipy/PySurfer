@@ -1085,8 +1085,9 @@ class Brain(object):
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
         if self.hemi == "rh":
-            for light in self._f.scene.light_manager.lights:
-                light.azimuth *= -1
+            if self._f.scene is not None:
+                for light in self._f.scene.light_manager.lights:
+                    light.azimuth *= -1
 
     def _get_geo_colors(self, config_opts):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
