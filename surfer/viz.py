@@ -1951,7 +1951,8 @@ class MultiBrain(HasTraits):
     """Class that spawns multiple Brain instances"""
 
     def __init__(self, subject_id, hemi, surf, views=['lat', 'med', 'ven'],
-                 curv=True, title=None, config_opts={}, subjects_dir=None):
+                 curv=True, title=None, config_opts={}, show_toolbar=False,
+                 subjects_dir=None):
         """Initialize a MultiBrain object with Freesurfer-specific data.
 
         Parameters
@@ -2010,7 +2011,22 @@ class MultiBrain(HasTraits):
         self.brains = [b['brain'] for b in brains]
         self._scenes = scenes
         self._v = v
-        return
+        self.toggle_toolbar(show_toolbar)
+
+    def toggle_toolbar(self, show=None):
+        """Toggle toolbar display
+
+        Parameters
+        ----------
+        show : bool | None
+            If None, the state is toggled. If True, the toolbar will
+            be shown, if False, hidden.
+        """
+        if show is None:
+            show = not self._scenes[0][0].scene_editor._tool_bar.isVisible()
+        for ss in self._scenes:
+            for s in ss:
+                s.scene_editor._tool_bar.setVisible(show)
 
 
 class _BrainView(HasTraits):
