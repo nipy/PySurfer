@@ -134,8 +134,8 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
         print("Error saving %s" % filename)
 
 
-class Brain(object):
-    """Brain object for visualizing with mlab"""
+class _Hemisphere(object):
+    """Object for visualizing one hemisphere with mlab"""
 
     def __init__(self, subject_id, hemi, surf,
                  curv=True, title=None, config_opts={},
@@ -285,7 +285,7 @@ class Brain(object):
         """
         if isinstance(view, basestring):
             try:
-                vd = self.xfm_view(view, 'd')
+                vd = self._xfm_view(view, 'd')
                 view = dict(azimuth=vd['v'][0], elevation=vd['v'][1])
                 roll = vd['r']
             except ValueError as v:
@@ -1056,15 +1056,8 @@ class Brain(object):
             fg_color_name = config.get("visual", "foreground")
         fg_color_code = colorConverter.to_rgb(fg_color_name)
 
-        try:
-            size = config_opts['size']
-        except KeyError:
-            size = config.getfloat("visual", "size")
-        size = (size, size)
-
         self.scene_properties = dict(fgcolor=fg_color_code,
-                                     bgcolor=bg_color_code,
-                                     size=size)
+                                     bgcolor=bg_color_code)
 
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
@@ -1487,7 +1480,7 @@ class Brain(object):
         """
         self.texts[name].text = text
 
-    def min_diff(self, beg, end):
+    def _min_diff(self, beg, end):
         """Determine minimum "camera distance" between two views.
 
         Parameters
@@ -1503,14 +1496,14 @@ class Brain(object):
             (min view "distance", min roll "distance")
 
         """
-        beg = self.xfm_view(beg)
-        end = self.xfm_view(end)
+        beg = self._xfm_view(beg)
+        end = self._xfm_view(end)
         if beg == end:
             dv = [360., 0.]
             dr = 0
         else:
-            end_d = self.xfm_view(end, 'd')
-            beg_d = self.xfm_view(beg, 'd')
+            end_d = self._xfm_view(end, 'd')
+            beg_d = self._xfm_view(beg, 'd')
             dv = []
             for b, e in zip(beg_d['v'], end_d['v']):
                 diff = e - b
@@ -1541,7 +1534,7 @@ class Brain(object):
         use_cache: bool
             Use previously generated images in ./.tmp/
         """
-        gviews = map(self.xfm_view, views)
+        gviews = map(self._xfm_view, views)
         allowed = ('lateral', 'caudal', 'medial', 'rostral')
         if not len([v for v in gviews if v in allowed]) == len(gviews):
             raise ValueError('Animate through %s views.' % ' '.join(allowed))
@@ -1555,7 +1548,7 @@ class Brain(object):
         for i, beg in enumerate(gviews):
             try:
                 end = gviews[i + 1]
-                dv, dr = self.min_diff(beg, end)
+                dv, dr = self._min_diff(beg, end)
                 dv /= np.array((n_steps))
                 dr /= np.array((n_steps))
                 self.show_view(beg)
@@ -1586,7 +1579,7 @@ class Brain(object):
             if ret:
                 print("\n\nError occured when exporting movie\n\n")
 
-    def xfm_view(self, view, out='s'):
+    def _xfm_view(self, view, out='s'):
         """Normalize a given string to available view
 
         Parameters
@@ -1947,13 +1940,13 @@ class TimeViewer(HasTraits):
                                       self.transparent)
 
 
-class MultiBrain(HasTraits):
-    """Class that spawns multiple Brain instances"""
+class Brain(object):
+    """Class for visualizing a brain using multiple views in mlab"""
 
-    def __init__(self, subject_id, hemi, surf, views=['lat', 'med', 'ven'],
-                 curv=True, title=None, config_opts={}, show_toolbar=False,
-                 subjects_dir=None):
-        """Initialize a MultiBrain object with Freesurfer-specific data.
+    def __init__(self, subject_id, hemi, surf, views=['lat'],
+                 curv=True, title=None, config_opts={}, figure=None,
+                 show_toolbar=False, subjects_dir=None):
+        """Initialize a Brain object with Freesurfer-specific data.
 
         Parameters
         ----------
@@ -1972,6 +1965,9 @@ class MultiBrain(HasTraits):
             title for the window
         config_opts : dict
             options to override visual options in config file
+        figure : list of instances of mayavi.core.scene.Scene | None
+            If None, a new window will be created with the appropriate
+            views.
         subjects_dir : str | None
             If not None, this directory will be used as the subjects directory
             instead of the value set using the SUBJECTS_DIR environment
@@ -1982,18 +1978,34 @@ class MultiBrain(HasTraits):
         brains : list
             List of the underlying brain instances.
         """
-        if not hemi in ['lh', 'rh', 'split', 'both']:
-            raise ValueError('hemi must be "lh", "rh", "split", or "both"')
-        n_col = dict(lh=1, rh=1, both=1, split=2)[hemi]
+        col_dict = dict(lh=1, rh=1, both=1, split=2)
+        n_col = col_dict[hemi]
+        if not hemi in col_dict.keys():
+            raise ValueError('hemi must be one of [%s], not %s'
+                             % (', '.join(col_dict.keys()), hemi))
+        self._hemi = hemi
         if title is None:
             title = subject_id
         if not isinstance(views, list):
             views = [views]
         n_row = len(views)
-        # spawn scenes
-        # XXX Need to parse size
-        h, w = 800, 600
-        scenes, v = _make_scenes(n_row, n_col, title=title, height=h, width=w)
+        self._set_window_properties(config_opts)
+        if figure is None:
+            # spawn scenes
+            h, w = self._scene_size
+            scenes, _v = _make_scenes(n_row, n_col, title, h, w)
+            figures = [[s.mayavi_scene for s in ss] for ss in scenes]
+        else:
+            if not isinstance(figure, (list, tuple)):
+                figure = [figure]
+            if not len(figure) == n_row * n_col:
+                raise ValueError('For the requested view, figure must be a '
+                                 'list or tuple with exactly %i elements, '
+                                 'not %i' % (n_row * n_col, len(figure)))
+            scenes = None
+            _v = None
+            figures = [figure[slice(ri * n_col, (ri + 1) * n_col)]
+                       for ri in range(n_row)]
         # fill scenes with brains
         kwargs = dict(surf=surf, curv=curv, title=None,
                       config_opts=config_opts, subjects_dir=subjects_dir)
@@ -2003,17 +2015,29 @@ class MultiBrain(HasTraits):
                 if not (hemi in ['lh', 'rh'] and h != hemi):
                     ci = hi if hemi == 'split' else 0
                     kwargs['hemi'] = h
-                    kwargs['figure'] = scenes[ri][ci].mayavi_scene
-                    brain = Brain(subject_id, **kwargs)
+                    kwargs['figure'] = figures[ri][ci]
+                    brain = _Hemisphere(subject_id, **kwargs)
                     brain.show_view(view)
                     brains += [dict(row=ri, col=ci, brain=brain, hemi=h)]
+        self._original_views = views
         self._brain_list = brains
-        self.brains = [b['brain'] for b in brains]
         self._scenes = scenes
-        self._v = v
-        self.toggle_toolbar(show_toolbar)
+        self._v = _v
+        if figure is None:
+            self.toggle_toolbars(show_toolbar)
 
-    def toggle_toolbar(self, show=None):
+    def _set_window_properties(self, config_opts):
+        try:
+            width = config_opts['width']
+        except KeyError:
+            width = config.getfloat("visual", "width")
+        try:
+            height = config_opts['height']
+        except KeyError:
+            height = config.getfloat("visual", "height")
+        self._scene_size = (height, width)
+
+    def toggle_toolbars(self, show=None):
         """Toggle toolbar display
 
         Parameters
@@ -2022,14 +2046,526 @@ class MultiBrain(HasTraits):
             If None, the state is toggled. If True, the toolbar will
             be shown, if False, hidden.
         """
+        if self._scenes is None:
+            raise ValueError('Cannot toggle toolbars when figures are '
+                             'passed in')
         if show is None:
             show = not self._scenes[0][0].scene_editor._tool_bar.isVisible()
         for ss in self._scenes:
             for s in ss:
                 s.scene_editor._tool_bar.setVisible(show)
 
+    def reset_view(self):
+        """Orient camera to display original view
+        """
+        for view, brain in zip(self._original_views, self._brain_list):
+            brain['brain'].show_view(view)
 
-class _BrainView(HasTraits):
+    def show_view(self, view=None, roll=None):
+        """Orient camera to display view
+
+        Parameters
+        ----------
+        view : {'lateral' | 'medial' | 'rostral' | 'caudal' |
+                'dorsal' | 'ventral' | 'frontal' | 'parietal' |
+                dict}
+            brain surface to view or kwargs to pass to mlab.view()
+
+        Returns
+        -------
+        cv: tuple
+            tuple returned from mlab.view
+        cr: float
+            current camera roll
+        """
+        raise NotImplementedError
+
+    def _check_hemi(self, hemi):
+        """Check for safe hemi input"""
+        if hemi is None:
+            if self._hemi not in ['lh', 'rh']:
+                raise ValueError('hemi must not be None when both '
+                                 'hemispheres are displayed')
+            else:
+                hemi = self._hemi
+        elif hemi not in ['lh', 'rh']:
+            extra = ' or None' if self._hemi in ['lh', 'rh'] else ''
+            raise ValueError('hemi must be either "lh" or "rh"' + extra)
+
+    def add_overlay(self, source, min=None, max=None, sign="abs", name=None,
+                    hemi=None):
+        """Add an overlay to the overlay dict from a file or array.
+
+        Parameters
+        ----------
+        source : str or numpy array
+            path to the overlay file or numpy array with data
+        min : float
+            threshold for overlay display
+        max : float
+            saturation point for overlay display
+        sign : {'abs' | 'pos' | 'neg'}
+            whether positive, negative, or both values should be displayed
+        name : str
+            name for the overlay in the internal dictionary
+        hemi : str | None
+            If None, it is assumed to belong to the hemipshere being
+            shown. If two hemispheres are being shown, an error will
+            be thrown.
+        """
+        hemi = self._check_hemi(hemi)
+        for brain in self._brain_list:
+            if brain['hemi'] == hemi:
+                brain['brain'].add_overlay(source, min, max, sign, name)
+
+    def add_data(self, array, min=None, max=None, thresh=None,
+                 colormap="blue-red", alpha=1,
+                 vertices=None, smoothing_steps=20, time=None,
+                 time_label="time index=%d", colorbar=True,
+                 hemi=None):
+        """Display data from a numpy array on the surface.
+
+        This provides a similar interface to add_overlay, but it displays
+        it with a single colormap. It offers more flexibility over the
+        colormap, and provides a way to display four dimensional data
+        (i.e. a timecourse).
+
+        Note that min sets the low end of the colormap, and is separate
+        from thresh (this is a different convention from add_overlay)
+
+        Note: If the data is defined for a subset of vertices (specified
+        by the "vertices" parameter), a smoothing method is used to interpolate
+        the data onto the high resolution surface. If the data is defined for
+        subsampled version of the surface, smoothing_steps can be set to None,
+        in which case only as many smoothing steps are applied until the whole
+        surface is filled with non-zeros.
+
+        Parameters
+        ----------
+        array : numpy array
+            data array (nvtx vector)
+        min : float
+            min value in colormap (uses real min if None)
+        max : float
+            max value in colormap (uses real max if None)
+        thresh : None or float
+            if not None, values below thresh will not be visible
+        colormap : str | array [256x4]
+            name of Mayavi colormap to use, or a custom look up table (a 256x4
+            array, with the columns representing RGBA (red, green, blue, alpha)
+            coded with integers going from 0 to 255).
+        alpha : float in [0, 1]
+            alpha level to control opacity
+        vertices : numpy array
+            vertices for which the data is defined (needed if len(data) < nvtx)
+        smoothing_steps : int or None
+            number of smoothing steps (smooting is used if len(data) < nvtx)
+            Default : 20
+        time : numpy array
+            time points in the data array (if data is 2D)
+        time_label : str | None
+            format of the time label (or None for no label)
+        colorbar : bool
+            whether to add a colorbar to the figure
+        hemi : str | None
+            If None, it is assumed to belong to the hemipshere being
+            shown. If two hemispheres are being shown, an error will
+            be thrown.
+        """
+        hemi = self._check_hemi(hemi)
+        for brain in self._brain_list:
+            if brain['hemi'] == hemi:
+                brain['brain'].add_data(array, min, max, thresh, colormap,
+                                        alpha, vertices, smoothing_steps,
+                                        time, time_label, colorbar)
+
+    def add_annotation(self, annot, borders=True, alpha=1, hemi=None):
+        """Add an annotation file.
+
+        Parameters
+        ----------
+        annot : str
+            Either path to annotation file or annotation name
+        borders : bool
+            Show only borders of regions
+        alpha : float in [0, 1]
+            Alpha level to control opacity
+        hemi : str | None
+            If None, it is assumed to belong to the hemipshere being
+            shown. If two hemispheres are being shown, an error will
+            be thrown.
+        """
+        hemi = self._check_hemi(hemi)
+        for brain in self._brain_list:
+            if brain['hemi'] == hemi:
+                brain['brain'].add_annotation(annot, borders, alpha)
+
+    def add_label(self, label, color="crimson", alpha=1,
+                  scalar_thresh=None, borders=False, hemi=None):
+        """Add an ROI label to the image.
+
+        Parameters
+        ----------
+        label : str | instance of Label
+            label filepath or name. Can also be an instance of
+            an object with attributes "hemi", "vertices", "name",
+            and (if scalar_thresh is not None) "values".
+        color : matplotlib-style color
+            anything matplotlib accepts: string, RGB, hex, etc.
+        alpha : float in [0, 1]
+            alpha level to control opacity
+        scalar_thresh : None or number
+            threshold the label ids using this value in the label
+            file's scalar field (i.e. label only vertices with
+            scalar >= thresh)
+        borders : bool
+            show only label borders
+        hemi : str | None
+            If None, it is assumed to belong to the hemipshere being
+            shown. If two hemispheres are being shown, an error will
+            be thrown.
+
+        Notes
+        -----
+        To remove previously added labels, run Brain.remove_labels().
+        """
+        hemi = self._check_hemi(hemi)
+        for brain in self._brain_list:
+            if brain['hemi'] == hemi:
+                brain['brain'].add_label(label, color, alpha, scalar_thresh,
+                                         borders)
+
+    def remove_labels(self, labels=None, hemi=None):
+        """Remove one or more previously added labels from the image.
+
+        Parameters
+        ----------
+        labels : None | str | list of str
+            Labels to remove. Can be a string naming a single label, or None to
+            remove all labels. Possible names can be found in the Brain.labels
+            attribute.
+        hemi : str | None
+            If None, it is assumed to belong to the hemipshere being
+            shown. If two hemispheres are being shown, an error will
+            be thrown.
+        """
+        hemi = self._check_hemi(hemi)
+        for brain in self._brain_list:
+            if brain['hemi'] == hemi:
+                brain['brain'].remove_labels(labels)
+
+    def add_morphometry(self, measure, grayscale=False, hemi=None):
+        """Add a morphometry overlay to the image.
+
+        Parameters
+        ----------
+        measure : {'area' | 'curv' | 'jacobian_white' | 'sulc' | 'thickness'}
+            which measure to load
+        grayscale : bool
+            whether to load the overlay with a grayscale colormap
+        hemi : str | None
+            If None, it is assumed to belong to the hemipshere being
+            shown. If two hemispheres are being shown, an error will
+            be thrown.
+        """
+        hemi = self._check_hemi(hemi)
+        for brain in self._brain_list:
+            if brain['hemi'] == hemi:
+                brain['brain'].add_morphometry(measure, grayscale)
+
+    def add_foci(self, coords, coords_as_verts=False, map_surface=None,
+                 scale_factor=1, color="white", alpha=1, name=None,
+                 hemi=None):
+        """Add spherical foci, possibly mapping to displayed surf.
+
+        The foci spheres can be displayed at the coordinates given, or
+        mapped through a surface geometry. In other words, coordinates
+        from a volume-based analysis in MNI space can be displayed on an
+        inflated average surface by finding the closest vertex on the
+        white surface and mapping to that vertex on the inflated mesh.
+
+        Parameters
+        ----------
+        coords : numpy array
+            x, y, z coordinates in stereotaxic space or array of vertex ids
+        coords_as_verts : bool
+            whether the coords parameter should be interpreted as vertex ids
+        map_surface : Freesurfer surf or None
+            surface to map coordinates through, or None to use raw coords
+        scale_factor : int
+            controls the size of the foci spheres
+        color : matplotlib color code
+            HTML name, RBG tuple, or hex code
+        alpha : float in [0, 1]
+            opacity of focus gylphs
+        name : str
+            internal name to use
+        hemi : str | None
+            If None, it is assumed to belong to the hemipshere being
+            shown. If two hemispheres are being shown, an error will
+            be thrown.
+        """
+        hemi = self._check_hemi(hemi)
+        for brain in self._brain_list:
+            if brain['hemi'] == hemi:
+                brain['brain'].add_foci(coords, coords_as_verts, map_surface,
+                                        scale_factor, color, alpha, name)
+
+    def add_contour_overlay(self, source, min=None, max=None,
+                            n_contours=7, line_width=1.5, hemi=None):
+        """Add a topographic contour overlay of the positive data.
+
+        Note: This visualization will look best when using the "low_contrast"
+        cortical curvature colorscheme.
+
+        Parameters
+        ----------
+        source : str or array
+            path to the overlay file or numpy array
+        min : float
+            threshold for overlay display
+        max : float
+            saturation point for overlay display
+        n_contours : int
+            number of contours to use in the display
+        line_width : float
+            width of contour lines
+        hemi : str | None
+            If None, it is assumed to belong to the hemipshere being
+            shown. If two hemispheres are being shown, an error will
+            be thrown.
+        """
+        hemi = self._check_hemi(hemi)
+        for brain in self._brain_list:
+            if brain['hemi'] == hemi:
+                brain['brain'].add_contour_overlay(source, min, max,
+                                                   n_contours, line_width)
+
+    def add_text(self, x, y, text, name, color=None, opacity=1.0):
+        """ Add a text to the visualization
+
+        Parameters
+        ----------
+        x : Float
+            x coordinate
+        y : Float
+            y coordinate
+        text : str
+            Text to add
+        name : str
+            Name of the text (text label can be updated using update_text())
+        color : Tuple
+            Color of the text. Default: (1, 1, 1)
+        opacity : Float
+            Opacity of the text. Default: 1.0
+        """
+        raise NotImplementedError
+
+    def save_image(self, fname):
+        """Save current view to disk
+
+        Only mayavi image types are supported:
+        (png jpg bmp tiff ps eps pdf rib  oogl iv  vrml obj
+
+        Parameters
+        ----------
+        filename: string
+            path to new image file
+        """
+        raise NotImplementedError
+
+    def screenshot(self, mode='rgb', antialiased=False):
+        """Generate a screenshot of current view
+
+        Wraps to mlab.screenshot for ease of use.
+
+        Parameters
+        ----------
+        mode: string
+            Either 'rgb' or 'rgba' for values to return
+        antialiased: bool
+            Antialias the image (see mlab.screenshot() for details)
+
+        Returns
+        -------
+        screenshot: array
+            Image pixel values
+        """
+        raise NotImplementedError
+
+    def save_imageset(self, prefix, views,  filetype='png', colorbar='auto'):
+        """Convenience wrapper for save_image
+
+        Files created are prefix+'_$view'+filetype
+
+        Parameters
+        ----------
+        prefix: string
+            filename prefix for image to be created
+        views: list
+            desired views for images
+        filetype: string
+            image type
+        colorbar: None | 'auto' | [int], optional
+            if None no colorbar is visible. If 'auto' is given the colorbar
+            is only shown in the middle view. Otherwise on the listed
+            views when a list of int is passed.
+
+        Returns
+        -------
+        images_written: list
+            all filenames written
+        """
+        raise NotImplementedError
+
+    def save_image_sequence(self, time_idx, fname_pattern, use_abs_idx=True):
+        """Save a temporal image sequence
+
+        The files saved are named "fname_pattern % (pos)" where "pos" is a
+        relative or absolute index (controlled by "use_abs_idx")
+
+        Parameters
+        ----------
+        time_idx : array-like
+            time indices to save
+        fname_pattern : str
+            filename pattern, e.g. 'movie-frame_%0.4d.png'
+        use_abs_idx : boolean
+            if True the indices given by "time_idx" are used in the filename
+            if False the index in the filename starts at zero and is
+            incremented by one for each image (Default: True)
+
+        Returns
+        -------
+        images_written: list
+            all filenames written
+        """
+        raise NotImplementedError
+
+    def scale_data_colormap(self, fmin, fmid, fmax, transparent):
+        """Scale the data colormaps.
+
+        Parameters
+        ----------
+        fmin : float
+            minimum value of colormap
+        fmid : float
+            value corresponding to color midpoint
+        fmax : float
+            maximum value for colormap
+        transparent : boolean
+            if True: use a linear transparency between fmin and fmid
+        """
+        for brain in self._brain_list:
+            brain['brain'].scale_data_colormap(fmin, fmid, fmax, transparent)
+
+    def save_montage(self, filename, order=['lat', 'ven', 'med'],
+                     orientation='h', border_size=15, colorbar='auto'):
+        """Create a montage from a given order of images
+
+        Parameters
+        ----------
+        filename: string
+            path to final image
+        order: list
+            order of views to build montage
+        orientation: {'h' | 'v'}
+            montage image orientation (horizontal of vertical alignment)
+        border_size: int
+            Size of image border (more or less space between images)
+        colorbar: None | 'auto' | [int], optional
+            if None no colorbar is visible. If 'auto' is given the colorbar
+            is only shown in the middle view. Otherwise on the listed
+            views when a list of int is passed.
+        """
+        raise NotImplementedError
+
+    def set_data_time_index(self, time_idx):
+        """ Set the data time index to show
+
+        Parameters
+        ----------
+        time_idx : int
+            time index
+        """
+        for brain in self._brain_list:
+            brain.set_data_time_index(time_idx)
+
+    def set_data_smoothing_steps(self, smoothing_steps):
+        """Set the number of smoothing steps
+
+        Parameters
+        ----------
+        smoothing_steps : int
+            Number of smoothing steps
+        """
+        for brain in self._brain_list:
+            brain['brain'].set_data_smoothing_steps(smoothing_steps)
+
+    def set_time(self, time):
+        """Set the data time index to the time point closest to time
+
+        Parameters
+        ----------
+        time : scalar
+            Time.
+        row : int
+            Row index of which brain to use.
+        col : int
+            Columnt index of which brain to use.
+        """
+        for brain in self._brain_list:
+            brain['brain'].set_time(time)
+
+    def update_text(self, text, name):
+        """Update text label
+
+        Parameters
+        ----------
+        text : str
+            New text for label
+        name : str
+            Name of text label
+        """
+        raise NotImplementedError
+
+    def animate(self, views, n_steps=180., fname=None, use_cache=False):
+        """Animate a rotation.
+
+        Currently only rotations through the axial plane are allowed.
+
+        Parameters
+        ----------
+        views: sequence
+            views to animate through
+        n_steps: float
+            number of steps to take in between
+        fname: string
+            If not None, it saves the animation as a movie.
+            fname should end in '.avi' as only the AVI format is supported
+        use_cache: bool
+            Use previously generated images in ./.tmp/
+        row : int
+            Row index of which brain to use.
+        col : int
+            Columnt index of which brain to use.
+        """
+        raise NotImplementedError
+
+    def show_colorbar(self):
+        "Show colorbar(s) for given plot"
+        raise NotImplementedError
+
+    def hide_colorbar(self, row=0, col=0):
+        "Hide colorbar(s) for given plot"
+        raise NotImplementedError
+
+    def close(self):
+        """Close all figures and cleanup data structure."""
+        [b.close() for b in self._brain_list]
+
+
+class _MlabView(HasTraits):
     """Helper class for multiple scenes in one window"""
     try:
         from mayavi.core.ui.api import MlabSceneModel
@@ -2058,7 +2594,7 @@ def _make_scenes(n_row=1, n_col=1, title='brain', height=800, width=600):
             name = 'brain_view' + str(ci + n_col * ri) + '.scene'
             editor = SceneEditor(scene_class=MayaviScene)
             ha += [Item(name, editor=editor, padding=0)]
-            context.update({name[:-6]: _BrainView()})
+            context.update({name[:-6]: _MlabView()})
             hscenes += [context[name[:-6]].scene]
         va += [HGroup(*ha, show_labels=False)]
         scenes += [hscenes]
