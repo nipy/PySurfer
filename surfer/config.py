@@ -8,6 +8,8 @@ default_cfg = StringIO("""
 background = black
 foreground = white
 size = 800
+height = 600
+width = 800
 cortex = classic
 default_view = lateral
 
