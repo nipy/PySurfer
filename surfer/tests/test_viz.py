@@ -30,7 +30,7 @@ def has_freesurfer():
         return True
 
 requires_fs = np.testing.dec.skipif(not has_freesurfer(),
-                                    'Requires MNE command line tools')
+                                    'Requires FreeSurfer command line tools')
 
 
 def test_brains():
@@ -190,7 +190,7 @@ def test_overlay():
     brain.overlays["conjunct"].pos_bar.visible = False
 
 
-def test_probabilistic():
+def test_probabilistic_labels():
     """Test plotting of probabilistic labels
     """
     mlab.options.backend = 'test'
