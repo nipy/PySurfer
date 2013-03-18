@@ -76,9 +76,8 @@ def test_contour():
     brain.contour['surface'].contour.number_of_contours = 10
 
 
-# XXX
 @requires_fs
-def atest_data():
+def test_data():
     """Test plotting of data
     """
     mlab.options.backend = 'test'
