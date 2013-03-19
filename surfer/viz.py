@@ -195,8 +195,6 @@ class _Hemisphere(object):
         # Turn rendering off for speed
         self._toggle_render(False, {})
 
-        # Set the lights so they are oriented by hemisphere
-        self._orient_lights()
         # Initialize a Surface object as the geometry
         self._geo = Surface(subject_id, hemi, surf,
                             subjects_dir=self.subjects_dir)
@@ -243,6 +241,7 @@ class _Hemisphere(object):
 
         # Turn disable render off so that it displays
         self._toggle_render(True)
+        mlab.draw(figure=self._f)
 
     def _toggle_render(self, state, view=None):
         """Turn rendering on (True) or off (False)"""
@@ -1062,7 +1061,8 @@ class _Hemisphere(object):
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
         if self.hemi == "rh":
-            if self._f.scene is not None:
+            if self._f.scene is not None and \
+                    self._f.scene.light_manager is not None:
                 for light in self._f.scene.light_manager.lights:
                     light.azimuth *= -1
 
@@ -1764,7 +1764,7 @@ class Overlay(object):
             pos_thresh = mlab.pipeline.threshold(pos_mesh, low=thresh_low)
             pos_surf = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
                                              vmin=min, vmax=max,
-                                             figure=self._f)
+                                             figure=figure)
             pos_bar = mlab.scalarbar(pos_surf, nb_labels=5)
             pos_bar.reverse_lut = True
 
@@ -1793,7 +1793,7 @@ class Overlay(object):
             neg_thresh = mlab.pipeline.threshold(neg_mesh, up=thresh_up)
             neg_surf = mlab.pipeline.surface(neg_thresh, colormap="PuBu",
                                              vmin=-max, vmax=-min,
-                                             figure=self._f)
+                                             figure=figure)
             neg_bar = mlab.scalarbar(neg_surf, nb_labels=5)
 
             self.neg = neg_surf
@@ -1943,9 +1943,9 @@ class TimeViewer(HasTraits):
 class Brain(object):
     """Class for visualizing a brain using multiple views in mlab"""
 
-    def __init__(self, subject_id, hemi, surf, views=['lat'],
-                 curv=True, title=None, config_opts={}, figure=None,
-                 show_toolbar=False, subjects_dir=None):
+    def __init__(self, subject_id, hemi, surf, curv=True, title=None,
+                 config_opts={}, figure=None, subjects_dir=None,
+                 views=['lat'], show_toolbar=False):
         """Initialize a Brain object with Freesurfer-specific data.
 
         Parameters
@@ -2010,7 +2010,9 @@ class Brain(object):
         kwargs = dict(surf=surf, curv=curv, title=None,
                       config_opts=config_opts, subjects_dir=subjects_dir)
         brains = []
+        brain_matrix = []
         for ri, view in enumerate(views):
+            brain_row = []
             for hi, h in enumerate(['lh', 'rh']):
                 if not (hemi in ['lh', 'rh'] and h != hemi):
                     ci = hi if hemi == 'split' else 0
@@ -2019,12 +2021,18 @@ class Brain(object):
                     brain = _Hemisphere(subject_id, **kwargs)
                     brain.show_view(view)
                     brains += [dict(row=ri, col=ci, brain=brain, hemi=h)]
+                    brain_row += [brain]
+            brain_matrix += [brain_row]
         self._original_views = views
         self._brain_list = brains
+        self.brains = [b['brain'] for b in brains]
+        self.brain_matrix = np.array(brain_matrix)
         self._scenes = scenes
         self._v = _v
         if figure is None:
             self.toggle_toolbars(show_toolbar)
+        for brain in self._brain_list:
+            brain['brain']._orient_lights()
 
     def _set_window_properties(self, config_opts):
         try:
@@ -2053,7 +2061,41 @@ class Brain(object):
             show = not self._scenes[0][0].scene_editor._tool_bar.isVisible()
         for ss in self._scenes:
             for s in ss:
-                s.scene_editor._tool_bar.setVisible(show)
+                try:
+                    s.scene_editor._tool_bar.setVisible(show)
+                except:
+                    pass
+
+    def _check_one_brain(self, name):
+        """Helper for various properties"""
+        if len(self.brains) > 1:
+            raise ValueError('Cannot access brain.%s when more than '
+                             'one view is plotted. Use brain.brain_matrix '
+                             'or brain.brains.' % name)
+
+    @property
+    def overlays(self):
+        """Wrap to overlays"""
+        self._check_one_brain('overlays')
+        return self.brains[0].overlays
+
+    @property
+    def contour(self):
+        """Wrap to overlays"""
+        self._check_one_brain('contour')
+        return self.brains[0].contour
+
+    @property
+    def _geo(self):
+        """Wrap to _geo"""
+        self._check_one_brain('_geo')
+        return self.brains[0]._geo
+
+    @property
+    def data(self):
+        """Wrap to data"""
+        self._check_one_brain('data')
+        return self.brains[0].data
 
     def reset_view(self):
         """Orient camera to display original view
@@ -2061,7 +2103,7 @@ class Brain(object):
         for view, brain in zip(self._original_views, self._brain_list):
             brain['brain'].show_view(view)
 
-    def show_view(self, view=None, roll=None):
+    def show_view(self, view=None, roll=None, row=-1, col=-1):
         """Orient camera to display view
 
         Parameters
@@ -2077,8 +2119,12 @@ class Brain(object):
             tuple returned from mlab.view
         cr: float
             current camera roll
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
         """
-        raise NotImplementedError
+        self.brain_matrix[row][col].show_view(view, roll)
 
     def _check_hemi(self, hemi):
         """Check for safe hemi input"""
@@ -2091,6 +2137,7 @@ class Brain(object):
         elif hemi not in ['lh', 'rh']:
             extra = ' or None' if self._hemi in ['lh', 'rh'] else ''
             raise ValueError('hemi must be either "lh" or "rh"' + extra)
+        return hemi
 
     def add_overlay(self, source, min=None, max=None, sign="abs", name=None,
                     hemi=None):
@@ -2341,7 +2388,8 @@ class Brain(object):
                 brain['brain'].add_contour_overlay(source, min, max,
                                                    n_contours, line_width)
 
-    def add_text(self, x, y, text, name, color=None, opacity=1.0):
+    def add_text(self, x, y, text, name, color=None, opacity=1.0,
+                 row=-1, col=-1):
         """ Add a text to the visualization
 
         Parameters
@@ -2358,10 +2406,14 @@ class Brain(object):
             Color of the text. Default: (1, 1, 1)
         opacity : Float
             Opacity of the text. Default: 1.0
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
         """
-        raise NotImplementedError
+        self.brain_matrix[row][col].add_text(x, y, text, name, color, opacity)
 
-    def save_image(self, fname):
+    def save_image(self, fname, row=-1, col=-1):
         """Save current view to disk
 
         Only mayavi image types are supported:
@@ -2371,10 +2423,14 @@ class Brain(object):
         ----------
         filename: string
             path to new image file
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
         """
-        raise NotImplementedError
+        self.brain_matrix[row][col].save_image(fname)
 
-    def screenshot(self, mode='rgb', antialiased=False):
+    def screenshot(self, mode='rgb', antialiased=False, row=-1, col=-1):
         """Generate a screenshot of current view
 
         Wraps to mlab.screenshot for ease of use.
@@ -2385,15 +2441,20 @@ class Brain(object):
             Either 'rgb' or 'rgba' for values to return
         antialiased: bool
             Antialias the image (see mlab.screenshot() for details)
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
 
         Returns
         -------
         screenshot: array
             Image pixel values
         """
-        raise NotImplementedError
+        self.brain_matrix[row, col].screenshot(mode, antialiased)
 
-    def save_imageset(self, prefix, views,  filetype='png', colorbar='auto'):
+    def save_imageset(self, prefix, views,  filetype='png', colorbar='auto',
+                      row=-1, col=-1):
         """Convenience wrapper for save_image
 
         Files created are prefix+'_$view'+filetype
@@ -2410,15 +2471,21 @@ class Brain(object):
             if None no colorbar is visible. If 'auto' is given the colorbar
             is only shown in the middle view. Otherwise on the listed
             views when a list of int is passed.
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
 
         Returns
         -------
         images_written: list
             all filenames written
         """
-        raise NotImplementedError
+        self.brain_matrix[row][col].save_imageset(prefix, views, filetype,
+                                                  colorbar)
 
-    def save_image_sequence(self, time_idx, fname_pattern, use_abs_idx=True):
+    def save_image_sequence(self, time_idx, fname_pattern, use_abs_idx=True,
+                            row=-1, col=-1):
         """Save a temporal image sequence
 
         The files saved are named "fname_pattern % (pos)" where "pos" is a
@@ -2434,13 +2501,19 @@ class Brain(object):
             if True the indices given by "time_idx" are used in the filename
             if False the index in the filename starts at zero and is
             incremented by one for each image (Default: True)
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
 
         Returns
         -------
         images_written: list
             all filenames written
         """
-        raise NotImplementedError
+        self.brain_matrix[row][col].save_image_sequence(time_idx,
+                                                        fname_pattern,
+                                                        use_abs_idx)
 
     def scale_data_colormap(self, fmin, fmid, fmax, transparent):
         """Scale the data colormaps.
@@ -2460,7 +2533,8 @@ class Brain(object):
             brain['brain'].scale_data_colormap(fmin, fmid, fmax, transparent)
 
     def save_montage(self, filename, order=['lat', 'ven', 'med'],
-                     orientation='h', border_size=15, colorbar='auto'):
+                     orientation='h', border_size=15, colorbar='auto',
+                     row=-1, col=-1):
         """Create a montage from a given order of images
 
         Parameters
@@ -2477,8 +2551,13 @@ class Brain(object):
             if None no colorbar is visible. If 'auto' is given the colorbar
             is only shown in the middle view. Otherwise on the listed
             views when a list of int is passed.
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
         """
-        raise NotImplementedError
+        self.brain_matrix[row][col].save_montage(filename, order, orientation,
+                                                 border_size, colorbar)
 
     def set_data_time_index(self, time_idx):
         """ Set the data time index to show
@@ -2489,7 +2568,7 @@ class Brain(object):
             time index
         """
         for brain in self._brain_list:
-            brain.set_data_time_index(time_idx)
+            brain['brain'].set_data_time_index(time_idx)
 
     def set_data_smoothing_steps(self, smoothing_steps):
         """Set the number of smoothing steps
@@ -2510,14 +2589,14 @@ class Brain(object):
         time : scalar
             Time.
         row : int
-            Row index of which brain to use.
+            Row index of which brain to use
         col : int
-            Columnt index of which brain to use.
+            Column index of which brain to use
         """
         for brain in self._brain_list:
             brain['brain'].set_time(time)
 
-    def update_text(self, text, name):
+    def update_text(self, text, name, row=-1, col=-1):
         """Update text label
 
         Parameters
@@ -2526,10 +2605,15 @@ class Brain(object):
             New text for label
         name : str
             Name of text label
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
         """
-        raise NotImplementedError
+        self.brain_matrix[row][col].update_text(text, name)
 
-    def animate(self, views, n_steps=180., fname=None, use_cache=False):
+    def animate(self, views, n_steps=180., fname=None, use_cache=False,
+                row=-1, col=-1):
         """Animate a rotation.
 
         Currently only rotations through the axial plane are allowed.
@@ -2546,23 +2630,41 @@ class Brain(object):
         use_cache: bool
             Use previously generated images in ./.tmp/
         row : int
-            Row index of which brain to use.
+            Row index of which brain to use
         col : int
-            Columnt index of which brain to use.
+            Column index of which brain to use
         """
-        raise NotImplementedError
+        self.brain_matrix[row][col].animate(views, n_steps, fname, use_cache)
 
-    def show_colorbar(self):
-        "Show colorbar(s) for given plot"
-        raise NotImplementedError
+    def show_colorbar(self, row=-1, col=-1):
+        """Show colorbar(s) for given plot
+
+        Parameters
+        ----------
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
+        """
+        self.brain_matrix[row][col].show_colorbar()
 
     def hide_colorbar(self, row=0, col=0):
-        "Hide colorbar(s) for given plot"
-        raise NotImplementedError
+        """Hide colorbar(s) for given plot
+
+        Parameters
+        ----------
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
+        """
+        self.brain_matrix[row][col].hide_colorbar()
 
     def close(self):
         """Close all figures and cleanup data structure."""
-        [b.close() for b in self._brain_list]
+        [b['brain'].close() for b in self._brain_list]
+        if self._v is not None:
+            self._v.dispose()
 
 
 class _MlabView(HasTraits):
