@@ -1956,8 +1956,6 @@ class Brain(object):
             hemisphere id (ie 'lh', 'rh', or 'split')
         surf :  geometry name
             freesurfer surface mesh name (ie 'white', 'inflated', etc.)
-        views : list (or str)
-            views to use
         curv : boolean
             if true, loads curv file and displays binary curvature
             (default: True)
@@ -1972,6 +1970,10 @@ class Brain(object):
             If not None, this directory will be used as the subjects directory
             instead of the value set using the SUBJECTS_DIR environment
             variable.
+        views : list (or str)
+            views to use
+        show_toolbar : bool
+            If True, toolbars will be shown for each view.
 
         Attributes
         ----------
