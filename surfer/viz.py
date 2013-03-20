@@ -52,6 +52,7 @@ rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
                 'ventral': {'v': (180., 180.), 'r': 90.},
                 'frontal': {'v': (60., 80.), 'r': -106.739},
                 'parietal': {'v': (-60., 60.), 'r': -49.106}}
+viewdicts = dict(lh=lh_viewdict, rh=rh_viewdict)
 
 
 def make_montage(filename, fnames, orientation='h', colorbar=None,
@@ -148,15 +149,13 @@ class _Hemisphere(object):
             assert mlab
         except ImportError:
             from enthought.mayavi import mlab
-
+        if not hemi in ['lh', 'rh']:
+            raise ValueError('hemi must be either "lh" or "rh"')
         # Set the identifying info
         self.subject_id = subject_id
         self.hemi = hemi
         self.subjects_dir = subjects_dir
-        if self.hemi == 'lh':
-            self.viewdict = lh_viewdict
-        elif self.hemi == 'rh':
-            self.viewdict = rh_viewdict
+        self.viewdict = viewdicts[hemi]
         self.surf = surf
         self._f = figure
         self._bg_color = bg_color
@@ -164,26 +163,21 @@ class _Hemisphere(object):
         # Turn rendering off for speed
         self._toggle_render(False, {})
 
-        # mlab pipeline mesh for geomtery
+        # mlab pipeline mesh and surface for geomtery
         self._geo = geo
         if curv:
             curv_data = self._geo.bin_curv
             meshargs = dict(scalars=curv_data)
+            colormap, vmin, vmax, reverse = self._get_geo_colors(config_opts)
+            kwargs = dict(colormap=colormap, vmin=vmin, vmax=vmax)
         else:
             curv_data = None
             meshargs = dict()
+            kwargs = dict(color=(.5, .5, .5))
         meshargs['figure'] = self._f
         self._geo_mesh = mlab.pipeline.triangular_mesh_source(
                                         self._geo.x, self._geo.y, self._geo.z,
                                         self._geo.faces, **meshargs)
-
-        # mlab surface for the geometry
-        if curv:
-            colormap, vmin, vmax, reverse = self._get_geo_colors(config_opts)
-            kwargs = dict(colormap=colormap, vmin=vmin, vmax=vmax)
-        else:
-            kwargs = dict(color=(.5, .5, .5))
-
         self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                                figure=self._f, reset_zoom=True,
                                                **kwargs)
