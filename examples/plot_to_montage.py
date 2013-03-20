@@ -13,8 +13,9 @@ from surfer import Brain
 sub = 'fsaverage'
 hemi = 'lh'
 surf = 'inflated'
+bgcolor = 'w'
 
-brain = Brain(sub, hemi, surf)
+brain = Brain(sub, hemi, surf, config_opts={'background': bgcolor})
 
 ###############################################################################
 # Save a set of images as a montage
@@ -27,7 +28,10 @@ brain.close()
 import Image
 import pylab as pl
 image = Image.open('/tmp/fsaverage_h_montage.png')
-fig = pl.figure(figsize=(5, 3))
-pl.imshow(image, origin='lower')
+fig = pl.figure(figsize=(5, 3), facecolor=bgcolor)
+ax = pl.axes(frameon=False)
+ax.imshow(image, origin='lower')
 pl.xticks(())
 pl.yticks(())
+pl.draw()
+pl.show()
