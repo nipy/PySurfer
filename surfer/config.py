@@ -16,6 +16,9 @@ default_view = lateral
 [overlay]
 min_thresh = 2.0
 max_thresh = robust_max
+
+[options]
+logging_level = INFO
 """)
 
 config = ConfigParser.ConfigParser()

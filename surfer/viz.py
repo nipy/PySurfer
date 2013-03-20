@@ -11,6 +11,10 @@ from . import io
 from . import utils
 from .io import Surface, _get_subjects_dir
 from .config import config
+from .utils import verbose
+
+import logging
+logger = logging.getLogger('surfer')
 
 try:
     from traits.api import (HasTraits, Range, Int, Float,
@@ -136,35 +140,9 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
 
 class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
-
-    def __init__(self, subject_id, hemi, surf,
-                 curv=True, title=None, config_opts={},
-                 figure=None, subjects_dir=None):
-        """Initialize a Brain object with Freesurfer-specific data.
-
-        Parameters
-        ----------
-        subject_id : str
-            subject name in Freesurfer subjects dir
-        hemi : str
-            hemisphere id (ie 'lh' or 'rh')
-        surf :  geometry name
-            freesurfer surface mesh name (ie 'white', 'inflated', etc.)
-        curv : boolean
-            if true, loads curv file and displays binary curvature
-            (default: True)
-        title : str
-            title for the mayavi figure
-        config_opts : dict
-            options to override visual options in config file
-        figure : instance of mayavi.core.scene.Scene | None
-            If None, the last figure will be cleaned and a new figure will
-            be created.
-        subjects_dir : str | None
-            If not None, this directory will be used as the subjects directory
-            instead of the value set using the SUBJECTS_DIR environment
-            variable.
-        """
+    def __init__(self, subject_id, hemi, surf, figure,
+                 curv=True, title=None, config_opts={}, subjects_dir=None,
+                 bg_color=None, offset=None):
         try:
             from mayavi import mlab
             assert mlab
@@ -179,15 +157,8 @@ class _Hemisphere(object):
         elif self.hemi == 'rh':
             self.viewdict = rh_viewdict
         self.surf = surf
-
-        # Initialize the mlab figure
-        if title is None:
-            title = subject_id
-        self._set_scene_properties(config_opts)
-        if figure is None:
-            figure = mlab.figure(title, **self.scene_properties)
-            mlab.clf(figure=figure)
         self._f = figure
+        self._bg_color = bg_color
 
         # Get the subjects directory from parameter or env. var
         self.subjects_dir = _get_subjects_dir(subjects_dir=subjects_dir)
@@ -197,7 +168,8 @@ class _Hemisphere(object):
 
         # Initialize a Surface object as the geometry
         self._geo = Surface(subject_id, hemi, surf,
-                            subjects_dir=self.subjects_dir)
+                            subjects_dir=self.subjects_dir,
+                            offset=offset)
 
         # Load in the geometry and (maybe) curvature
         self._geo.load_geometry()
@@ -218,17 +190,17 @@ class _Hemisphere(object):
         # mlab surface for the geometry
         if curv:
             colormap, vmin, vmax, reverse = self._get_geo_colors(config_opts)
-            self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
-                                colormap=colormap, vmin=vmin, vmax=vmax,
-                                figure=self._f)
-            if reverse:
-                curv_bar = mlab.scalarbar(self._geo_surf)
-                curv_bar.reverse_lut = True
-                curv_bar.visible = False
+            kwargs = dict(colormap=colormap, vmin=vmin, vmax=vmax)
         else:
-            self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
-                                                   color=(.5, .5, .5),
-                                                   figure=self._f)
+            kwargs = dict(color=(.5, .5, .5))
+
+        self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
+                                               figure=self._f, reset_zoom=True,
+                                               **kwargs)
+        if curv and reverse:
+            curv_bar = mlab.scalarbar(self._geo_surf)
+            curv_bar.reverse_lut = True
+            curv_bar.visible = False
 
         # Initialize the overlay and label dictionaries
         self.overlays = dict()
@@ -237,7 +209,7 @@ class _Hemisphere(object):
         self.texts = dict()
 
         # Bring up the lateral view
-        self.show_view(config.get("visual", "default_view"))
+        self.show_view(config.get("visual", "default_view"), distance='auto')
 
         # Turn disable render off so that it displays
         self._toggle_render(True)
@@ -264,7 +236,7 @@ class _Hemisphere(object):
         else:
             return view
 
-    def show_view(self, view=None, roll=None):
+    def show_view(self, view=None, roll=None, distance=None):
         """Orient camera to display view
 
         Parameters
@@ -276,11 +248,19 @@ class _Hemisphere(object):
 
         Returns
         -------
+        view : tuple
+            tuple returned from mlab.view
+        roll : float
+            camera roll
+        distance : float | 'auto' | None
+            distance from the origin
+
+        Returns
+        -------
         cv: tuple
             tuple returned from mlab.view
         cr: float
             current camera roll
-
         """
         if isinstance(view, basestring):
             try:
@@ -290,10 +270,10 @@ class _Hemisphere(object):
             except ValueError as v:
                 print(v)
                 raise
-        cv, cr = self.__view(view, roll)
+        cv, cr = self.__view(view, roll, distance)
         return (cv, cr)
 
-    def __view(self, viewargs=None, roll=None):
+    def __view(self, viewargs=None, roll=None, distance=None):
         """Wrapper for mlab.view()
 
         Parameters
@@ -315,12 +295,14 @@ class _Hemisphere(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        if viewargs:
+        if viewargs is not None:
             viewargs['reset_roll'] = True
             viewargs['figure'] = self._f
+            viewargs['distance'] = distance
+            viewargs['focalpoint'] = (0.0, 0.0, 0.0)
             mlab.view(**viewargs)
-        if not roll is None:
-            mlab.roll(roll, figure=self._f)
+        if roll is not None:
+            mlab.roll(roll=roll, figure=self._f)
 
         view = mlab.view(figure=self._f)
         roll = mlab.roll(figure=self._f)
@@ -408,10 +390,11 @@ class _Hemisphere(object):
                 pass
         self._toggle_render(True, view)
 
+    @verbose
     def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="blue-red", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
-                 time_label="time index=%d", colorbar=True):
+                 time_label="time index=%d", colorbar=True, verbose=None):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to add_overlay, but it displays
@@ -456,6 +439,8 @@ class _Hemisphere(object):
             format of the time label (or None for no label)
         colorbar : bool
             whether to add a colorbar to the figure
+        verbose : bool, str, int, or None
+            If not None, override default verbose level (see surfer.verbose).
         """
         try:
             from mayavi import mlab
@@ -478,7 +463,7 @@ class _Hemisphere(object):
 
         # Create smoothing matrix if necessary
         if len(array) < self._geo.x.shape[0]:
-            if vertices == None:
+            if vertices is None:
                 raise ValueError("len(data) < nvtx: need vertices")
             adj_mat = utils.mesh_edges(self._geo.faces)
             smooth_mat = utils.smoothing_matrix(vertices, adj_mat,
@@ -494,7 +479,7 @@ class _Hemisphere(object):
         else:
             raise ValueError("data has to be 1D or 2D")
 
-        if smooth_mat != None:
+        if smooth_mat is not None:
             array_plot = smooth_mat * array_plot
 
         # Copy and byteswap to deal with Mayavi bug
@@ -541,7 +526,7 @@ class _Hemisphere(object):
                          array=array, smoothing_steps=smoothing_steps,
                          fmin=min, fmid=(min + max) / 2, fmax=max,
                          transparent=False, time=0, time_idx=0)
-        if vertices != None:
+        if vertices is not None:
             self.data["vertices"] = vertices
             self.data["smooth_mat"] = smooth_mat
 
@@ -554,7 +539,7 @@ class _Hemisphere(object):
 
         # Create time array and add label if 2D
         if array.ndim == 2:
-            if time == None:
+            if time is None:
                 time = np.arange(array.shape[1])
             self._times = time
             self.data["time_label"] = time_label
@@ -1031,33 +1016,6 @@ class _Hemisphere(object):
         self.texts[name] = text
         self._toggle_render(True, view)
 
-    def _set_scene_properties(self, config_opts):
-        """Set the scene_prop dict from the config parser.
-
-        Parameters
-        ----------
-        config_opts : dict
-            dictionary of config file "visual" options
-
-        """
-        try:
-            bg_color_name = config_opts['background']
-        except KeyError:
-            bg_color_name = config.get("visual", "background")
-        if bg_color_name is not None:
-            bg_color_code = colorConverter.to_rgb(bg_color_name)
-        else:
-            bg_color_code = None
-
-        try:
-            fg_color_name = config_opts['foreground']
-        except KeyError:
-            fg_color_name = config.get("visual", "foreground")
-        fg_color_code = colorConverter.to_rgb(fg_color_name)
-
-        self.scene_properties = dict(fgcolor=fg_color_code,
-                                     bgcolor=bg_color_code)
-
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
         if self.hemi == "rh":
@@ -1280,7 +1238,8 @@ class _Hemisphere(object):
 
         return images_written
 
-    def scale_data_colormap(self, fmin, fmid, fmax, transparent):
+    @verbose
+    def scale_data_colormap(self, fmin, fmid, fmax, transparent, verbose=None):
         """Scale the data colormap.
 
         Parameters
@@ -1293,6 +1252,8 @@ class _Hemisphere(object):
             maximum value for colormap
         transparent : boolean
             if True: use a linear transparency between fmin and fmid
+        verbose : bool, str, int, or None
+            If not None, override default verbose level (see surfer.verbose).
         """
 
         if not (fmin < fmid) and (fmid < fmax):
@@ -1303,8 +1264,8 @@ class _Hemisphere(object):
         fmid = float(fmid)
         fmax = float(fmax)
 
-        print "colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e transparent=%d" \
-              % (fmin, fmid, fmax, transparent)
+        logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
+                    "transparent=%d" % (fmin, fmid, fmax, transparent))
 
         # Get the original colormap
         table = self.data["orig_ctable"].copy()
@@ -1417,13 +1378,16 @@ class _Hemisphere(object):
             time = self.data["time"][time_idx]
             self.update_text(self.data["time_label"] % time, "time_label")
 
-    def set_data_smoothing_steps(self, smoothing_steps):
+    @verbose
+    def set_data_smoothing_steps(self, smoothing_steps, verbose=None):
         """ Set the number of smoothing steps
 
         Parameters
         ----------
         smoothing_steps : int
             Number of smoothing steps
+        verbose : bool, str, int, or None
+            If not None, override default verbose level (see surfer.verbose).
         """
 
         adj_mat = utils.mesh_edges(self._geo.faces)
@@ -1712,8 +1676,7 @@ class _Hemisphere(object):
         return data
 
     def _format_cbar_text(self, cbar):
-
-        bg_color = self.scene_properties["bgcolor"]
+        bg_color = self._bg_color
         if bg_color is None or sum(bg_color) < 2:
             text_color = (1., 1., 1.)
         else:
@@ -1822,8 +1785,14 @@ class Overlay(object):
 
 
 class TimeViewer(HasTraits):
-    """ TimeViewer object providing a GUI for visualizing time series, such
-        as M/EEG inverse solutions, on Brain object(s)
+    """TimeViewer object providing a GUI for visualizing time series
+
+    Useful for visualizing M/EEG inverse solutions on Brain object(s).
+
+    Parameters
+    ----------
+    brain : Brain (or list of Brain)
+        brain(s) to control
     """
     # Nested import of traisui for setup.py without X server
     try:
@@ -1864,13 +1833,6 @@ class TimeViewer(HasTraits):
                 )
 
     def __init__(self, brain):
-        """Initialize TimeViewer
-
-        Parameters
-        ----------
-        brain : Brain (or list of Brain)
-            brain(s) to control
-        """
         super(TimeViewer, self).__init__()
 
         if isinstance(brain, (list, tuple)):
@@ -1951,45 +1913,47 @@ class TimeViewer(HasTraits):
 
 
 class Brain(object):
-    """Class for visualizing a brain using multiple views in mlab"""
+    """Class for visualizing a brain using multiple views in mlab
 
+    Parameters
+    ----------
+    subject_id : str
+        subject name in Freesurfer subjects dir
+    hemi : str
+        hemisphere id (ie 'lh', 'rh', or 'split')
+    surf :  geometry name
+        freesurfer surface mesh name (ie 'white', 'inflated', etc.)
+    curv : boolean
+        if true, loads curv file and displays binary curvature
+        (default: True)
+    title : str
+        title for the window
+    config_opts : dict
+        options to override visual options in config file
+    figure : list of instances of mayavi.core.scene.Scene | None
+        If None, a new window will be created with the appropriate
+        views.
+    subjects_dir : str | None
+        If not None, this directory will be used as the subjects directory
+        instead of the value set using the SUBJECTS_DIR environment
+        variable.
+    views : list (or str)
+        views to use
+    show_toolbar : bool
+        If True, toolbars will be shown for each view.
+    offscreen : bool
+        If True, rendering will be done offscreen (not shown). Useful
+        mostly for generating images or screenshots, but can be buggy.
+        Use at your own risk.
+
+    Attributes
+    ----------
+    brains : list
+        List of the underlying brain instances.
+    """
     def __init__(self, subject_id, hemi, surf, curv=True, title=None,
                  config_opts={}, figure=None, subjects_dir=None,
-                 views=['lat'], show_toolbar=False):
-        """Initialize a Brain object with Freesurfer-specific data.
-
-        Parameters
-        ----------
-        subject_id : str
-            subject name in Freesurfer subjects dir
-        hemi : str
-            hemisphere id (ie 'lh', 'rh', or 'split')
-        surf :  geometry name
-            freesurfer surface mesh name (ie 'white', 'inflated', etc.)
-        curv : boolean
-            if true, loads curv file and displays binary curvature
-            (default: True)
-        title : str
-            title for the window
-        config_opts : dict
-            options to override visual options in config file
-        figure : list of instances of mayavi.core.scene.Scene | None
-            If None, a new window will be created with the appropriate
-            views.
-        subjects_dir : str | None
-            If not None, this directory will be used as the subjects directory
-            instead of the value set using the SUBJECTS_DIR environment
-            variable.
-        views : list (or str)
-            views to use
-        show_toolbar : bool
-            If True, toolbars will be shown for each view.
-
-        Attributes
-        ----------
-        brains : list
-            List of the underlying brain instances.
-        """
+                 views=['lat'], show_toolbar=False, offscreen=False):
         col_dict = dict(lh=1, rh=1, both=1, split=2)
         n_col = col_dict[hemi]
         if not hemi in col_dict.keys():
@@ -2005,8 +1969,8 @@ class Brain(object):
         if figure is None:
             # spawn scenes
             h, w = self._scene_size
-            scenes, _v = _make_scenes(n_row, n_col, title, h, w)
-            figures = [[s.mayavi_scene for s in ss] for ss in scenes]
+            figures, scenes, _v = _make_scenes(n_row, n_col, title,
+                                               h, w, offscreen)
         else:
             if not isinstance(figure, (list, tuple)):
                 figure = [figure]
@@ -2018,9 +1982,18 @@ class Brain(object):
             _v = None
             figures = [figure[slice(ri * n_col, (ri + 1) * n_col)]
                        for ri in range(n_row)]
+        for ff in figures:
+            for f in ff:
+                f.render()
+                if f.scene is not None:
+                    f.scene.background = self._bg_color
+                    f.scene.foreground = self._fg_color
+
         # fill scenes with brains
+        offset = None if hemi != 'both' else 0.0
         kwargs = dict(surf=surf, curv=curv, title=None,
-                      config_opts=config_opts, subjects_dir=subjects_dir)
+                      config_opts=config_opts, subjects_dir=subjects_dir,
+                      bg_color=self._bg_color, offset=offset)
         brains = []
         brain_matrix = []
         for ri, view in enumerate(views):
@@ -2031,7 +2004,6 @@ class Brain(object):
                     kwargs['hemi'] = h
                     kwargs['figure'] = figures[ri][ci]
                     brain = _Hemisphere(subject_id, **kwargs)
-                    brain.show_view(view)
                     brains += [dict(row=ri, col=ci, brain=brain, hemi=h)]
                     brain_row += [brain]
             brain_matrix += [brain_row]
@@ -2039,14 +2011,17 @@ class Brain(object):
         self._brain_list = brains
         self.brains = [b['brain'] for b in brains]
         self.brain_matrix = np.array(brain_matrix)
+        self._figures = figures
         self._scenes = scenes
         self._v = _v
-        if figure is None:
+        self.set_distance()
+        if self._scenes is not None:
             self.toggle_toolbars(show_toolbar)
         for brain in self._brain_list:
             brain['brain']._orient_lights()
 
     def _set_window_properties(self, config_opts):
+        """Set window properties using config_opts"""
         try:
             width = config_opts['width']
         except KeyError:
@@ -2056,6 +2031,23 @@ class Brain(object):
         except KeyError:
             height = config.getfloat("visual", "height")
         self._scene_size = (height, width)
+
+        try:
+            bg_color_name = config_opts['background']
+        except KeyError:
+            bg_color_name = config.get("visual", "background")
+        if bg_color_name is not None:
+            bg_color_code = colorConverter.to_rgb(bg_color_name)
+        else:
+            bg_color_code = None
+        self._bg_color = bg_color_code
+
+        try:
+            fg_color_name = config_opts['foreground']
+        except KeyError:
+            fg_color_name = config.get("visual", "foreground")
+        fg_color_code = colorConverter.to_rgb(fg_color_name)
+        self._fg_color = fg_color_code
 
     def toggle_toolbars(self, show=None):
         """Toggle toolbar display
@@ -2071,12 +2063,11 @@ class Brain(object):
                              'passed in')
         if show is None:
             show = not self._scenes[0][0].scene_editor._tool_bar.isVisible()
-        for ss in self._scenes:
-            for s in ss:
-                try:
-                    s.scene_editor._tool_bar.setVisible(show)
-                except:
-                    pass
+        for s in self._scenes:
+            try:
+                s.scene_editor._tool_bar.setVisible(show)
+            except:
+                pass
 
     def _check_one_brain(self, name):
         """Helper for various properties"""
@@ -2115,7 +2106,7 @@ class Brain(object):
         for view, brain in zip(self._original_views, self._brain_list):
             brain['brain'].show_view(view)
 
-    def show_view(self, view=None, roll=None, row=-1, col=-1):
+    def show_view(self, view=None, roll=None, distance=None, row=-1, col=-1):
         """Orient camera to display view
 
         Parameters
@@ -2127,16 +2118,55 @@ class Brain(object):
 
         Returns
         -------
-        cv: tuple
+        view : tuple
             tuple returned from mlab.view
-        cr: float
-            current camera roll
+        roll : float
+            camera roll
+        distance : float | 'auto' | None
+            distance from the origin
         row : int
             Row index of which brain to use
         col : int
             Column index of which brain to use
         """
-        self.brain_matrix[row][col].show_view(view, roll)
+        return self.brain_matrix[row][col].show_view(view, roll, distance)
+
+    def set_distance(self, distance=None):
+        """Set view distances for all brain plots to the same value
+
+        Parameters
+        ----------
+        distance : float | None
+            Distance to use. If None, brains are set to the farthest
+            "best fit" distance across all current views; note that
+            the underlying "best fit" function can be buggy.
+
+        Returns
+        -------
+        distance : float
+            The distance used.
+        """
+        try:
+            from mayavi import mlab
+            assert mlab
+        except:
+            from enthought.mayavi import mlab
+        if distance is None:
+            distance = []
+            for ff in self._figures:
+                for f in ff:
+                    mlab.view(figure=f, distance='auto')
+                    v = mlab.view(figure=f)
+                    # This should only happen for the test backend
+                    if v is None:
+                        v = [0, 0, 100]
+                    distance += [v[2]]
+            distance = max(distance)
+
+        for ff in self._figures:
+            for f in ff:
+                mlab.view(distance=distance, figure=f)
+        return distance
 
     def _check_hemi(self, hemi):
         """Check for safe hemi input"""
@@ -2688,32 +2718,45 @@ class _MlabView(HasTraits):
     scene = Instance(MlabSceneModel, ())
 
 
-def _make_scenes(n_row=1, n_col=1, title='brain', height=800, width=600):
+def _make_scenes(n_row, n_col, title, height, width, offscreen):
     """Make one window with multiple brain viewers"""
     try:
         from mayavi.core.ui.api import SceneEditor
         from mayavi.core.ui.mayavi_scene import MayaviScene
+        from mayavi import mlab
         assert SceneEditor
         assert MayaviScene
+        assert mlab
     except:
         from enthought.mayavi.core.ui.api import SceneEditor
         from enthought.mayavi.core.ui.mayavi_scene import MayaviScene
-    context = {}
-    va = []
-    scenes = []
-    for ri in xrange(n_row):
-        ha = []
-        hscenes = []
-        for ci in xrange(n_col):
-            name = 'brain_view' + str(ci + n_col * ri) + '.scene'
-            editor = SceneEditor(scene_class=MayaviScene)
-            ha += [Item(name, editor=editor, padding=0)]
-            context.update({name[:-6]: _MlabView()})
-            hscenes += [context[name[:-6]].scene]
-        va += [HGroup(*ha, show_labels=False)]
-        scenes += [hscenes]
-    view = View(VGroup(*va), resizable=True, height=height, width=width)
-    # use kind='panel' so that these can eventually be embedded, as well
-    v = view.ui(context=context, kind='panel')
-    v.title = title
-    return scenes, v
+        from enthought.mayavi import mlab
+    if offscreen is False:
+        context = {}
+        va = []
+        scenes = []
+        figures = []
+        for ri in xrange(n_row):
+            ha = []
+            hfigures = []
+            for ci in xrange(n_col):
+                name = 'brain_view' + str(ci + n_col * ri) + '.scene'
+                editor = SceneEditor(scene_class=MayaviScene)
+                ha += [Item(name, editor=editor, padding=0)]
+                context.update({name[:-6]: _MlabView()})
+                scenes += [context[name[:-6]].scene]
+                hfigures += [context[name[:-6]].scene.mayavi_scene]
+            va += [HGroup(*ha, show_labels=False)]
+            figures += [hfigures]
+        view = View(VGroup(*va), resizable=True, height=height, width=width)
+        # use kind='panel' so that these can eventually be embedded, as well
+        v = view.ui(context=context, kind='panel')
+        v.title = title
+    else:
+        v, scenes = None, None
+        orig_val = mlab.options.offscreen
+        mlab.options.offscreen = True
+        figures = [[mlab.figure(size=(height / n_row, width / n_col))
+                    for _ in xrange(n_col)] for __ in xrange(n_row)]
+        mlab.options.offscreen = orig_val
+    return figures, scenes, v
