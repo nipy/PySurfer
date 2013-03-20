@@ -140,7 +140,7 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
 
 class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
-    def __init__(self, subject_id, hemi, surf, figure,
+    def __init__(self, subject_id, hemi, surf, figure, geo,
                  curv=True, title=None, config_opts={}, subjects_dir=None,
                  bg_color=None, offset=None):
         try:
@@ -152,6 +152,7 @@ class _Hemisphere(object):
         # Set the identifying info
         self.subject_id = subject_id
         self.hemi = hemi
+        self.subjects_dir = subjects_dir
         if self.hemi == 'lh':
             self.viewdict = lh_viewdict
         elif self.hemi == 'rh':
@@ -160,28 +161,17 @@ class _Hemisphere(object):
         self._f = figure
         self._bg_color = bg_color
 
-        # Get the subjects directory from parameter or env. var
-        self.subjects_dir = _get_subjects_dir(subjects_dir=subjects_dir)
-
         # Turn rendering off for speed
         self._toggle_render(False, {})
 
-        # Initialize a Surface object as the geometry
-        self._geo = Surface(subject_id, hemi, surf,
-                            subjects_dir=self.subjects_dir,
-                            offset=offset)
-
-        # Load in the geometry and (maybe) curvature
-        self._geo.load_geometry()
+        # mlab pipeline mesh for geomtery
+        self._geo = geo
         if curv:
-            self._geo.load_curvature()
             curv_data = self._geo.bin_curv
             meshargs = dict(scalars=curv_data)
         else:
             curv_data = None
             meshargs = dict()
-
-        # mlab pipeline mesh for geomtery
         meshargs['figure'] = self._f
         self._geo_mesh = mlab.pipeline.triangular_mesh_source(
                                         self._geo.x, self._geo.y, self._geo.z,
@@ -331,7 +321,6 @@ class _Hemisphere(object):
             if no name was provided, deduces the name if filename was given
             as a source
         """
-
         # If source is a string, try to load a file
         if isinstance(source, basestring):
             if name is None:
@@ -353,36 +342,12 @@ class _Hemisphere(object):
 
         return scalar_data, name
 
-    def add_overlay(self, source, min=None, max=None, sign="abs", name=None):
-        """Add an overlay to the overlay dict from a file or array.
-
-        Parameters
-        ----------
-        source : str or numpy array
-            path to the overlay file or numpy array with data
-        min : float
-            threshold for overlay display
-        max : float
-            saturation point for overlay display
-        sign : {'abs' | 'pos' | 'neg'}
-            whether positive, negative, or both values should be displayed
-        name : str
-            name for the overlay in the internal dictionary
-
-        """
-        scalar_data, name = self._read_scalar_data(source, name)
-
-        min, max = self._get_display_range(scalar_data, min, max, sign)
-
+    def add_overlay(self, old, name):
+        """Add an overlay to the overlay dict from a file or array"""
+        view = self._toggle_render(False)
         if name in self.overlays:
             "%s%d" % (name, len(self.overlays) + 1)
-
-        if not sign in ["abs", "pos", "neg"]:
-            raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
-
-        view = self._toggle_render(False)
-        self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign,
-                                      figure=self._f)
+        self.overlays[name] = OverlayDisplay(old, figure=self._f)
         for bar in ["pos_bar", "neg_bar"]:
             try:
                 self._format_cbar_text(getattr(self.overlays[name], bar))
@@ -1619,7 +1584,6 @@ class _Hemisphere(object):
             sign = "pos"
         elif scalar_data.max() <= 0:
             sign = "neg"
-        self.sign = sign
 
         # Get data with a range that will make sense for automatic thresholding
         if sign == "neg":
@@ -1684,104 +1648,99 @@ class _Hemisphere(object):
         cbar.label_text_property.color = text_color
 
 
-class Overlay(object):
-    """Encapsulation of statistical neuroimaging overlay visualization."""
+class OverlayData(object):
+    """Encapsulation of statistical neuroimaging overlay viz data"""
 
-    def __init__(self, scalar_data, geo, min, max, sign, figure=None):
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
+    def __init__(self, scalar_data, geo, min, max, sign):
         if scalar_data.min() >= 0:
             sign = "pos"
         elif scalar_data.max() <= 0:
             sign = "neg"
-        self.sign = sign
+        self.geo = geo
+
+        if sign in ["abs", "pos"]:
+            # Figure out the correct threshold to avoid TraitErrors
+            # This seems like not the cleanest way to do this
+            pos_max = np.max((0.0, np.max(scalar_data)))
+            if pos_max < min:
+                thresh_low = pos_max
+            else:
+                thresh_low = min
+            self.pos_lims = [thresh_low, min, max]
+        else:
+            self.pos_lims = None
+
+        if sign in ["abs", "neg"]:
+            # Figure out the correct threshold to avoid TraitErrors
+            # This seems even less clean due to negative convolutedness
+            neg_min = np.min((0.0, np.min(scalar_data)))
+            if neg_min > -min:
+                thresh_up = neg_min
+            else:
+                thresh_up = -min
+            self.neg_lims = [thresh_up, -max, -min]
+        else:
+            self.neg_lims = None
 
         # Byte swap copy; due to mayavi bug
         mlab_data = scalar_data.copy()
         mlab_data = mlab_data.astype(np.float64)
         if scalar_data.dtype.byteorder == '>':
             mlab_data.byteswap(True)
+        self.mlab_data = mlab_data
 
-        if sign in ["abs", "pos"]:
-            pos_mesh = mlab.pipeline.triangular_mesh_source(geo.x,
-                                                           geo.y,
-                                                           geo.z,
-                                                           geo.faces,
-                                                           scalars=mlab_data,
-                                                           figure=figure)
 
-            # Figure out the correct threshold to avoid TraitErrors
-            # This seems like not the cleanest way to do this
-            pos_data = scalar_data[np.where(scalar_data > 0)]
-            try:
-                pos_max = pos_data.max()
-            except ValueError:
-                pos_max = 0
-            if pos_max < min:
-                thresh_low = pos_max
-            else:
-                thresh_low = min
-            pos_thresh = mlab.pipeline.threshold(pos_mesh, low=thresh_low)
-            pos_surf = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
-                                             vmin=min, vmax=max,
+class OverlayDisplay():
+    """Encapsulation of overlay viz plotting"""
+
+    def __init__(self, ol, figure):
+        try:
+            from mayavi import mlab
+            assert mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+        args = [ol.geo.x, ol.geo.y, ol.geo.z, ol.geo.faces]
+        kwargs = dict(scalars=ol.mlab_data, figure=figure)
+        if ol.pos_lims is not None:
+            pos_mesh = mlab.pipeline.triangular_mesh_source(*args, **kwargs)
+            pos_thresh = mlab.pipeline.threshold(pos_mesh, low=ol.pos_lims[0])
+            self.pos = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
+                                             vmin=ol.pos_lims[1],
+                                             vmax=ol.pos_lims[2],
                                              figure=figure)
-            pos_bar = mlab.scalarbar(pos_surf, nb_labels=5)
-            pos_bar.reverse_lut = True
+            self.pos_bar = mlab.scalarbar(self.pos, nb_labels=5)
+            self.pos_bar.reverse_lut = True
+        else:
+            self.pos = None
 
-            self.pos = pos_surf
-            self.pos_bar = pos_bar
-
-        if sign in ["abs", "neg"]:
-            neg_mesh = mlab.pipeline.triangular_mesh_source(geo.x,
-                                                           geo.y,
-                                                           geo.z,
-                                                           geo.faces,
-                                                           scalars=mlab_data,
-                                                           figure=figure)
-
-            # Figure out the correct threshold to avoid TraitErrors
-            # This seems even less clean due to negative convolutedness
-            neg_data = scalar_data[np.where(scalar_data < 0)]
-            try:
-                neg_min = neg_data.min()
-            except ValueError:
-                neg_min = 0
-            if neg_min > -min:
-                thresh_up = neg_min
-            else:
-                thresh_up = -min
-            neg_thresh = mlab.pipeline.threshold(neg_mesh, up=thresh_up)
-            neg_surf = mlab.pipeline.surface(neg_thresh, colormap="PuBu",
-                                             vmin=-max, vmax=-min,
+        if ol.neg_lims is not None:
+            neg_mesh = mlab.pipeline.triangular_mesh_source(*args, **kwargs)
+            neg_thresh = mlab.pipeline.threshold(neg_mesh,
+                                                 up=ol.neg_lims[0])
+            self.neg = mlab.pipeline.surface(neg_thresh, colormap="PuBu",
+                                             vmin=ol.neg_lims[1],
+                                             vmax=ol.neg_lims[2],
                                              figure=figure)
-            neg_bar = mlab.scalarbar(neg_surf, nb_labels=5)
-
-            self.neg = neg_surf
-            self.neg_bar = neg_bar
-
+            self.neg_bar = mlab.scalarbar(self.neg, nb_labels=5)
+        else:
+            self.neg = None
         self._format_colorbar()
 
     def remove(self):
-
-        if self.sign in ["pos", "abs"]:
+        if self.pos is not None:
             self.pos.remove()
             self.pos_bar.visible = False
-        if self.sign in ["neg", "abs"]:
+        if self.neg is not None:
             self.neg.remove()
             self.neg_bar.visible = False
 
     def _format_colorbar(self):
-
-        if self.sign in ["abs", "neg"]:
-            self.neg_bar.scalar_bar_representation.position = (0.05, 0.01)
-            self.neg_bar.scalar_bar_representation.position2 = (0.42, 0.09)
-        if self.sign in ["abs", "pos"]:
+        if self.pos is not None:
             self.pos_bar.scalar_bar_representation.position = (0.53, 0.01)
             self.pos_bar.scalar_bar_representation.position2 = (0.42, 0.09)
+        if self.neg is not None:
+            self.neg_bar.scalar_bar_representation.position = (0.05, 0.01)
+            self.neg_bar.scalar_bar_representation.position2 = (0.42, 0.09)
 
 
 class TimeViewer(HasTraits):
@@ -1959,12 +1918,38 @@ class Brain(object):
         if not hemi in col_dict.keys():
             raise ValueError('hemi must be one of [%s], not %s'
                              % (', '.join(col_dict.keys()), hemi))
+        # Get the subjects directory from parameter or env. var
+        subjects_dir = _get_subjects_dir(subjects_dir=subjects_dir)
+
         self._hemi = hemi
         if title is None:
             title = subject_id
+
         if not isinstance(views, list):
             views = [views]
         n_row = len(views)
+
+        # load geometry for one or both hemispheres as necessary
+        offset = None if hemi != 'both' else 0.0
+        self.geo = dict()
+        if hemi in ['split', 'both']:
+            geo_hemis = ['lh', 'rh']
+        elif hemi == 'lh':
+            geo_hemis = ['lh']
+        elif hemi == 'rh':
+            geo_hemis = ['rh']
+        else:
+            raise ValueError('bad hemi value')
+        for h in geo_hemis:
+            # Initialize a Surface object as the geometry
+            geo = Surface(subject_id, h, surf, subjects_dir, offset)
+            # Load in the geometry and (maybe) curvature
+            geo.load_geometry()
+            if curv:
+                geo.load_curvature()
+            self.geo[h] = geo
+
+        # deal with making figures
         self._set_window_properties(config_opts)
         if figure is None:
             # spawn scenes
@@ -1989,8 +1974,7 @@ class Brain(object):
                     f.scene.background = self._bg_color
                     f.scene.foreground = self._fg_color
 
-        # fill scenes with brains
-        offset = None if hemi != 'both' else 0.0
+        # fill figures with brains
         kwargs = dict(surf=surf, curv=curv, title=None,
                       config_opts=config_opts, subjects_dir=subjects_dir,
                       bg_color=self._bg_color, offset=offset)
@@ -2002,6 +1986,7 @@ class Brain(object):
                 if not (hemi in ['lh', 'rh'] and h != hemi):
                     ci = hi if hemi == 'split' else 0
                     kwargs['hemi'] = h
+                    kwargs['geo'] = self.geo[h]
                     kwargs['figure'] = figures[ri][ci]
                     brain = _Hemisphere(subject_id, **kwargs)
                     brains += [dict(row=ri, col=ci, brain=brain, hemi=h)]
@@ -2015,6 +2000,7 @@ class Brain(object):
         self._scenes = scenes
         self._v = _v
         self.set_distance()
+        self.subjects_dir = subjects_dir
         if self._scenes is not None:
             self.toggle_toolbars(show_toolbar)
         for brain in self._brain_list:
@@ -2064,6 +2050,7 @@ class Brain(object):
         if show is None:
             show = not self._scenes[0][0].scene_editor._tool_bar.isVisible()
         for s in self._scenes:
+            # this may not work if QT is not the backend (?), or in testing
             try:
                 s.scene_editor._tool_bar.setVisible(show)
             except:
@@ -2181,6 +2168,97 @@ class Brain(object):
             raise ValueError('hemi must be either "lh" or "rh"' + extra)
         return hemi
 
+    def _read_scalar_data(self, source, hemi, name=None, cast=True):
+        """Load in scalar data from an image stored in a file or an array
+
+        Parameters
+        ----------
+        source : str or numpy array
+            path to scalar data file or a numpy array
+        name : str or None, optional
+            name for the overlay in the internal dictionary
+        cast : bool, optional
+            either to cast float data into 64bit datatype as a
+            workaround. cast=True can fix a rendering problem with
+            certain versions of Mayavi
+
+        Returns
+        -------
+        scalar_data : numpy array
+            flat numpy array of scalar data
+        name : str
+            if no name was provided, deduces the name if filename was given
+            as a source
+        """
+        # If source is a string, try to load a file
+        if isinstance(source, basestring):
+            if name is None:
+                basename = os.path.basename(source)
+                if basename.endswith(".gz"):
+                    basename = basename[:-3]
+                if basename.startswith("%s." % hemi):
+                    basename = basename[3:]
+                name = os.path.splitext(basename)[0]
+            scalar_data = io.read_scalar_data(source)
+        else:
+            # Can't think of a good way to check that this will work nicely
+            scalar_data = source
+
+        if cast:
+            if (scalar_data.dtype.char == 'f' and
+                scalar_data.dtype.itemsize < 8):
+                scalar_data = scalar_data.astype(np.float)
+
+        return scalar_data, name
+
+    def _get_display_range(self, scalar_data, min, max, sign):
+        if scalar_data.min() >= 0:
+            sign = "pos"
+        elif scalar_data.max() <= 0:
+            sign = "neg"
+
+        # Get data with a range that will make sense for automatic thresholding
+        if sign == "neg":
+            range_data = np.abs(scalar_data[np.where(scalar_data < 0)])
+        elif sign == "pos":
+            range_data = scalar_data[np.where(scalar_data > 0)]
+        else:
+            range_data = np.abs(scalar_data)
+
+        # Get the min and max from among various places
+        if min is None:
+            try:
+                min = config.getfloat("overlay", "min_thresh")
+            except ValueError:
+                min_str = config.get("overlay", "min_thresh")
+                if min_str == "robust_min":
+                    min = stats.scoreatpercentile(range_data, 2)
+                elif min_str == "actual_min":
+                    min = range_data.min()
+                else:
+                    min = 2.0
+                    warn("The 'min_thresh' value in your config value must be "
+                "a float, 'robust_min', or 'actual_min', but it is %s. "
+                "I'm setting the overlay min to the config default of 2" % min)
+
+        if max is None:
+            try:
+                max = config.getfloat("overlay", "max_thresh")
+            except ValueError:
+                max_str = config.get("overlay", "max_thresh")
+                if max_str == "robust_max":
+                    max = stats.scoreatpercentile(scalar_data, 98)
+                elif max_str == "actual_max":
+                    max = range_data.max()
+                else:
+                    max = stats.scoreatpercentile(range_data, 98)
+                    warn("The 'max_thresh' value in your config value must be "
+                "a float, 'robust_min', or 'actual_min', but it is %s. "
+                "I'm setting the overlay min to the config default "
+                "of robust_max" % max)
+
+        return min, max
+
     def add_overlay(self, source, min=None, max=None, sign="abs", name=None,
                     hemi=None):
         """Add an overlay to the overlay dict from a file or array.
@@ -2203,9 +2281,15 @@ class Brain(object):
             be thrown.
         """
         hemi = self._check_hemi(hemi)
+        # load data here
+        scalar_data, name = self._read_scalar_data(source, hemi, name=name)
+        min, max = self._get_display_range(scalar_data, min, max, sign)
+        if not sign in ["abs", "pos", "neg"]:
+            raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
+        old = OverlayData(scalar_data, self.geo[hemi], min, max, sign)
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                brain['brain'].add_overlay(source, min, max, sign, name)
+                brain['brain'].add_overlay(old, name)
 
     def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="blue-red", alpha=1,
