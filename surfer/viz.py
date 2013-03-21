@@ -160,9 +160,6 @@ class _Hemisphere(object):
         self._f = figure
         self._bg_color = bg_color
 
-        # Turn rendering off for speed
-        self._toggle_render(False, {})
-
         # mlab pipeline mesh and surface for geomtery
         self._geo = geo
         if curv:
@@ -186,66 +183,17 @@ class _Hemisphere(object):
             curv_bar.reverse_lut = True
             curv_bar.visible = False
 
-        # Initialize the overlay and label dictionaries
-        self.overlays = dict()
-        self.labels = dict()
-        self.foci = dict()
-        self.texts = dict()
-
         # Bring up the lateral view
         self.show_view(config.get("visual", "default_view"), distance='auto')
 
-        # Turn disable render off so that it displays
-        self._toggle_render(True)
-        mlab.draw(figure=self._f)
-
-    def _toggle_render(self, state, view=None):
-        """Turn rendering on (True) or off (False)"""
+    def show_view(self, view=None, roll=None, distance=None):
+        """Orient camera to display view"""
         try:
             from mayavi import mlab
             assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
-        if state is False and view is None:
-            view = mlab.view(figure=self._f)
-
-        # Testing backend doesn't have this option
-        if mlab.options.backend != 'test':
-            self._f.scene.disable_render = not state
-
-        if state is True and view is not None:
-            mlab.view(*view, figure=self._f)
-            return
-        else:
-            return view
-
-    def show_view(self, view=None, roll=None, distance=None):
-        """Orient camera to display view
-
-        Parameters
-        ----------
-        view : {'lateral' | 'medial' | 'rostral' | 'caudal' |
-                'dorsal' | 'ventral' | 'frontal' | 'parietal' |
-                dict}
-            brain surface to view or kwargs to pass to mlab.view()
-
-        Returns
-        -------
-        view : tuple
-            tuple returned from mlab.view
-        roll : float
-            camera roll
-        distance : float | 'auto' | None
-            distance from the origin
-
-        Returns
-        -------
-        cv: tuple
-            tuple returned from mlab.view
-        cr: float
-            current camera roll
-        """
         if isinstance(view, basestring):
             try:
                 vd = self._xfm_view(view, 'd')
@@ -254,37 +202,13 @@ class _Hemisphere(object):
             except ValueError as v:
                 print(v)
                 raise
-        cv, cr = self.__view(view, roll, distance)
-        return (cv, cr)
 
-    def __view(self, viewargs=None, roll=None, distance=None):
-        """Wrapper for mlab.view()
-
-        Parameters
-        ----------
-        viewargs: dict
-            mapping with keys corresponding to mlab.view args
-        roll: num
-            int or float to set camera roll
-
-        Returns
-        -------
-        camera settings: tuple
-            view settings, roll setting
-
-        """
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
-        if viewargs is not None:
-            viewargs['reset_roll'] = True
-            viewargs['figure'] = self._f
-            viewargs['distance'] = distance
-            viewargs['focalpoint'] = (0.0, 0.0, 0.0)
-            mlab.view(**viewargs)
+        if view is not None:
+            view['reset_roll'] = True
+            view['figure'] = self._f
+            view['distance'] = distance
+            view['focalpoint'] = (0.0, 0.0, 0.0)
+            mlab.view(**view)
         if roll is not None:
             mlab.roll(roll=roll, figure=self._f)
 
@@ -336,100 +260,21 @@ class _Hemisphere(object):
 
         return scalar_data, name
 
-    def add_overlay(self, old, name):
+    def add_overlay(self, old):
         """Add an overlay to the overlay dict from a file or array"""
-        view = self._toggle_render(False)
-        if name in self.overlays:
-            "%s%d" % (name, len(self.overlays) + 1)
-        self.overlays[name] = OverlayDisplay(old, figure=self._f)
+        surf = OverlayDisplay(old, figure=self._f)
         for bar in ["pos_bar", "neg_bar"]:
             try:
-                self._format_cbar_text(getattr(self.overlays[name], bar))
+                self._format_cbar_text(getattr(surf, bar))
             except AttributeError:
                 pass
-        self._toggle_render(True, view)
+        return surf
 
     @verbose
-    def add_data(self, array, min=None, max=None, thresh=None,
-                 colormap="blue-red", alpha=1,
-                 vertices=None, smoothing_steps=20, time=None,
-                 time_label="time index=%d", colorbar=True, verbose=None):
-        """Display data from a numpy array on the surface.
-
-        This provides a similar interface to add_overlay, but it displays
-        it with a single colormap. It offers more flexibility over the
-        colormap, and provides a way to display four dimensional data
-        (i.e. a timecourse).
-
-        Note that min sets the low end of the colormap, and is separate
-        from thresh (this is a different convention from add_overlay)
-
-        Note: If the data is defined for a subset of vertices (specified
-        by the "vertices" parameter), a smoothing method is used to interpolate
-        the data onto the high resolution surface. If the data is defined for
-        subsampled version of the surface, smoothing_steps can be set to None,
-        in which case only as many smoothing steps are applied until the whole
-        surface is filled with non-zeros.
-
-        Parameters
-        ----------
-        array : numpy array
-            data array (nvtx vector)
-        min : float
-            min value in colormap (uses real min if None)
-        max : float
-            max value in colormap (uses real max if None)
-        thresh : None or float
-            if not None, values below thresh will not be visible
-        colormap : str | array [256x4]
-            name of Mayavi colormap to use, or a custom look up table (a 256x4
-            array, with the columns representing RGBA (red, green, blue, alpha)
-            coded with integers going from 0 to 255).
-        alpha : float in [0, 1]
-            alpha level to control opacity
-        vertices : numpy array
-            vertices for which the data is defined (needed if len(data) < nvtx)
-        smoothing_steps : int or None
-            number of smoothing steps (smooting is used if len(data) < nvtx)
-            Default : 20
-        time : numpy array
-            time points in the data array (if data is 2D)
-        time_label : str | None
-            format of the time label (or None for no label)
-        colorbar : bool
-            whether to add a colorbar to the figure
-        verbose : bool, str, int, or None
-            If not None, override default verbose level (see surfer.verbose).
-        """
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
-        view = self._toggle_render(False)
-
-        # Possibly remove old data
-        if hasattr(self, "data"):
-            self.data["surface"].remove()
-            if 'colorbar' in self.data:
-                self.data["colorbar"].remove()
-
-        if min is None:
-            min = array.min()
-        if max is None:
-            max = array.max()
-
-        # Create smoothing matrix if necessary
-        if len(array) < self._geo.x.shape[0]:
-            if vertices is None:
-                raise ValueError("len(data) < nvtx: need vertices")
-            adj_mat = utils.mesh_edges(self._geo.faces)
-            smooth_mat = utils.smoothing_matrix(vertices, adj_mat,
-                                                smoothing_steps)
-        else:
-            smooth_mat = None
-
+    def add_data(self, array, mlab_plot, vertices, smooth_mat, smoothing_steps,
+                 min, max, thresh, lut, colormap, alpha, time, time_label,
+                 colorbar):
+        """Add data to the brain"""
         # Calculate initial data to plot
         if array.ndim == 1:
             array_plot = array
@@ -438,12 +283,11 @@ class _Hemisphere(object):
         else:
             raise ValueError("data has to be 1D or 2D")
 
-        if smooth_mat is not None:
-            array_plot = smooth_mat * array_plot
-
-        # Copy and byteswap to deal with Mayavi bug
-        mlab_plot = self._prepare_data(array_plot)
-
+        try:
+            from mayavi import mlab
+            assert mlab
+        except ImportError:
+            from enthought.mayavi import mlab
         # Set up the visualization pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
@@ -457,17 +301,6 @@ class _Hemisphere(object):
             else:
                 mesh = mlab.pipeline.threshold(mesh, low=thresh)
 
-        # process colormap argument
-        if isinstance(colormap, basestring):
-            lut = None
-        else:
-            lut = np.asarray(colormap)
-            if lut.shape != (256, 4):
-                err = ("colormap argument must be mayavi colormap (string) or"
-                       " look up table (array of shape (256, 4))")
-                raise ValueError(err)
-            colormap = "blue-red"
-
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
                                      opacity=float(alpha), figure=self._f)
@@ -480,105 +313,23 @@ class _Hemisphere(object):
         orig_ctable = \
             surf.module_manager.scalar_lut_manager.lut.table.to_array().copy()
 
-        # Fill in the data dict
-        self.data = dict(surface=surf, orig_ctable=orig_ctable,
-                         array=array, smoothing_steps=smoothing_steps,
-                         fmin=min, fmid=(min + max) / 2, fmax=max,
-                         transparent=False, time=0, time_idx=0)
-        if vertices is not None:
-            self.data["vertices"] = vertices
-            self.data["smooth_mat"] = smooth_mat
-
         # Get the colorbar
         if colorbar:
             bar = mlab.scalarbar(surf)
             self._format_cbar_text(bar)
             bar.scalar_bar_representation.position2 = .8, 0.09
-            self.data['colorbar'] = bar
-
-        # Create time array and add label if 2D
-        if array.ndim == 2:
-            if time is None:
-                time = np.arange(array.shape[1])
-            self._times = time
-            self.data["time_label"] = time_label
-            self.data["time"] = time
-            self.data["time_idx"] = 0
-            y_txt = 0.05 + 0.05 * bool(colorbar)
-            if time_label is not None:
-                self.add_text(0.05, y_txt, time_label % time[0],
-                              name="time_label")
         else:
-            self._times = None
+            bar = None
 
-        self._toggle_render(True, view)
+        return surf, orig_ctable, bar
 
-    def add_annotation(self, annot, borders=True, alpha=1):
-        """Add an annotation file.
-
-        Parameters
-        ----------
-        annot : str
-            Either path to annotation file or annotation name
-        borders : bool
-            Show only borders of regions
-        alpha : float in [0, 1]
-            Alpha level to control opacity
-
-        """
+    def add_annotation(self, annot, ids, cmap):
+        """Add an annotation file"""
         try:
             from mayavi import mlab
             assert mlab
         except ImportError:
             from enthought.mayavi import mlab
-
-        view = self._toggle_render(False)
-
-        # Figure out where the data is coming from
-        if os.path.isfile(annot):
-            filepath = annot
-            annot = os.path.basename(filepath).split('.')[1]
-        else:
-            filepath = pjoin(self.subjects_dir,
-                             self.subject_id,
-                             'label',
-                             ".".join([self.hemi, annot, 'annot']))
-            if not os.path.exists(filepath):
-                raise ValueError('Annotation file %s does not exist'
-                                 % filepath)
-
-        # Read in the data
-        labels, cmap, _ = io.read_annot(filepath, orig_ids=True)
-
-        # Maybe zero-out the non-border vertices
-        if borders:
-            n_vertices = labels.size
-            edges = utils.mesh_edges(self._geo.faces)
-            border_edges = labels[edges.row] != labels[edges.col]
-            show = np.zeros(n_vertices, dtype=np.int)
-            show[np.unique(edges.row[border_edges])] = 1
-            labels *= show
-
-        # Handle null labels properly
-        # (tksurfer doesn't use the alpha channel, so sometimes this
-        # is set weirdly. For our purposes, it should always be 0.
-        # Unless this sometimes causes problems?
-        cmap[np.where(cmap[:, 4] == 0), 3] = 0
-        if np.any(labels == 0) and not np.any(cmap[:, -1] == 0):
-            cmap = np.vstack((cmap, np.zeros(5, int)))
-
-        # Set label ids sensibly
-        ord = np.argsort(cmap[:, -1])
-        ids = ord[np.searchsorted(cmap[ord, -1], labels)]
-        cmap = cmap[:, :4]
-
-        #  Set the alpha level
-        alpha_vec = cmap[:, 3]
-        alpha_vec[alpha_vec > 0] = alpha * 255
-
-        # Maybe get rid of old annot
-        if hasattr(self, "annot"):
-            self.annot['surface'].remove()
 
         # Create an mlab surface to visualize the annot
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
@@ -593,106 +344,16 @@ class _Hemisphere(object):
         surf.module_manager.scalar_lut_manager.lut.table = cmap
 
         # Set the brain attributes
-        self.annot = dict(surface=surf, name=annot, colormap=cmap)
+        annot = dict(surface=surf, name=annot, colormap=cmap)
+        return annot
 
-        self._toggle_render(True, view)
-
-    def add_label(self, label, color="crimson", alpha=1,
-                  scalar_thresh=None, borders=False):
-        """Add an ROI label to the image.
-
-        Parameters
-        ----------
-        label : str | instance of Label
-            label filepath or name. Can also be an instance of
-            an object with attributes "hemi", "vertices", "name",
-            and (if scalar_thresh is not None) "values".
-        color : matplotlib-style color
-            anything matplotlib accepts: string, RGB, hex, etc.
-        alpha : float in [0, 1]
-            alpha level to control opacity
-        scalar_thresh : None or number
-            threshold the label ids using this value in the label
-            file's scalar field (i.e. label only vertices with
-            scalar >= thresh)
-        borders : bool
-            show only label borders
-
-        Notes
-        -----
-        To remove previously added labels, run Brain.remove_labels().
-
-        """
+    def add_label(self, label, label_name, color, alpha):
+        """Add an ROI label to the image"""
         try:
             from mayavi import mlab
             assert mlab
         except ImportError:
             from enthought.mayavi import mlab
-
-        view = self._toggle_render(False)
-
-        # Figure out where the data is coming from
-
-        if isinstance(label, basestring):
-            if os.path.isfile(label):
-                filepath = label
-                label_name = os.path.basename(filepath).split('.')[1]
-            else:
-                label_name = label
-                filepath = pjoin(self.subjects_dir,
-                                 self.subject_id,
-                                 'label',
-                                 ".".join([self.hemi, label_name, 'label']))
-                if not os.path.exists(filepath):
-                    raise ValueError('Label file %s does not exist'
-                                     % filepath)
-            # Load the label data and create binary overlay
-            if scalar_thresh is None:
-                ids = io.read_label(filepath)
-            else:
-                ids, scalars = io.read_label(filepath, read_scalars=True)
-                ids = ids[scalars >= scalar_thresh]
-        else:
-            # try to extract parameters from label instance
-            try:
-                hemi = label.hemi
-                ids = label.vertices
-                if label.name is None:
-                    label_name = 'unnamed'
-                else:
-                    label_name = str(label.name)
-                if scalar_thresh is not None:
-                    scalars = label.values
-            except Exception:
-                raise ValueError('Label was not a filename (str), and could '
-                                 'not be understood as a class. The class '
-                                 'must have attributes "hemi", "vertices", '
-                                 '"name", and (if scalar_thresh is not None)'
-                                 '"values"')
-            if not hemi == self.hemi:
-                raise ValueError('label hemisphere (%s) and brain hemisphere '
-                                 '(%s) must match' % (label.hemi, self.hemi))
-            if scalar_thresh is not None:
-                ids = ids[scalars >= scalar_thresh]
-
-        label = np.zeros(self._geo.coords.shape[0])
-        label[ids] = 1
-
-        # make sure we have a unique name
-        if label_name in self.labels:
-            i = 2
-            name = label_name + '_%i'
-            while name % i in self.labels:
-                i += 1
-            label_name = name % i
-
-        if borders:
-            n_vertices = label.size
-            edges = utils.mesh_edges(self._geo.faces)
-            border_edges = label[edges.row] != label[edges.col]
-            show = np.zeros(n_vertices, dtype=np.int)
-            show[np.unique(edges.row[border_edges])] = 1
-            label *= show
 
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                    self._geo.y,
@@ -701,87 +362,18 @@ class _Hemisphere(object):
                                                    scalars=label,
                                                    figure=self._f)
         surf = mlab.pipeline.surface(mesh, name=label_name, figure=self._f)
-
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color]) * 255
         surf.module_manager.scalar_lut_manager.lut.table = cmap
+        return surf
 
-        self.labels[label_name] = surf
-
-        self._toggle_render(True, view)
-
-    def remove_labels(self, labels=None):
-        """Remove one or more previously added labels from the image.
-
-        Parameters
-        ----------
-        labels : None | str | list of str
-            Labels to remove. Can be a string naming a single label, or None to
-            remove all labels. Possible names can be found in the Brain.labels
-            attribute.
-        """
-        if labels is None:
-            labels = self.labels.keys()
-        elif isinstance(labels, str):
-            labels = [labels]
-
-        for key in labels:
-            label = self.labels.pop(key)
-            label.remove()
-
-    def add_morphometry(self, measure, grayscale=False):
-        """Add a morphometry overlay to the image.
-
-        Parameters
-        ----------
-        measure : {'area' | 'curv' | 'jacobian_white' | 'sulc' | 'thickness'}
-            which measure to load
-        grayscale : bool
-            whether to load the overlay with a grayscale colormap
-
-        """
+    def add_morphometry(self, morph_data, colormap, measure):
+        """Add a morphometry overlay to the image"""
         try:
             from mayavi import mlab
             assert mlab
         except ImportError:
             from enthought.mayavi import mlab
-
-        # Find the source data
-        surf_dir = pjoin(self.subjects_dir, self.subject_id, 'surf')
-        morph_file = pjoin(surf_dir, '.'.join([self.hemi, measure]))
-        if not os.path.exists(morph_file):
-            raise ValueError(
-                'Could not find %s in subject directory' % morph_file)
-
-        # Preset colormaps
-        cmap_dict = dict(area="pink",
-                         curv="RdBu",
-                         jacobian_white="pink",
-                         sulc="RdBu",
-                         thickness="pink")
-
-        view = self._toggle_render(False)
-
-        # Maybe get rid of an old overlay
-        if hasattr(self, "morphometry"):
-            self.morphometry['surface'].remove()
-            self.morphometry['colorbar'].visible = False
-
-        # Read in the morphometric data
-        morph_data = io.read_morph_data(morph_file)
-
-        # Get a cortex mask for robust range
-        self._geo.load_label("cortex")
-        ctx_idx = self._geo.labels["cortex"]
-
-        # Get the display range
-        if measure == "thickness":
-            min, max = 1, 4
-        else:
-            min, max = stats.describe(morph_data[ctx_idx])[1]
-
-        # Set up the Mayavi pipeline
-        morph_data = self._prepare_data(morph_data)
 
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
@@ -789,10 +381,7 @@ class _Hemisphere(object):
                                                     self._geo.faces,
                                                     scalars=morph_data,
                                                     figure=self._f)
-        if grayscale:
-            colormap = "gray"
-        else:
-            colormap = cmap_dict[measure]
+
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
                                      name=measure, figure=self._f)
@@ -803,71 +392,17 @@ class _Hemisphere(object):
         bar.scalar_bar_representation.position2 = .8, 0.09
 
         # Fil in the morphometry dict
-        self.morphometry = dict(surface=surf,
-                                colorbar=bar,
-                                measure=measure)
+        return dict(surface=surf, colorbar=bar, measure=measure)
 
-        self._toggle_render(True, view)
-
-    def add_foci(self, coords, coords_as_verts=False, map_surface=None,
-                 scale_factor=1, color="white", alpha=1, name=None):
-        """Add spherical foci, possibly mapping to displayed surf.
-
-        The foci spheres can be displayed at the coordinates given, or
-        mapped through a surface geometry. In other words, coordinates
-        from a volume-based analysis in MNI space can be displayed on an
-        inflated average surface by finding the closest vertex on the
-        white surface and mapping to that vertex on the inflated mesh.
-
-        Parameters
-        ----------
-        coords : numpy array
-            x, y, z coordinates in stereotaxic space or array of vertex ids
-        coords_as_verts : bool
-            whether the coords parameter should be interpreted as vertex ids
-        map_surface : Freesurfer surf or None
-            surface to map coordinates through, or None to use raw coords
-        scale_factor : int
-            controls the size of the foci spheres
-        color : matplotlib color code
-            HTML name, RBG tuple, or hex code
-        alpha : float in [0, 1]
-            opacity of focus gylphs
-        name : str
-            internal name to use
-
-        """
+    def add_foci(self, foci_coords, scale_factor, color, alpha, name):
+        """Add spherical foci, possibly mapping to displayed surf"""
         try:
             from mayavi import mlab
             assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
-        # Figure out how to interpret the first parameter
-        if coords_as_verts:
-            coords = self._geo.coords[coords]
-            map_surface = None
-
-        # Possibly map the foci coords through a surface
-        if map_surface is None:
-            foci_coords = np.atleast_2d(coords)
-        else:
-            foci_surf = io.Surface(self.subject_id, self.hemi, map_surface,
-                                   subjects_dir=self.subjects_dir)
-            foci_surf.load_geometry()
-            foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
-            foci_coords = self._geo.coords[foci_vtxs]
-
-        # Get a unique name (maybe should take this approach elsewhere)
-        if name is None:
-            name = "foci_%d" % (len(self.foci) + 1)
-
-        # Convert the color code
-        if not isinstance(color, tuple):
-            color = colorConverter.to_rgb(color)
-
         # Create the visualization
-        view = self._toggle_render(False)
         points = mlab.points3d(foci_coords[:, 0],
                                foci_coords[:, 1],
                                foci_coords[:, 2],
@@ -875,51 +410,16 @@ class _Hemisphere(object):
                                scale_factor=(10. * scale_factor),
                                color=color, opacity=alpha, name=name,
                                figure=self._f)
-        self.foci[name] = points
-        self._toggle_render(True, view)
+        return points
 
-    def add_contour_overlay(self, source, min=None, max=None,
+    def add_contour_overlay(self, scalar_data, min=None, max=None,
                             n_contours=7, line_width=1.5):
-        """Add a topographic contour overlay of the positive data.
-
-        Note: This visualization will look best when using the "low_contrast"
-        cortical curvature colorscheme.
-
-        Parameters
-        ----------
-        source : str or array
-            path to the overlay file or numpy array
-        min : float
-            threshold for overlay display
-        max : float
-            saturation point for overlay display
-        n_contours : int
-            number of contours to use in the display
-        line_width : float
-            width of contour lines
-
-        """
+        """Add a topographic contour overlay of the positive data"""
         try:
             from mayavi import mlab
             assert mlab
         except ImportError:
             from enthought.mayavi import mlab
-
-        # Read the scalar data
-        scalar_data, _ = self._read_scalar_data(source)
-
-        min, max = self._get_display_range(scalar_data, min, max, "pos")
-
-        # Prep the viz
-        view = self._toggle_render(False)
-
-        # Maybe get rid of an old overlay
-        if hasattr(self, "contour"):
-            self.contour['surface'].remove()
-            self.contour['colorbar'].visible = False
-
-        # Deal with Mayavi bug
-        scalar_data = self._prepare_data(scalar_data)
 
         # Set up the pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y,
@@ -939,41 +439,18 @@ class _Hemisphere(object):
         bar.scalar_bar_representation.position2 = .8, 0.09
 
         # Set up a dict attribute with pointers at important things
-        self.contour = dict(surface=surf, colorbar=bar)
-
-        # Show the new overlay
-        self._toggle_render(True, view)
+        return dict(surface=surf, colorbar=bar)
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0):
-        """ Add a text to the visualization
-
-        Parameters
-        ----------
-        x : Float
-            x coordinate
-        y : Float
-            y coordinate
-        text : str
-            Text to add
-        name : str
-            Name of the text (text label can be updated using update_text())
-        color : Tuple
-            Color of the text. Default: (1, 1, 1)
-        opacity : Float
-            Opacity of the text. Default: 1.0
-        """
+        """ Add a text to the visualization"""
         try:
             from mayavi import mlab
             assert mlab
         except ImportError:
             from enthought.mayavi import mlab
 
-        view = self._toggle_render(False)
-        text = mlab.text(x, y, text, name=name, color=color,
+        return mlab.text(x, y, text, name=name, color=color,
                          opacity=opacity, figure=self._f)
-
-        self.texts[name] = text
-        self._toggle_render(True, view)
 
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
@@ -1023,43 +500,6 @@ class _Hemisphere(object):
             color_data = colormap_map['classic']
 
         return color_data
-
-    def get_data_properties(self):
-        """ Get properties of the data shown
-
-        Returns
-        -------
-        props : dict
-            Dictionary with data properties
-
-            props["fmin"] : minimum colormap
-            props["fmid"] : midpoint colormap
-            props["fmax"] : maximum colormap
-            props["transparent"] : lower part of colormap transparent?
-            props["time"] : time points
-            props["time_idx"] : current time index
-            props["smoothing_steps"] : number of smoothing steps
-        """
-        props = dict()
-        try:
-            props["fmin"] = self.data["fmin"]
-            props["fmid"] = self.data["fmid"]
-            props["fmax"] = self.data["fmax"]
-            props["transparent"] = self.data["transparent"]
-            props["time"] = self.data["time"]
-            props["time_idx"] = self.data["time_idx"]
-            props["smoothing_steps"] = self.data["smoothing_steps"]
-        except KeyError:
-            # The user has not added any data
-            props["fmin"] = 0
-            props["fmid"] = 0
-            props["fmax"] = 0
-            props["transparent"] = 0
-            props["time"] = 0
-            props["time_idx"] = 0
-            props["smoothing_steps"] = 0
-
-        return props
 
     def save_image(self, fname):
         """Save current view to disk
@@ -1197,76 +637,6 @@ class _Hemisphere(object):
 
         return images_written
 
-    @verbose
-    def scale_data_colormap(self, fmin, fmid, fmax, transparent, verbose=None):
-        """Scale the data colormap.
-
-        Parameters
-        ----------
-        fmin : float
-            minimum value of colormap
-        fmid : float
-            value corresponding to color midpoint
-        fmax : float
-            maximum value for colormap
-        transparent : boolean
-            if True: use a linear transparency between fmin and fmid
-        verbose : bool, str, int, or None
-            If not None, override default verbose level (see surfer.verbose).
-        """
-
-        if not (fmin < fmid) and (fmid < fmax):
-            raise ValueError("Invalid colormap, we need fmin<fmid<fmax")
-
-        # Cast inputs to float to prevent integer division
-        fmin = float(fmin)
-        fmid = float(fmid)
-        fmax = float(fmax)
-
-        logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
-                    "transparent=%d" % (fmin, fmid, fmax, transparent))
-
-        # Get the original colormap
-        table = self.data["orig_ctable"].copy()
-
-        # Add transparency if needed
-        if transparent:
-            n_colors = table.shape[0]
-            n_colors2 = int(n_colors / 2)
-            table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
-            table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
-
-        # Scale the colormap
-        table_new = table.copy()
-        n_colors = table.shape[0]
-        n_colors2 = int(n_colors / 2)
-
-        # Index of fmid in new colorbar
-        fmid_idx = np.round(n_colors * ((fmid - fmin) / (fmax - fmin))) - 1
-
-        # Go through channels
-        for i in range(4):
-            part1 = np.interp(np.linspace(0, n_colors2 - 1, fmid_idx + 1),
-                              np.arange(n_colors),
-                              table[:, i])
-            table_new[:fmid_idx + 1, i] = part1
-            part2 = np.interp(np.linspace(n_colors2, n_colors - 1,
-                                          n_colors - fmid_idx - 1),
-                              np.arange(n_colors),
-                              table[:, i])
-            table_new[fmid_idx + 1:, i] = part2
-
-        # Get the new colormap
-        cmap = self.data["surface"].module_manager.scalar_lut_manager
-        cmap.lut.table = table_new
-        cmap.data_range = np.array([fmin, fmax])
-
-        # Update the data properties
-        self.data["fmin"] = fmin
-        self.data["fmid"] = fmid
-        self.data["fmax"] = fmax
-        self.data["transparent"] = transparent
-
     def save_montage(self, filename, order=['lat', 'ven', 'med'],
                      orientation='h', border_size=15, colorbar='auto'):
         """Create a montage from a given order of images
@@ -1312,96 +682,6 @@ class _Hemisphere(object):
         mlab.view(*current_view, figure=self._f)
         for cb in colorbars:
             cb.visible = colorbars_visibility[cb]
-
-    def set_data_time_index(self, time_idx):
-        """ Set the data time index to show
-
-        Parameters
-        ----------
-        time_idx : int
-            time index
-        """
-        if time_idx < 0 or time_idx >= self.data["array"].shape[1]:
-            raise ValueError("time index out of range")
-
-        plot_data = self.data["array"][:, time_idx]
-
-        if "smooth_mat" in self.data:
-            plot_data = self.data["smooth_mat"] * plot_data
-        self.data["surface"].mlab_source.scalars = plot_data
-        self.data["time_idx"] = time_idx
-
-        # Update time label
-        if self.data["time_label"]:
-            time = self.data["time"][time_idx]
-            self.update_text(self.data["time_label"] % time, "time_label")
-
-    @verbose
-    def set_data_smoothing_steps(self, smoothing_steps, verbose=None):
-        """ Set the number of smoothing steps
-
-        Parameters
-        ----------
-        smoothing_steps : int
-            Number of smoothing steps
-        verbose : bool, str, int, or None
-            If not None, override default verbose level (see surfer.verbose).
-        """
-
-        adj_mat = utils.mesh_edges(self._geo.faces)
-        smooth_mat = utils.smoothing_matrix(self.data["vertices"], adj_mat,
-                                            smoothing_steps)
-
-        self.data["smooth_mat"] = smooth_mat
-
-        # Redraw
-        if self.data["array"].ndim == 1:
-            plot_data = self.data["array"]
-        else:
-            plot_data = self.data["array"][:, self.data["time_idx"]]
-
-        plot_data = self.data["smooth_mat"] * plot_data
-
-        self.data["surface"].mlab_source.scalars = plot_data
-
-        # Update data properties
-        self.data["smoothing_steps"] = smoothing_steps
-
-    def set_time(self, time):
-        """Set the data time index to the time point closest to time
-
-        Parameters
-        ----------
-        time : scalar
-            Time.
-        """
-        times = getattr(self, '_times', None)
-        if times is None:
-            raise RuntimeError("Brain has no time axis")
-
-        # Check that time is in range
-        tmin = np.min(times)
-        tmax = np.max(times)
-        max_diff = (tmax - tmin) / (len(times) - 1) / 2
-        if time < tmin - max_diff or time > tmax + max_diff:
-            err = ("time = %s lies outside of the time axis "
-                   "[%s, %s]" % (time, tmin, tmax))
-            raise ValueError(err)
-
-        idx = np.argmin(np.abs(times - time))
-        self.set_data_time_index(idx)
-
-    def update_text(self, text, name):
-        """ Update text label
-
-        Parameters
-        ----------
-        text : str
-            New text for label
-        name : str
-            Name of text label
-        """
-        self.texts[name].text = text
 
     def _min_diff(self, beg, end):
         """Determine minimum "camera distance" between two views.
@@ -1531,35 +811,6 @@ class _Hemisphere(object):
         else:
             return view
 
-    def _get_colorbars(self):
-        colorbars = []
-        if hasattr(self, 'data') and 'colorbar' in self.data:
-            colorbars.append(self.data['colorbar'])
-        if hasattr(self, 'morphometry') and 'colorbar' in self.morphometry:
-            colorbars.append(self.morphometry['colorbar'])
-        if hasattr(self, 'contour') and 'colorbar' in self.contour:
-            colorbars.append(self.contour['colorbar'])
-        if hasattr(self, 'overlays'):
-            for name, obj in self.overlays.items():
-                for bar in ["pos_bar", "neg_bar"]:
-                    try:
-                        colorbars.append(getattr(obj, bar))
-                    except AttributeError:
-                        pass
-        return colorbars
-
-    def _colorbar_visibility(self, visible):
-        for cb in self._get_colorbars():
-            cb.visible = visible
-
-    def show_colorbar(self):
-        "Show colorbar(s)"
-        self._colorbar_visibility(True)
-
-    def hide_colorbar(self):
-        "Hide colorbar(s)"
-        self._colorbar_visibility(False)
-
     def close(self):
         """Close the figure and cleanup data structure."""
         try:
@@ -1620,18 +871,6 @@ class _Hemisphere(object):
 
         return min, max
 
-    def _prepare_data(self, data):
-        """Ensure data is float64 and has proper endianness.
-
-        Note: this is largely aimed at working around a Mayavi bug.
-
-        """
-        data = data.copy()
-        data = data.astype(np.float64)
-        if data.dtype.byteorder == '>':
-            data.byteswap(True)
-        return data
-
     def _format_cbar_text(self, cbar):
         bg_color = self._bg_color
         if bg_color is None or sum(bg_color) < 2:
@@ -1674,13 +913,8 @@ class OverlayData(object):
             self.neg_lims = [thresh_up, -max, -min]
         else:
             self.neg_lims = None
-
         # Byte swap copy; due to mayavi bug
-        mlab_data = scalar_data.copy()
-        mlab_data = mlab_data.astype(np.float64)
-        if scalar_data.dtype.byteorder == '>':
-            mlab_data.byteswap(True)
-        self.mlab_data = mlab_data
+        self.mlab_data = _prepare_data(scalar_data)
 
 
 class OverlayDisplay():
@@ -1855,6 +1089,19 @@ class TimeViewer(HasTraits):
                                       self.transparent)
 
 
+def _prepare_data(self, data):
+    """Ensure data is float64 and has proper endianness.
+
+    Note: this is largely aimed at working around a Mayavi bug.
+
+    """
+    data = data.copy()
+    data = data.astype(np.float64)
+    if data.dtype.byteorder == '>':
+        data.byteswap(True)
+    return data
+
+
 class Brain(object):
     """Class for visualizing a brain using multiple views in mlab
 
@@ -1957,6 +1204,8 @@ class Brain(object):
                 if f.scene is not None:
                     f.scene.background = self._bg_color
                     f.scene.foreground = self._fg_color
+        self._figures = figures
+        self._toggle_render(False)
 
         # fill figures with brains
         kwargs = dict(surf=surf, curv=curv, title=None,
@@ -1980,15 +1229,48 @@ class Brain(object):
         self._brain_list = brains
         self.brains = [b['brain'] for b in brains]
         self.brain_matrix = np.array(brain_matrix)
-        self._figures = figures
         self._scenes = scenes
         self._v = _v
-        self.set_distance()
         self.subjects_dir = subjects_dir
+        self.set_distance()
+        self._toggle_render(True, None)
+        # Initialize the overlay and label dictionaries
+        self.foci_lists = dict()
+        self.texts_matrix = np.array([dict() for _ in xrange(n_row)
+                                      for __ in xrange(n_col)])
+        self.labels_dict = dict()
+        self.overlays_dict = dict()
+        self.contour_list = []
+        self.morphometry_list = []
+        self.annotation_list = []
+        self.data_dict = dict(lh=None, rh=None)
+        self.n_times = None
         if self._scenes is not None:
             self.toggle_toolbars(show_toolbar)
         for brain in self._brain_list:
             brain['brain']._orient_lights()
+
+    def _toggle_render(self, state, views=None):
+        """Turn rendering on (True) or off (False)"""
+        try:
+            from mayavi import mlab
+            assert mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+
+        if views is None:
+            views = [None] * len(self._figures)
+        for vi, (_f, view) in enumerate(zip(self._figures, views)):
+            if state is False and view is None:
+                views[vi] = mlab.view(figure=_f)
+
+            # Testing backend doesn't have this option
+            if mlab.options.backend != 'test':
+                _f.scene.disable_render = not state
+
+            if state is True and view is not None:
+                mlab.view(*view, figure=_f)
+        return view
 
     def _set_window_properties(self, config_opts):
         """Set window properties using config_opts"""
@@ -2019,6 +1301,38 @@ class Brain(object):
         fg_color_code = colorConverter.to_rgb(fg_color_name)
         self._fg_color = fg_color_code
 
+    def get_data_properties(self):
+        """ Get properties of the data shown
+
+        Returns
+        -------
+        props : dict
+            Dictionary with data properties
+
+            props["fmin"] : minimum colormap
+            props["fmid"] : midpoint colormap
+            props["fmax"] : maximum colormap
+            props["transparent"] : lower part of colormap transparent?
+            props["time"] : time points
+            props["time_idx"] : current time index
+            props["smoothing_steps"] : number of smoothing steps
+        """
+        props = dict()
+        keys = ['fmin', 'fmid', 'fmax', 'transparent', 'time', 'time_idx',
+                'smoothing_steps']
+        try:
+            if self.data_dict['lh'] is not None:
+                hemi = 'lh'
+            else:
+                hemi = 'rh'
+            for key in keys:
+                props[key] = self.data_dict[hemi][key]
+        except KeyError:
+            # The user has not added any data
+            for key in keys:
+                props[key] = 0
+        return props
+
     def toggle_toolbars(self, show=None):
         """Toggle toolbar display
 
@@ -2040,36 +1354,59 @@ class Brain(object):
             except:
                 pass
 
-    def _check_one_brain(self, name):
+    def _get_one_brain(self, d, name):
         """Helper for various properties"""
         if len(self.brains) > 1:
             raise ValueError('Cannot access brain.%s when more than '
                              'one view is plotted. Use brain.brain_matrix '
                              'or brain.brains.' % name)
+        if isinstance(d, dict):
+            out = dict()
+            for key, value in d.iteritems():
+                out[key] = value[0]
+        else:
+            out = d[0]
+        return out
 
     @property
     def overlays(self):
         """Wrap to overlays"""
-        self._check_one_brain('overlays')
-        return self.brains[0].overlays
+        return self._get_one_brain(self.overlays_dict, 'overlays')
+
+    @property
+    def foci(self):
+        """Wrap to overlays"""
+        return self._get_one_brain(self.foci_dict, 'foci')
+
+    @property
+    def labels(self):
+        """Wrap to overlays"""
+        return self._get_one_brain(self.labels_dict, 'labels')
 
     @property
     def contour(self):
         """Wrap to overlays"""
-        self._check_one_brain('contour')
-        return self.brains[0].contour
+        return self._get_one_brain(self.contour_list, 'contour')
+
+    @property
+    def texts(self):
+        """Wrap to overlays"""
+        self._get_one_brain([[]], 'texts')
+        return self.brain_matrix[0, 0]
 
     @property
     def _geo(self):
         """Wrap to _geo"""
-        self._check_one_brain('_geo')
-        return self.brains[0]._geo
+        return self._get_one_brain(self.geo, '_geo')
 
     @property
     def data(self):
         """Wrap to data"""
-        self._check_one_brain('data')
-        return self.brains[0].data
+        self._get_one_brain([[]], 'data')
+        if self.data_dict['lh'] is not None:
+            return self.data_dict['lh']
+        else:
+            return self.data_dict['rh']
 
     def reset_view(self):
         """Orient camera to display original view
@@ -2264,6 +1601,7 @@ class Brain(object):
             shown. If two hemispheres are being shown, an error will
             be thrown.
         """
+        views = self._toggle_render(False)
         hemi = self._check_hemi(hemi)
         # load data here
         scalar_data, name = self._read_scalar_data(source, hemi, name=name)
@@ -2271,9 +1609,14 @@ class Brain(object):
         if not sign in ["abs", "pos", "neg"]:
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
         old = OverlayData(scalar_data, self.geo[hemi], min, max, sign)
+        ol = []
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                brain['brain'].add_overlay(old, name)
+                ol.append(brain['brain'].add_overlay(old))
+        if name in self.overlays:
+            name = "%s%d" % (name, len(self.overlays) + 1)
+        self.overlays_dict[name] = ol
+        self._toggle_render(True, views)
 
     def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="blue-red", alpha=1,
@@ -2330,11 +1673,88 @@ class Brain(object):
             be thrown.
         """
         hemi = self._check_hemi(hemi)
-        for brain in self._brain_list:
+
+        if min is None:
+            min = array.min()
+        if max is None:
+            max = array.max()
+
+        # Create smoothing matrix if necessary
+        if len(array) < self.geo[hemi].x.shape[0]:
+            if vertices is None:
+                raise ValueError("len(data) < nvtx: need vertices")
+            adj_mat = utils.mesh_edges(self._geo.faces)
+            smooth_mat = utils.smoothing_matrix(vertices, adj_mat,
+                                                smoothing_steps)
+        else:
+            smooth_mat = None
+
+        # Calculate initial data to plot
+        if array.ndim == 1:
+            array_plot = array
+        elif array.ndim == 2:
+            array_plot = array[:, 0]
+        else:
+            raise ValueError("data has to be 1D or 2D")
+
+        if smooth_mat is not None:
+            array_plot = smooth_mat * array_plot
+
+        # Copy and byteswap to deal with Mayavi bug
+        mlab_plot = _prepare_data(array_plot)
+
+        # process colormap argument
+        if isinstance(colormap, basestring):
+            lut = None
+        else:
+            lut = np.asarray(colormap)
+            if lut.shape != (256, 4):
+                err = ("colormap argument must be mayavi colormap (string) or"
+                       " look up table (array of shape (256, 4))")
+                raise ValueError(err)
+            colormap = "blue-red"
+
+        data = dict(array=array, smoothing_steps=smoothing_steps,
+                    fmin=min, fmid=(min + max) / 2, fmax=max,
+                    transparent=False, time=0, time_idx=0,
+                    vertices=vertices, smooth_mat=smooth_mat)
+
+        # Create time array and add label if 2D
+        if array.ndim == 2:
+            if time is None:
+                time = np.arange(array.shape[1])
+            self._times = time
+            self.n_times = array.shape[1]
+            if not self.n_times == len(time):
+                raise ValueError('time is not the same length as '
+                                 'array.shape[1]')
+            data["time_label"] = time_label
+            data["time"] = time
+            data["time_idx"] = 0
+            y_txt = 0.05 + 0.05 * bool(colorbar)
+        else:
+            self._times = None
+            self.n_times = None
+
+        views = self._toggle_render(False)
+        surfs = []
+        bars = []
+        for bi, brain in enumerate(self._brain_list):
             if brain['hemi'] == hemi:
-                brain['brain'].add_data(array, min, max, thresh, colormap,
-                                        alpha, vertices, smoothing_steps,
-                                        time, time_label, colorbar)
+                s, ct, bar = brain['brain'].add_data(array, mlab_plot,
+                        vertices, smooth_mat, min, max, thresh, lut, colormap,
+                        alpha, time, time_label, colorbar)
+                surfs.append(s)
+                bars.append(bar)
+                row, col = np.unravel_index(bi, self.brain_matrix.shape)
+                if array.ndim == 2 and time_label is not None:
+                    self.add_text(0.05, y_txt, time_label % time[0],
+                                  name="time_label", row=row, col=col)
+        self._toggle_render(True, views)
+        data['surfaces'] = surfs
+        data['colorbars'] = bars
+        data['orig_ctable'] = ct
+        self.data_dict[hemi] = data
 
     def add_annotation(self, annot, borders=True, alpha=1, hemi=None):
         """Add an annotation file.
@@ -2353,9 +1773,60 @@ class Brain(object):
             be thrown.
         """
         hemi = self._check_hemi(hemi)
+
+        # Get rid of any old annots
+        for a in self.annot_list:
+            a['surface'].remove()
+
+        # Figure out where the data is coming from
+        if os.path.isfile(annot):
+            filepath = annot
+            annot = os.path.basename(filepath).split('.')[1]
+        else:
+            filepath = pjoin(self.subjects_dir,
+                             self.subject_id,
+                             'label',
+                             ".".join([hemi, annot, 'annot']))
+            if not os.path.exists(filepath):
+                raise ValueError('Annotation file %s does not exist'
+                                 % filepath)
+
+        # Read in the data
+        labels, cmap, _ = io.read_annot(filepath, orig_ids=True)
+
+        # Maybe zero-out the non-border vertices
+        if borders:
+            n_vertices = labels.size
+            edges = utils.mesh_edges(self._geo.faces)
+            border_edges = labels[edges.row] != labels[edges.col]
+            show = np.zeros(n_vertices, dtype=np.int)
+            show[np.unique(edges.row[border_edges])] = 1
+            labels *= show
+
+        # Handle null labels properly
+        # (tksurfer doesn't use the alpha channel, so sometimes this
+        # is set weirdly. For our purposes, it should always be 0.
+        # Unless this sometimes causes problems?
+        cmap[np.where(cmap[:, 4] == 0), 3] = 0
+        if np.any(labels == 0) and not np.any(cmap[:, -1] == 0):
+            cmap = np.vstack((cmap, np.zeros(5, int)))
+
+        # Set label ids sensibly
+        ord = np.argsort(cmap[:, -1])
+        ids = ord[np.searchsorted(cmap[ord, -1], labels)]
+        cmap = cmap[:, :4]
+
+        #  Set the alpha level
+        alpha_vec = cmap[:, 3]
+        alpha_vec[alpha_vec > 0] = alpha * 255
+
+        al = []
+        views = self._toggle_render(False)
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                brain['brain'].add_annotation(annot, borders, alpha)
+                al.append(brain['brain'].add_annotation(annot, ids, cmap))
+        self.annot_list = al
+        self._toggle_render(True, views)
 
     def add_label(self, label, color="crimson", alpha=1,
                   scalar_thresh=None, borders=False, hemi=None):
@@ -2387,10 +1858,76 @@ class Brain(object):
         To remove previously added labels, run Brain.remove_labels().
         """
         hemi = self._check_hemi(hemi)
+        if isinstance(label, basestring):
+            if os.path.isfile(label):
+                filepath = label
+                label_name = os.path.basename(filepath).split('.')[1]
+            else:
+                label_name = label
+                filepath = pjoin(self.subjects_dir,
+                                 self.subject_id,
+                                 'label',
+                                 ".".join([hemi, label_name, 'label']))
+                if not os.path.exists(filepath):
+                    raise ValueError('Label file %s does not exist'
+                                     % filepath)
+            # Load the label data and create binary overlay
+            if scalar_thresh is None:
+                ids = io.read_label(filepath)
+            else:
+                ids, scalars = io.read_label(filepath, read_scalars=True)
+                ids = ids[scalars >= scalar_thresh]
+        else:
+            # try to extract parameters from label instance
+            try:
+                lhemi = label.hemi
+                ids = label.vertices
+                if label.name is None:
+                    label_name = 'unnamed'
+                else:
+                    label_name = str(label.name)
+                if scalar_thresh is not None:
+                    scalars = label.values
+            except Exception:
+                raise ValueError('Label was not a filename (str), and could '
+                                 'not be understood as a class. The class '
+                                 'must have attributes "hemi", "vertices", '
+                                 '"name", and (if scalar_thresh is not None)'
+                                 '"values"')
+            if not lhemi == hemi:
+                raise ValueError('label hemisphere (%s) and brain hemisphere '
+                                 '(%s) must match' % (lhemi, hemi))
+            if scalar_thresh is not None:
+                ids = ids[scalars >= scalar_thresh]
+
+        label = np.zeros(self._geo.coords.shape[0])
+        label[ids] = 1
+
+        # make sure we have a unique name
+        if label_name in self.labels_dict:
+            i = 2
+            name = label_name + '_%i'
+            while name % i in self.labels_dict:
+                i += 1
+            label_name = name % i
+
+        if borders:
+            n_vertices = label.size
+            edges = utils.mesh_edges(self._geo.faces)
+            border_edges = label[edges.row] != label[edges.col]
+            show = np.zeros(n_vertices, dtype=np.int)
+            show[np.unique(edges.row[border_edges])] = 1
+            label *= show
+
+        # make a list of all the plotted labels
+        ll = []
+        views = self._toggle_render(False)
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                brain['brain'].add_label(label, color, alpha, scalar_thresh,
-                                         borders)
+                ll.append(brain['brain'].add_label(label, label_name,
+                          color, alpha))
+        self.labels_dict[label_name] = ll
+        self._toggle_render(True, views)
 
     def remove_labels(self, labels=None, hemi=None):
         """Remove one or more previously added labels from the image.
@@ -2407,9 +1944,15 @@ class Brain(object):
             be thrown.
         """
         hemi = self._check_hemi(hemi)
-        for brain in self._brain_list:
-            if brain['hemi'] == hemi:
-                brain['brain'].remove_labels(labels)
+        if labels is None:
+            labels = self.labels_dict.keys()
+        elif isinstance(labels, str):
+            labels = [labels]
+
+        for key in labels:
+            label = self.labels_dict.pop(key)
+            for ll in label:
+                ll.remove()
 
     def add_morphometry(self, measure, grayscale=False, hemi=None):
         """Add a morphometry overlay to the image.
@@ -2426,9 +1969,55 @@ class Brain(object):
             be thrown.
         """
         hemi = self._check_hemi(hemi)
+
+        # Find the source data
+        surf_dir = pjoin(self.subjects_dir, self.subject_id, 'surf')
+        morph_file = pjoin(surf_dir, '.'.join([self.hemi, measure]))
+        if not os.path.exists(morph_file):
+            raise ValueError(
+                'Could not find %s in subject directory' % morph_file)
+
+        # Preset colormaps
+        cmap_dict = dict(area="pink",
+                         curv="RdBu",
+                         jacobian_white="pink",
+                         sulc="RdBu",
+                         thickness="pink")
+
+        # Get rid of any old overlays
+        for m in self.morphometry_list:
+            m['surface'].remove()
+            m['colorbar'].visible = False
+
+        # Read in the morphometric data
+        morph_data = io.read_morph_data(morph_file)
+
+        # Get a cortex mask for robust range
+        self._geo.load_label("cortex")
+        ctx_idx = self._geo.labels["cortex"]
+
+        # Get the display range
+        if measure == "thickness":
+            min, max = 1, 4
+        else:
+            min, max = stats.describe(morph_data[ctx_idx])[1]
+
+        # Set up the Mayavi pipeline
+        morph_data = _prepare_data(morph_data)
+
+        if grayscale:
+            colormap = "gray"
+        else:
+            colormap = cmap_dict[measure]
+
+        views = self._toggle_render(False)
+        ml = []
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                brain['brain'].add_morphometry(measure, grayscale)
+                ml.append(brain['brain'].add_morphometry(morph_data, colormap,
+                                                         measure))
+        self.morphometry_list = ml
+        self._toggle_render(True, views)
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
                  scale_factor=1, color="white", alpha=1, name=None,
@@ -2463,10 +2052,38 @@ class Brain(object):
             be thrown.
         """
         hemi = self._check_hemi(hemi)
+
+        # Figure out how to interpret the first parameter
+        if coords_as_verts:
+            coords = self.geo[hemi].coords[coords]
+            map_surface = None
+
+        # Possibly map the foci coords through a surface
+        if map_surface is None:
+            foci_coords = np.atleast_2d(coords)
+        else:
+            foci_surf = io.Surface(self.subject_id, hemi, map_surface,
+                                   subjects_dir=self.subjects_dir)
+            foci_surf.load_geometry()
+            foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
+            foci_coords = self.geo[hemi].coords[foci_vtxs]
+
+        # Get a unique name (maybe should take this approach elsewhere)
+        if name is None:
+            name = "foci_%d" % (len(self.foci) + 1)
+
+        # Convert the color code
+        if not isinstance(color, tuple):
+            color = colorConverter.to_rgb(color)
+
+        views = self._toggle_render(False)
+        fl = []
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                brain['brain'].add_foci(coords, coords_as_verts, map_surface,
-                                        scale_factor, color, alpha, name)
+                fl.append(brain['brain'].add_foci(foci_coords, scale_factor,
+                                                  color, alpha, name))
+        self.foci_dict[name] = fl
+        self._toggle_render(True, views)
 
     def add_contour_overlay(self, source, min=None, max=None,
                             n_contours=7, line_width=1.5, hemi=None):
@@ -2493,10 +2110,30 @@ class Brain(object):
             be thrown.
         """
         hemi = self._check_hemi(hemi)
+
+        # Read the scalar data
+        scalar_data, _ = self._read_scalar_data(source)
+        min, max = self._get_display_range(scalar_data, min, max, "pos")
+
+        # Deal with Mayavi bug
+        scalar_data = _prepare_data(scalar_data)
+
+        # Maybe get rid of an old overlay
+        if hasattr(self, "contour"):
+            for c in self.contour_list:
+                c['surface'].remove()
+                c['colorbar'].visible = False
+
+        views = self._toggle_render(False)
+        cl = []
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                brain['brain'].add_contour_overlay(source, min, max,
-                                                   n_contours, line_width)
+                cl.append(brain['brain'].add_contour_overlay(scalar_data,
+                                                             min, max,
+                                                             n_contours,
+                                                             line_width))
+        self.contour_list = cl
+        self._toggle_render(True, views)
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0,
                  row=-1, col=-1):
@@ -2521,7 +2158,11 @@ class Brain(object):
         col : int
             Column index of which brain to use
         """
-        self.brain_matrix[row][col].add_text(x, y, text, name, color, opacity)
+        if name in self.texts_matrix[row, col]:
+            self.texts_matrix[row, col].remove()
+        text = self.brain_matrix[row, col].add_text(x, y, text,
+                                                    name, color, opacity)
+        self.texts_matrix[row, col][name] = text
 
     def save_image(self, fname, row=-1, col=-1):
         """Save current view to disk
@@ -2625,8 +2266,9 @@ class Brain(object):
                                                         fname_pattern,
                                                         use_abs_idx)
 
-    def scale_data_colormap(self, fmin, fmid, fmax, transparent):
-        """Scale the data colormaps.
+    @verbose
+    def scale_data_colormap(self, fmin, fmid, fmax, transparent, verbose=None):
+        """Scale the data colormap.
 
         Parameters
         ----------
@@ -2638,9 +2280,64 @@ class Brain(object):
             maximum value for colormap
         transparent : boolean
             if True: use a linear transparency between fmin and fmid
+        verbose : bool, str, int, or None
+            If not None, override default verbose level (see surfer.verbose).
         """
-        for brain in self._brain_list:
-            brain['brain'].scale_data_colormap(fmin, fmid, fmax, transparent)
+        if not (fmin < fmid) and (fmid < fmax):
+            raise ValueError("Invalid colormap, we need fmin<fmid<fmax")
+
+        # Cast inputs to float to prevent integer division
+        fmin = float(fmin)
+        fmid = float(fmid)
+        fmax = float(fmax)
+
+        logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
+                    "transparent=%d" % (fmin, fmid, fmax, transparent))
+
+        # Get the original colormap
+        table = self.data["orig_ctable"].copy()
+
+        # Add transparency if needed
+        if transparent:
+            n_colors = table.shape[0]
+            n_colors2 = int(n_colors / 2)
+            table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
+            table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
+
+        # Scale the colormap
+        table_new = table.copy()
+        n_colors = table.shape[0]
+        n_colors2 = int(n_colors / 2)
+
+        # Index of fmid in new colorbar
+        fmid_idx = np.round(n_colors * ((fmid - fmin) / (fmax - fmin))) - 1
+
+        # Go through channels
+        for i in range(4):
+            part1 = np.interp(np.linspace(0, n_colors2 - 1, fmid_idx + 1),
+                              np.arange(n_colors),
+                              table[:, i])
+            table_new[:fmid_idx + 1, i] = part1
+            part2 = np.interp(np.linspace(n_colors2, n_colors - 1,
+                                          n_colors - fmid_idx - 1),
+                              np.arange(n_colors),
+                              table[:, i])
+            table_new[fmid_idx + 1:, i] = part2
+
+        views = self._toggle_render(False)
+        # Use the new colormap
+        for hemi in ['lh', 'rh']:
+            data = self.data_dict[hemi]
+            if data is not None:
+                for surf in data['surfaces']:
+                    cmap = surf.module_manager.scalar_lut_manager
+                    cmap.lut.table = table_new
+                    cmap.data_range = np.array([fmin, fmax])
+
+                # Update the data properties
+                data["fmin"], data['fmid'], data['fmax'] = fmin, fmid, fmax
+                data["transparent"] = transparent
+        self._toggle_render(True, views)
 
     def save_montage(self, filename, order=['lat', 'ven', 'med'],
                      orientation='h', border_size=15, colorbar='auto',
@@ -2670,26 +2367,68 @@ class Brain(object):
                                                  border_size, colorbar)
 
     def set_data_time_index(self, time_idx):
-        """ Set the data time index to show
+        """Set the data time index to show
 
         Parameters
         ----------
         time_idx : int
             time index
         """
-        for brain in self._brain_list:
-            brain['brain'].set_data_time_index(time_idx)
+        if self.n_times is None:
+            raise RuntimeError('cannot set time index with no time data')
+        if time_idx < 0 or time_idx >= self.n_times:
+            raise ValueError("time index out of range")
 
-    def set_data_smoothing_steps(self, smoothing_steps):
+        views = self._toggle_render(False)
+        for hemi in ['lh', 'rh']:
+            data = self.data_dict[hemi]
+            if data is not None:
+                plot_data = data["array"][:, time_idx]
+                if data["smooth_mat"] is not None:
+                    plot_data = data["smooth_mat"] * plot_data
+                for surf in data["surfaces"]:
+                    surf.mlab_source.scalars = plot_data
+                data["time_idx"] = time_idx
+
+                # Update time label
+                if data["time_label"]:
+                    time = data["time"][time_idx]
+                    self.update_text(data["time_label"] % time, "time_label")
+        self._toggle_render(True, views)
+
+    @verbose
+    def set_data_smoothing_steps(self, smoothing_steps, verbose=None):
         """Set the number of smoothing steps
 
         Parameters
         ----------
         smoothing_steps : int
             Number of smoothing steps
+        verbose : bool, str, int, or None
+            If not None, override default verbose level (see surfer.verbose).
         """
-        for brain in self._brain_list:
-            brain['brain'].set_data_smoothing_steps(smoothing_steps)
+        views = self._toggle_render(False)
+        for hemi in ['lh', 'rh']:
+            data = self.data_dict[hemi]
+            if data is not None:
+                adj_mat = utils.mesh_edges(self.geo[hemi].faces)
+                smooth_mat = utils.smoothing_matrix(self.data["vertices"],
+                                                    adj_mat, smoothing_steps)
+                data["smooth_mat"] = smooth_mat
+
+                # Redraw
+                if data["array"].ndim == 1:
+                    plot_data = data["array"]
+                else:
+                    plot_data = data["array"][:, data["time_idx"]]
+
+                plot_data = data["smooth_mat"] * plot_data
+                for surf in data["surfaces"]:
+                    surf.mlab_source.scalars = plot_data
+
+                # Update data properties
+                data["smoothing_steps"] = smoothing_steps
+        self._toggle_render(True, views)
 
     def set_time(self, time):
         """Set the data time index to the time point closest to time
@@ -2698,13 +2437,22 @@ class Brain(object):
         ----------
         time : scalar
             Time.
-        row : int
-            Row index of which brain to use
-        col : int
-            Column index of which brain to use
         """
-        for brain in self._brain_list:
-            brain['brain'].set_time(time)
+        if self.n_times is None:
+            raise RuntimeError("Brain has no time axis")
+        times = self._times
+
+        # Check that time is in range
+        tmin = np.min(times)
+        tmax = np.max(times)
+        max_diff = (tmax - tmin) / (len(times) - 1) / 2
+        if time < tmin - max_diff or time > tmax + max_diff:
+            err = ("time = %s lies outside of the time axis "
+                   "[%s, %s]" % (time, tmin, tmax))
+            raise ValueError(err)
+
+        idx = np.argmin(np.abs(times - time))
+        self.set_data_time_index(idx)
 
     def update_text(self, text, name, row=-1, col=-1):
         """Update text label
@@ -2746,6 +2494,28 @@ class Brain(object):
         """
         self.brain_matrix[row][col].animate(views, n_steps, fname, use_cache)
 
+    def _get_colorbars(self, row, col):
+        ind = row * len(self.brain_matrix) + col
+        colorbars = []
+        if hasattr(self, 'data') and 'colorbar' in self.data:
+            colorbars.append(self.data['colorbar'][ind])
+        if len(self.morphometry_list) > 0:
+            colorbars.append(self.morphometry[ind]['colorbar'])
+        if len(self.contour_list) > 0:
+            colorbars.append(self.contour[ind]['colorbar'])
+        if len(self.overlays_dict) > 0:
+            for name, obj in self.overlays_dict.items():
+                for bar in ["pos_bar", "neg_bar"]:
+                    try:
+                        colorbars.append(getattr(obj[ind], bar))
+                    except AttributeError:
+                        pass
+        return colorbars
+
+    def _colorbar_visibility(self, visible):
+        for cb in self._get_colorbars():
+            cb.visible = visible
+
     def show_colorbar(self, row=-1, col=-1):
         """Show colorbar(s) for given plot
 
@@ -2756,9 +2526,9 @@ class Brain(object):
         col : int
             Column index of which brain to use
         """
-        self.brain_matrix[row][col].show_colorbar()
+        self._colorbar_visibility(True, row, col)
 
-    def hide_colorbar(self, row=0, col=0):
+    def hide_colorbar(self, row=-1, col=-1):
         """Hide colorbar(s) for given plot
 
         Parameters
@@ -2768,7 +2538,7 @@ class Brain(object):
         col : int
             Column index of which brain to use
         """
-        self.brain_matrix[row][col].hide_colorbar()
+        self._colorbar_visibility(False, row, col)
 
     def close(self):
         """Close all figures and cleanup data structure."""
