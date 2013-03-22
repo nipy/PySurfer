@@ -26,7 +26,7 @@ image = brain.save_montage(None, ['l', 'v', 'm'], orientation='v')
 import pylab as pl
 fig = pl.figure(figsize=(5, 3), facecolor=bgcolor)
 ax = pl.axes(frameon=False)
-ax.imshow(image, origin='lower')
+ax.imshow(image, origin='upper')
 pl.xticks(())
 pl.yticks(())
 pl.draw()
