@@ -17,7 +17,7 @@ from surfer.io import read_stc
 define subject, surface and hemisphere(s) to plot
 """
 subject_id, surface = 'fsaverage', 'inflated'
-hemi = 'both'
+hemi = 'split'
 
 """
 create Brain object for visualization
