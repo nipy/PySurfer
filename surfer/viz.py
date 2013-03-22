@@ -163,6 +163,28 @@ def _prepare_data(data):
     return data
 
 
+def _force_render(figures):
+    """Ensure plots are updated before properties are used"""
+    from pyface.api import GUI
+    try:
+        from mayavi import mlab
+        assert mlab
+    except:
+        from enthought.mayavi import mlab
+    if not isinstance(figures, list):
+        figures = [[figures]]
+    for ff in figures:
+        for f in ff:
+            f.render()
+            mlab.draw(figure=f)
+    _gui = GUI()
+    orig_val = _gui.busy
+    _gui.set_busy(busy=True)
+    _gui.process_events()
+    _gui.set_busy(busy=orig_val)
+    _gui.process_events()
+
+
 class _MlabGenerator(HasTraits):
     """TraitsUI mlab figure generator"""
 
@@ -337,13 +359,14 @@ class Brain(object):
             figures = [figure[slice(ri * n_col, (ri + 1) * n_col)]
                        for ri in range(n_row)]
         self._figures = figures
-        self._toggle_render(False)
-        for ff in figures:
+        for ff in self._figures:
             for f in ff:
                 if f.scene is not None:
                     f.scene.background = self._bg_color
                     f.scene.foreground = self._fg_color
-                f.render()
+        # force rendering so scene.lights exists
+        _force_render(self._figures)
+        self._toggle_render(False)
 
         # fill figures with brains
         kwargs = dict(surf=surf, curv=curv, title=None,
@@ -364,6 +387,9 @@ class Brain(object):
                     brains += [dict(row=ri, col=ci, brain=brain, hemi=h)]
                     brain_row += [brain]
             brain_matrix += [brain_row]
+        # force rendering so that distance calculations work
+        self._toggle_render(True, None)
+        _force_render(self._figures)
         self._original_views = views
         self._brain_list = brains
         self.brains = [b['brain'] for b in brains]
@@ -371,8 +397,10 @@ class Brain(object):
         self._scenes = scenes
         self._v = _v
         self.subjects_dir = subjects_dir
+        # Do it twice since Mayavi + TraitsUI is buggy
         self.set_distance()
-        self._toggle_render(True, None)
+        _force_render(self._figures)
+        self.set_distance()
         # Initialize the overlay and label dictionaries
         self.foci_dict = dict()
         self.labels_dict = dict()
@@ -1906,6 +1934,7 @@ class _Hemisphere(object):
                 print(v)
                 raise
 
+        _force_render(self._f)
         if view is not None:
             view['reset_roll'] = True
             view['figure'] = self._f
@@ -1914,6 +1943,7 @@ class _Hemisphere(object):
             mlab.view(**view)
         if roll is not None:
             mlab.roll(roll=roll, figure=self._f)
+        _force_render(self._f)
 
         view = mlab.view(figure=self._f)
         roll = mlab.roll(figure=self._f)
