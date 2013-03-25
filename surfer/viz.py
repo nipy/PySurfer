@@ -359,12 +359,17 @@ class Brain(object):
             figures = [figure[slice(ri * n_col, (ri + 1) * n_col)]
                        for ri in range(n_row)]
         self._figures = figures
+        self._scenes = scenes
+        self._v = _v
         for ff in self._figures:
             for f in ff:
                 if f.scene is not None:
                     f.scene.background = self._bg_color
                     f.scene.foreground = self._fg_color
         # force rendering so scene.lights exists
+        _force_render(self._figures)
+        if self._scenes is not None:
+            self.toggle_toolbars(show_toolbar)
         _force_render(self._figures)
         self._toggle_render(False)
 
@@ -376,7 +381,6 @@ class Brain(object):
         brain_matrix = []
         for ri, view in enumerate(views):
             brain_row = []
-            # plot RH first so that we get LH view for hemi='both'
             for hi, h in enumerate(['lh', 'rh']):
                 if not (hemi in ['lh', 'rh'] and h != hemi):
                     ci = hi if hemi == 'split' else 0
@@ -384,23 +388,19 @@ class Brain(object):
                     kwargs['geo'] = self.geo[h]
                     kwargs['figure'] = figures[ri][ci]
                     brain = _Hemisphere(subject_id, **kwargs)
+                    brain.show_view(view)
                     brains += [dict(row=ri, col=ci, brain=brain, hemi=h)]
                     brain_row += [brain]
             brain_matrix += [brain_row]
-        # force rendering so that distance calculations work
-        self._toggle_render(True, None)
+        self._toggle_render(True)
         _force_render(self._figures)
         self._original_views = views
         self._brain_list = brains
+        for brain in self._brain_list:
+            brain['brain']._orient_lights()
         self.brains = [b['brain'] for b in brains]
         self.brain_matrix = np.array(brain_matrix)
-        self._scenes = scenes
-        self._v = _v
         self.subjects_dir = subjects_dir
-        # Do it twice since Mayavi + TraitsUI is buggy
-        self.set_distance()
-        _force_render(self._figures)
-        self.set_distance()
         # Initialize the overlay and label dictionaries
         self.foci_dict = dict()
         self.labels_dict = dict()
@@ -412,10 +412,6 @@ class Brain(object):
         # note that texts gets treated differently
         self.texts_dict = dict()
         self.n_times = None
-        if self._scenes is not None:
-            self.toggle_toolbars(show_toolbar)
-        for brain in self._brain_list:
-            brain['brain']._orient_lights()
 
     ###########################################################################
     # HELPERS
@@ -427,10 +423,10 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        if views is None:
-            views = [None] * len(self._figures)
         figs = []
         [figs.extend(f) for f in self._figures]
+        if views is None:
+            views = [None] * len(figs)
         for vi, (_f, view) in enumerate(zip(figs, views)):
             if state is False and view is None:
                 views[vi] = mlab.view(figure=_f)
@@ -440,8 +436,9 @@ class Brain(object):
                 _f.scene.disable_render = not state
 
             if state is True and view is not None:
+                mlab.draw(figure=_f)
                 mlab.view(*view, figure=_f)
-        return view
+        return views
 
     def _set_window_properties(self, config_opts):
         """Set window properties using config_opts"""
@@ -517,13 +514,23 @@ class Brain(object):
             raise ValueError('Cannot toggle toolbars when figures are '
                              'passed in')
         if show is None:
-            show = not self._scenes[0][0].scene_editor._tool_bar.isVisible()
+            try:
+                # QT4
+                show = self._scenes[0][0].scene_editor._tool_bar.isVisible()
+                show = not show
+            except:
+                # WX
+                show = not self._scenes[0][0].scene_editor._tool_bar.Shown()
+                show = not show
         for s in self._scenes:
             # this may not work if QT is not the backend (?), or in testing
             try:
                 s.scene_editor._tool_bar.setVisible(show)
             except:
-                pass
+                try:
+                    s.scene_editor._tool_bar.Show(show)
+                except:
+                    pass
 
     def _get_one_brain(self, d, name):
         """Helper for various properties"""
@@ -721,7 +728,6 @@ class Brain(object):
             shown. If two hemispheres are being shown, an error will
             be thrown.
         """
-        views = self._toggle_render(False)
         hemi = self._check_hemi(hemi)
         # load data here
         scalar_data, name = self._read_scalar_data(source, hemi, name=name)
@@ -730,11 +736,12 @@ class Brain(object):
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
         old = OverlayData(scalar_data, self.geo[hemi], min, max, sign)
         ol = []
+        views = self._toggle_render(False)
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
                 ol.append(brain['brain'].add_overlay(old))
-        if name in self.overlays:
-            name = "%s%d" % (name, len(self.overlays) + 1)
+        if name in self.overlays_dict:
+            name = "%s%d" % (name, len(self.overlays_dict) + 1)
         self.overlays_dict[name] = ol
         self._toggle_render(True, views)
 
@@ -856,9 +863,9 @@ class Brain(object):
             self._times = None
             self.n_times = None
 
-        views = self._toggle_render(False)
         surfs = []
         bars = []
+        views = self._toggle_render(False)
         for bi, brain in enumerate(self._brain_list):
             if brain['hemi'] == hemi:
                 s, ct, bar = brain['brain'].add_data(array, mlab_plot,
@@ -1913,9 +1920,6 @@ class _Hemisphere(object):
             curv_bar = mlab.scalarbar(self._geo_surf)
             curv_bar.reverse_lut = True
             curv_bar.visible = False
-
-        # Bring up the lateral view
-        self.show_view(config.get("visual", "default_view"), distance='auto')
 
     def show_view(self, view=None, roll=None, distance=None):
         """Orient camera to display view"""
