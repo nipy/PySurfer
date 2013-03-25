@@ -25,16 +25,18 @@ surf_data_rh = io.project_volume_data(mri_file, "rh", reg_file)
 You can pass this array to the add_overlay method for
 a typical activation overlay (with thresholding, etc.)
 """
-brain.add_overlay(surf_data_lh, min=.3, max=.7, name="ang_corr", hemi='lh')
-brain.add_overlay(surf_data_rh, min=.3, max=.7, name="ang_corr", hemi='rh')
+brain.add_overlay(surf_data_lh, min=.3, max=.7, name="ang_corr_lh", hemi='lh')
+brain.add_overlay(surf_data_rh, min=.3, max=.7, name="ang_corr_rh", hemi='rh')
 
 """
 You can also pass it to add_data for more control
 over the visualzation. Here we'll plot the whole
 range of correlations
 """
-brain.brains[0].overlays["ang_corr"].remove()
-brain.brains[1].overlays["ang_corr"].remove()
+for overlay in brain.overlays_dict["ang_corr_lh"]:
+    overlay.remove()
+for overlay in brain.overlays_dict["ang_corr_rh"]:
+    overlay.remove()
 brain.add_data(surf_data_lh, -.7, .7, colormap="jet", alpha=.7, hemi='lh')
 brain.add_data(surf_data_rh, -.7, .7, colormap="jet", alpha=.7, hemi='rh')
 

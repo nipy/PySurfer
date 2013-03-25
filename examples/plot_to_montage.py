@@ -7,7 +7,6 @@ Make one image from multiple views.
 
 """
 print __doc__
-
 from surfer import Brain
 
 sub = 'fsaverage'
@@ -20,6 +19,7 @@ brain = Brain(sub, hemi, surf, config_opts={'background': bgcolor})
 ###############################################################################
 # Get a set of images as a montage, note the data could be saved if desired
 image = brain.save_montage(None, ['l', 'v', 'm'], orientation='v')
+brain.close()
 
 ###############################################################################
 # View created image
