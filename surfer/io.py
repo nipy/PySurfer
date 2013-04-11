@@ -357,9 +357,8 @@ class Surface(object):
         argument.
 
         """
-        label = nib.freesurfer.read_label(
-            pjoin(self.data_path, 'label',
-            '%s.%s.label' % (self.hemi, name)))
+        label = nib.freesurfer.read_label(pjoin(self.data_path, 'label',
+                                          '%s.%s.label' % (self.hemi, name)))
         label_array = np.zeros(len(self.x), np.int)
         label_array[label] = 1
         try:
