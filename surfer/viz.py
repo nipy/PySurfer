@@ -7,6 +7,8 @@ from scipy import stats
 from scipy import ndimage
 from matplotlib.colors import colorConverter
 
+import nibabel as nib
+
 from . import io
 from . import utils
 from .io import Surface, _get_subjects_dir
@@ -598,7 +600,7 @@ class Brain(object):
                                  % filepath)
 
         # Read in the data
-        labels, cmap, _ = io.read_annot(filepath, orig_ids=True)
+        labels, cmap, _ = nib.freesurfer.read_annot(filepath, orig_ids=True)
 
         # Maybe zero-out the non-border vertices
         if borders:
@@ -702,9 +704,10 @@ class Brain(object):
                                      % filepath)
             # Load the label data and create binary overlay
             if scalar_thresh is None:
-                ids = io.read_label(filepath)
+                ids = nib.freesurfer.read_label(filepath)
             else:
-                ids, scalars = io.read_label(filepath, read_scalars=True)
+                ids, scalars = nib.freesurfer.read_label(filepath,
+                                                         read_scalars=True)
                 ids = ids[scalars >= scalar_thresh]
         else:
             # try to extract parameters from label instance
@@ -828,7 +831,7 @@ class Brain(object):
         view = mlab.view()
 
         # Read in the morphometric data
-        morph_data = io.read_morph_data(morph_file)
+        morph_data = nib.freesurfer.read_morph_data(morph_file)
 
         # Get a cortex mask for robust range
         self._geo.load_label("cortex")
