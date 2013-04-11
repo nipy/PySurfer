@@ -7,7 +7,7 @@
 descr = """PySurfer: Python / FreeSurfer / Mayavi2 for brain imaging"""
 
 import os
-
+import surfer
 
 DISTNAME = 'pysurfer'
 DESCRIPTION = descr
@@ -17,7 +17,7 @@ MAINTAINER_EMAIL = 'mwaskom@stanford.edu'
 URL = 'http://pysurfer.github.com'
 LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/nipy/PySurfer'
-VERSION = '0.4.dev'
+VERSION = surfer.__version__
 
 import setuptools  # we are using a setuptools namespace
 from numpy.distutils.core import setup

@@ -28,9 +28,9 @@ a volume based analysis.
 """
 coord = [-43, 25, 24]
 
-utils.coord_to_label(subject_id, coord, label='coord', hemi='lh', n_steps=50,
-                     map_surface="white")
-brain.add_label('coord-lh.label')
+utils.coord_to_label(subject_id, coord, label='example_data/coord',
+                     hemi='lh', n_steps=50, map_surface="white")
+brain.add_label('example_data/coord-lh.label')
 
 """
 Now we plot the foci on the inflated surface. We will map
@@ -45,9 +45,10 @@ or using a vertex index
 """
 coord = 0
 
-utils.coord_to_label(subject_id, coord, label='coord', hemi='lh', n_steps=50,
-                     map_surface="white", coord_as_vert=True)
-brain.add_label('coord-lh.label', color='blue')
+utils.coord_to_label(subject_id, coord, label='example_data/coord',
+                     hemi='lh', n_steps=50, map_surface="white",
+                     coord_as_vert=True)
+brain.add_label('example_data/coord-lh.label', color='blue')
 
 """
 Now we plot the foci on the inflated surface. We will map

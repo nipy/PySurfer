@@ -1,11 +1,43 @@
 import os
 from os.path import join as pjoin
-import time
-from subprocess import call
+from tempfile import mktemp
+
+from subprocess import Popen, PIPE
 import gzip
 import numpy as np
 import nibabel as nib
 from nibabel.spatialimages import ImageFileError
+
+
+def _get_subjects_dir(subjects_dir=None):
+    """Get the subjects directory from parameter or environment variable
+
+    Parameters
+    ----------
+    subjects_dir : str | None
+        The subjects directory.
+
+    Returns
+    -------
+    subjects_dir : str
+        The subjects directory. If the subjects_dir input parameter is not
+        None, its value will be returned, otherwise it will be obtained from
+        the SUBJECTS_DIR environment variable.
+    """
+
+    if subjects_dir is None:
+        if 'SUBJECTS_DIR' in os.environ:
+            subjects_dir = os.environ['SUBJECTS_DIR']
+        else:
+            raise ValueError('The subjects directory has to be specified using '
+                             'either the subjects_dir parameter or the '
+                             'SUBJECTS_DIR environment variable.')
+
+    if not os.path.exists(subjects_dir):
+        raise ValueError('The subjects directory %s does not exist.'
+                         % subjects_dir)
+
+    return subjects_dir
 
 
 def _fread3(fobj):
@@ -299,13 +331,13 @@ def read_stc(filepath):
     stc['tstep'] /= 1000.0
 
     # read number of vertices/sources
-    vertices_n = int(np.fromfile(fid, dtype=">I4", count=1))
+    vertices_n = int(np.fromfile(fid, dtype=">u4", count=1))
 
     # read the source vector
-    stc['vertices'] = np.fromfile(fid, dtype=">I4", count=vertices_n)
+    stc['vertices'] = np.fromfile(fid, dtype=">u4", count=vertices_n)
 
     # read the number of timepts
-    data_n = int(np.fromfile(fid, dtype=">I4", count=1))
+    data_n = int(np.fromfile(fid, dtype=">u4", count=1))
 
     if ((file_length / 4 - 4 - vertices_n) % (data_n * vertices_n)) != 0:
         raise ValueError('incorrect stc file size')
@@ -379,10 +411,10 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         proj_flag += "-"
         proj_flag += projsum
     if hasattr(projarg, "__iter__"):
-        proj_arg = "%.3f, %.3f, %.3f" % tuple(projarg)
+        proj_arg = map(str, projarg)
     else:
-        proj_arg = str(projarg)
-    cmd_list.extend([proj_flag, proj_arg])
+        proj_arg = [str(projarg)]
+    cmd_list.extend([proj_flag] + proj_arg)
 
     # Set misc args
     if smooth_fwhm:
@@ -393,11 +425,13 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         cmd_list.extend(["--trgsubject", target_subject])
 
     # Execute the command
-    out_file = ".tmp-pysurfer.mgz"
+    out_file = mktemp(prefix="pysurfer-v2s", suffix='.mgz')
     cmd_list.extend(["--o", out_file])
     if verbose:
         print " ".join(cmd_list)
-    out = call(cmd_list)
+    p = Popen(cmd_list, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
+    out = p.returncode
     if out:
         raise RuntimeError(("mri_vol2surf command failed "
                             "with command-line: ") + " ".join(cmd_list))
@@ -431,9 +465,12 @@ class Surface(object):
         The vertices coordinates
     faces : 2d array
         The faces ie. the triangles
+    subjects_dir : str | None
+        If not None, this directory will be used as the subjects directory
+        instead of the value set using the SUBJECTS_DIR environment variable.
     """
 
-    def __init__(self, subject_id, hemi, surf):
+    def __init__(self, subject_id, hemi, surf, subjects_dir=None):
         """Surface
 
         Parameters
@@ -449,12 +486,8 @@ class Surface(object):
         self.hemi = hemi
         self.surf = surf
 
-        if 'SUBJECTS_DIR' not in os.environ:
-            raise ValueError('Surface relies on the definition of the '
-                             'of the SUBJECTS_DIR environment variable')
-
-        subj_dir = os.environ["SUBJECTS_DIR"]
-        self.data_path = pjoin(subj_dir, subject_id)
+        subjects_dir = _get_subjects_dir(subjects_dir)
+        self.data_path = pjoin(subjects_dir, subject_id)
 
     def load_geometry(self):
         surf_path = pjoin(self.data_path, "surf",

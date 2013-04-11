@@ -9,7 +9,7 @@ from matplotlib.colors import colorConverter
 
 from . import io
 from . import utils
-from .io import Surface
+from .io import Surface, _get_subjects_dir
 from .config import config
 
 try:
@@ -45,11 +45,96 @@ rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
                 'parietal': {'v': (-60., 60.), 'r': -49.106}}
 
 
+def make_montage(filename, fnames, orientation='h', colorbar=None,
+                 border_size=15):
+    """Save montage of current figure
+
+    Parameters
+    ----------
+    filename : str
+        The name of the file, e.g, 'montage.png'
+    fnames : list of str
+        The images to make the montage off.
+    orientation : 'h' | 'v'
+        The orientation of the montage: horizontal or vertical
+    colorbar : None | list of int
+        If None remove colorbars, else keep the ones whose index
+        is present.
+    border_size : int
+        The size of the border to keep.
+    """
+    import Image
+    images = map(Image.open, fnames)
+    # get bounding box for cropping
+    boxes = []
+    for ix, im in enumerate(images):
+        # sum the RGB dimension so we do not miss G or B-only pieces
+        gray = np.sum(np.array(im), axis=-1)
+        gray[gray == gray[0, 0]] = 0  # hack for find_objects that wants 0
+        labels, n_labels = ndimage.label(gray.astype(np.float))
+        slices = ndimage.find_objects(labels, n_labels)  # slice roi
+        if colorbar is not None and ix in colorbar:
+            # we need all pieces so let's compose them into single min/max
+            slices_a = np.array([[[xy.start, xy.stop] for xy in s]
+                                 for s in slices])
+            # TODO: ideally gaps could be deduced and cut out with
+            #       consideration of border_size
+            # so we need mins on 0th and maxs on 1th of 1-nd dimension
+            mins = np.min(slices_a[:, :, 0], axis=0)
+            maxs = np.max(slices_a[:, :, 1], axis=0)
+            s = (slice(mins[0], maxs[0]), slice(mins[1], maxs[1]))
+        else:
+            # we need just the first piece
+            s = slices[0]
+        # box = (left, top, width, height)
+        boxes.append([s[1].start - border_size, s[0].start - border_size,
+                      s[1].stop + border_size, s[0].stop + border_size])
+    if orientation == 'v':
+        min_left = min(box[0] for box in boxes)
+        max_width = max(box[2] for box in boxes)
+        for box in boxes:
+            box[0] = min_left
+            box[2] = max_width
+    else:
+        min_top = min(box[1] for box in boxes)
+        max_height = max(box[3] for box in boxes)
+        for box in boxes:
+            box[1] = min_top
+            box[3] = max_height
+    # crop images
+    cropped_images = []
+    for im, box in zip(images, boxes):
+        cropped_images.append(im.crop(box))
+    images = cropped_images
+    # Get full image size
+    if orientation == 'h':
+        w = sum(i.size[0] for i in images)
+        h = max(i.size[1] for i in images)
+    else:
+        h = sum(i.size[1] for i in images)
+        w = max(i.size[0] for i in images)
+    new = Image.new("RGBA", (w, h))
+    x = 0
+    for i in images:
+        if orientation == 'h':
+            pos = (x, 0)
+            x += i.size[0]
+        else:
+            pos = (0, x)
+            x += i.size[1]
+        new.paste(i, pos)
+    try:
+        new.save(filename)
+    except Exception:
+        print("Error saving %s" % filename)
+
+
 class Brain(object):
     """Brain object for visualizing with mlab."""
 
     def __init__(self, subject_id, hemi, surf,
-                 curv=True, title=None, config_opts={}):
+                 curv=True, title=None, config_opts={},
+                 figure=None, subjects_dir=None):
         """Initialize a Brain object with Freesurfer-specific data.
 
         Parameters
@@ -67,6 +152,13 @@ class Brain(object):
             title for the mayavi figure
         config_opts : dict
             options to override visual options in config file
+        figure : instance of mayavi.core.scene.Scene | None
+            If None, the last figure will be cleaned and a new figure will
+            be created.
+        subjects_dir : str | None
+            If not None, this directory will be used as the subjects directory
+            instead of the value set using the SUBJECTS_DIR environment
+            variable.
         """
         try:
             from mayavi import mlab
@@ -86,16 +178,23 @@ class Brain(object):
         if title is None:
             title = subject_id
         self._set_scene_properties(config_opts)
-        self._f = mlab.figure(title,
-                              **self.scene_properties)
-        mlab.clf()
-        self._f.scene.disable_render = True
+        if figure is None:
+            figure = mlab.figure(title, **self.scene_properties)
+            mlab.clf()
+        self._f = figure
+
+        # Get the subjects directory from parameter or env. var
+        self.subjects_dir = _get_subjects_dir(subjects_dir=subjects_dir)
+
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
 
         # Set the lights so they are oriented by hemisphere
         self._orient_lights()
-
         # Initialize a Surface object as the geometry
-        self._geo = Surface(subject_id, hemi, surf)
+        self._geo = Surface(subject_id, hemi, surf,
+                            subjects_dir=self.subjects_dir)
 
         # Load in the geometry and (maybe) curvature
         self._geo.load_geometry()
@@ -134,8 +233,10 @@ class Brain(object):
         # Bring up the lateral view
         self.show_view(config.get("visual", "default_view"))
 
-        # Turn disable render off so that it displays
-        self._f.scene.disable_render = False
+        # Turn disable render off so that it displays (option doesn't exist
+        # in testing mode)
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = False
 
     def show_view(self, view=None, roll=None):
         """Orient camera to display view
@@ -189,10 +290,15 @@ class Brain(object):
 
         if viewargs:
             viewargs['reset_roll'] = True
+            viewargs['figure'] = self._f
             mlab.view(**viewargs)
         if not roll is None:
-            mlab.roll(roll)
-        return mlab.view(), mlab.roll()
+            mlab.roll(roll, figure=self._f)
+
+        view = mlab.view(figure=self._f)
+        roll = mlab.roll(figure=self._f)
+
+        return view, roll
 
     def _read_scalar_data(self, source, name=None, cast=True):
         """Load in scalar data from an image stored in a file or an array
@@ -270,7 +376,9 @@ class Brain(object):
         if not sign in ["abs", "pos", "neg"]:
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
         self.overlays[name] = Overlay(scalar_data, self._geo, min, max, sign)
         for bar in ["pos_bar", "neg_bar"]:
@@ -279,13 +387,15 @@ class Brain(object):
             except AttributeError:
                 pass
 
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render, option view == None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
     def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="blue-red", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
-                 time_label="time index=%d"):
+                 time_label="time index=%d", colorbar=True):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to add_overlay, but it displays
@@ -295,6 +405,13 @@ class Brain(object):
 
         Note that min sets the low end of the colormap, and is separate
         from thresh (this is a different convention from add_overlay)
+
+        Note: If the data is defined for a subset of vertices (specified
+        by the "vertices" parameter), a smoothing method is used to interpolate
+        the data onto the high resolution surface. If the data is defined for
+        subsampled version of the surface, smoothing_steps can be set to None,
+        in which case only as many smoothing steps are applied until the whole
+        surface is filled with non-zeros.
 
         Parameters
         ----------
@@ -306,32 +423,39 @@ class Brain(object):
             max value in colormap (uses real max if None)
         thresh : None or float
             if not None, values below thresh will not be visible
-        colormap : str
-            name of Mayavi colormap to use
+        colormap : str | array [256x4]
+            name of Mayavi colormap to use, or a custom look up table (a 256x4
+            array, with the columns representing RGBA (red, green, blue, alpha)
+            coded with integers going from 0 to 255).
         alpha : float in [0, 1]
             alpha level to control opacity
         vertices : numpy array
             vertices for which the data is defined (needed if len(data) < nvtx)
-        smoothing_steps : int
+        smoothing_steps : int or None
             number of smoothing steps (smooting is used if len(data) < nvtx)
             Default : 20
         time : numpy array
             time points in the data array (if data is 2D)
-        time_label : str
-            format of the time label
+        time_label : str | None
+            format of the time label (or None for no label)
+        colorbar : bool
+            whether to add a colorbar to the figure
         """
         try:
             from mayavi import mlab
         except ImportError:
             from enthought.mayavi import mlab
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
 
         # Possibly remove old data
         if hasattr(self, "data"):
             self.data["surface"].remove()
-            self.data["colorbar"].remove()
+            if 'colorbar' in self.data:
+                self.data["colorbar"].remove()
 
         if min is None:
             min = array.min()
@@ -360,11 +484,7 @@ class Brain(object):
             array_plot = smooth_mat * array_plot
 
         # Copy and byteswap to deal with Mayavi bug
-        if array_plot.dtype.byteorder == '>':
-            mlab_plot = array_plot.copy()
-            mlab_plot.byteswap(True)
-        else:
-            mlab_plot = array_plot
+        mlab_plot = self._prepare_data(array_plot)
 
         # Set up the visualization pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
@@ -377,21 +497,32 @@ class Brain(object):
                 warn("Data min is greater than threshold.")
             else:
                 mesh = mlab.pipeline.threshold(mesh, low=thresh)
+
+        # process colormap argument
+        if isinstance(colormap, basestring):
+            lut = None
+        else:
+            lut = np.asarray(colormap)
+            if lut.shape != (256, 4):
+                err = ("colormap argument must be mayavi colormap (string) or"
+                       " look up table (array of shape (256, 4))")
+                raise ValueError(err)
+            colormap = "blue-red"
+
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
                                      opacity=float(alpha))
 
-        # Get the colorbar
-        bar = mlab.scalarbar(surf)
-        self._format_cbar_text(bar)
-        bar.scalar_bar_representation.position2 = .8, 0.09
+        # apply look up table if given
+        if lut is not None:
+            surf.module_manager.scalar_lut_manager.lut.table = lut
 
         # Get the original colormap table
         orig_ctable = \
             surf.module_manager.scalar_lut_manager.lut.table.to_array().copy()
 
         # Fill in the data dict
-        self.data = dict(surface=surf, colorbar=bar, orig_ctable=orig_ctable,
+        self.data = dict(surface=surf, orig_ctable=orig_ctable,
                          array=array, smoothing_steps=smoothing_steps,
                          fmin=min, fmid=(min + max) / 2, fmax=max,
                          transparent=False, time=0, time_idx=0)
@@ -399,18 +530,36 @@ class Brain(object):
             self.data["vertices"] = vertices
             self.data["smooth_mat"] = smooth_mat
 
-        mlab.view(*view)
+        # Get the colorbar
+        if colorbar:
+            bar = mlab.scalarbar(surf)
+            self._format_cbar_text(bar)
+            bar.scalar_bar_representation.position2 = .8, 0.09
+            self.data['colorbar'] = bar
+
+
+
+        # view = None on testing backend
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
 
         # Create time array and add label if 2D
         if array.ndim == 2:
             if time == None:
                 time = np.arange(array.shape[1])
+            self._times = time
             self.data["time_label"] = time_label
             self.data["time"] = time
             self.data["time_idx"] = 0
-            self.add_text(0.05, 0.1, time_label % time[0], name="time_label")
+            y_txt = 0.05 + 0.05 * bool(colorbar)
+            if time_label is not None:
+                self.add_text(0.05, y_txt, time_label % time[0], name="time_label")
+        else:
+            self._times = None
 
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = False
 
     def add_annotation(self, annot, borders=True, alpha=1):
         """Add an annotation file.
@@ -430,7 +579,9 @@ class Brain(object):
         except ImportError:
             from enthought.mayavi import mlab
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
 
         # Figure out where the data is coming from
@@ -438,7 +589,7 @@ class Brain(object):
             filepath = annot
             annot = os.path.basename(filepath).split('.')[1]
         else:
-            filepath = pjoin(os.environ['SUBJECTS_DIR'],
+            filepath = pjoin(self.subjects_dir,
                              self.subject_id,
                              'label',
                              ".".join([self.hemi, annot, 'annot']))
@@ -493,8 +644,10 @@ class Brain(object):
         # Set the brain attributes
         self.annot = dict(surface=surf, name=annot, colormap=cmap)
 
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render option, view = None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
     def add_label(self, label, color="crimson", alpha=1,
                   scalar_thresh=None, borders=False):
@@ -502,8 +655,10 @@ class Brain(object):
 
         Parameters
         ----------
-        label : str
-            label filepath or name
+        label : str | instance of Label
+            label filepath or name. Can also be an instance of
+            an object with attributes "hemi", "vertices", "name",
+            and (if scalar_thresh is not None) "values".
         color : matplotlib-style color
             anything matplotlib accepts: string, RGB, hex, etc.
         alpha : float in [0, 1]
@@ -515,37 +670,75 @@ class Brain(object):
         borders : bool
             show only label borders
 
+        Notes
+        -----
+        To remove previously added labels, run Brain.remove_labels().
+
         """
         try:
             from mayavi import mlab
         except ImportError:
             from enthought.mayavi import mlab
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
 
         # Figure out where the data is coming from
-        if os.path.isfile(label):
-            filepath = label
-            label_name = os.path.basename(filepath).split('.')[1]
-        else:
-            label_name = label
-            filepath = pjoin(os.environ['SUBJECTS_DIR'],
-                             self.subject_id,
-                             'label',
-                             ".".join([self.hemi, label_name, 'label']))
-            if not os.path.exists(filepath):
-                raise ValueError('Label file %s does not exist'
-                                 % filepath)
 
-        # Load the label data and create binary overlay
-        if scalar_thresh is None:
-            ids = io.read_label(filepath)
+        if isinstance(label, basestring):
+            if os.path.isfile(label):
+                filepath = label
+                label_name = os.path.basename(filepath).split('.')[1]
+            else:
+                label_name = label
+                filepath = pjoin(self.subjects_dir,
+                                 self.subject_id,
+                                 'label',
+                                 ".".join([self.hemi, label_name, 'label']))
+                if not os.path.exists(filepath):
+                    raise ValueError('Label file %s does not exist'
+                                     % filepath)
+            # Load the label data and create binary overlay
+            if scalar_thresh is None:
+                ids = io.read_label(filepath)
+            else:
+                ids, scalars = io.read_label(filepath, read_scalars=True)
+                ids = ids[scalars >= scalar_thresh]
         else:
-            ids, scalars = io.read_label(filepath, read_scalars=True)
-            ids = ids[scalars >= scalar_thresh]
+            # try to extract parameters from label instance
+            try:
+                hemi = label.hemi
+                ids = label.vertices
+                if label.name is None:
+                    label_name = 'unnamed'
+                else:
+                    label_name = str(label.name)
+                if scalar_thresh is not None:
+                    scalars = label.values
+            except Exception:
+                raise ValueError('Label was not a filename (str), and could '
+                                 'not be understood as a class. The class '
+                                 'must have attributes "hemi", "vertices", '
+                                 '"name", and (if scalar_thresh is not None)'
+                                 '"values"')
+            if not hemi == self.hemi:
+                raise ValueError('label hemisphere (%s) and brain hemisphere '
+                                 '(%s) must match' % (label.hemi, self.hemi))
+            if scalar_thresh is not None:
+                ids = ids[scalars >= scalar_thresh]
+
         label = np.zeros(self._geo.coords.shape[0])
         label[ids] = 1
+
+        # make sure we have a unique name
+        if label_name in self.labels:
+            i = 2
+            name = label_name + '_%i'
+            while name % i in self.labels:
+                i += 1
+            label_name = name % i
 
         if borders:
             n_vertices = label.size
@@ -568,8 +761,29 @@ class Brain(object):
 
         self.labels[label_name] = surf
 
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render option, view = None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
+
+    def remove_labels(self, labels=None):
+        """Remove one or more previously added labels from the image.
+
+        Parameters
+        ----------
+        labels : None | str | list of str
+            Labels to remove. Can be a string naming a single label, or None to
+            remove all labels. Possible names can be found in the Brain.labels
+            attribute.
+        """
+        if labels is None:
+            labels = self.labels.keys()
+        elif isinstance(labels, str):
+            labels = [labels]
+
+        for key in labels:
+            label = self.labels.pop(key)
+            label.remove()
 
     def add_morphometry(self, measure, grayscale=False):
         """Add a morphometry overlay to the image.
@@ -588,7 +802,7 @@ class Brain(object):
             from enthought.mayavi import mlab
 
         # Find the source data
-        surf_dir = pjoin(os.environ['SUBJECTS_DIR'], self.subject_id, 'surf')
+        surf_dir = pjoin(self.subjects_dir, self.subject_id, 'surf')
         morph_file = pjoin(surf_dir, '.'.join([self.hemi, measure]))
         if not os.path.exists(morph_file):
             raise ValueError(
@@ -601,7 +815,9 @@ class Brain(object):
                          sulc="RdBu",
                          thickness="pink")
 
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
 
         # Maybe get rid of an old overlay
         if hasattr(self, "morphometry"):
@@ -625,8 +841,8 @@ class Brain(object):
             min, max = stats.describe(morph_data[ctx_idx])[1]
 
         # Set up the Mayavi pipeline
-        if morph_data.dtype.byteorder == '>':
-            morph_data.byteswap(True)  # byte swap inplace; due to mayavi bug
+        morph_data = self._prepare_data(morph_data)
+
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
                                                     self._geo.z,
@@ -649,8 +865,10 @@ class Brain(object):
         self.morphometry = dict(surface=surf,
                                 colorbar=bar,
                                 measure=measure)
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render option, view = None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
                  scale_factor=1, color="white", alpha=1, name=None):
@@ -694,7 +912,8 @@ class Brain(object):
         if map_surface is None:
             foci_coords = np.atleast_2d(coords)
         else:
-            foci_surf = io.Surface(self.subject_id, self.hemi, map_surface)
+            foci_surf = io.Surface(self.subject_id, self.hemi, map_surface,
+                                   subjects_dir=self.subjects_dir)
             foci_surf.load_geometry()
             foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
             foci_coords = self._geo.coords[foci_vtxs]
@@ -704,10 +923,13 @@ class Brain(object):
             name = "foci_%d" % (len(self.foci) + 1)
 
         # Convert the color code
-        color = colorConverter.to_rgb(color)
+        if not isinstance(color, tuple):
+            color = colorConverter.to_rgb(color)
 
         # Create the visualization
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
         points = mlab.points3d(foci_coords[:, 0],
                                foci_coords[:, 1],
@@ -716,8 +938,10 @@ class Brain(object):
                                scale_factor=(10. * scale_factor),
                                color=color, opacity=alpha, name=name)
         self.foci[name] = points
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render option, view = None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
     def add_contour_overlay(self, source, min=None, max=None,
                             n_contours=7, line_width=1.5):
@@ -751,7 +975,9 @@ class Brain(object):
         min, max = self._get_display_range(scalar_data, min, max, "pos")
 
         # Prep the viz
-        self._f.scene.disable_render = True
+        # Testing backend doesn't have this option
+        if mlab.options.backend != 'test':
+            self._f.scene.disable_render = True
         view = mlab.view()
 
         # Maybe get rid of an old overlay
@@ -760,8 +986,7 @@ class Brain(object):
             self.contour['colorbar'].visible = False
 
         # Deal with Mayavi bug
-        if scalar_data.dtype.byteorder == '>':
-            scalar_data.byteswap(True)
+        scalar_data = self._prepare_data(scalar_data)
 
         # Set up the pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y,
@@ -783,10 +1008,12 @@ class Brain(object):
         self.contour = dict(surface=surf, colorbar=bar)
 
         # Show the new overlay
-        mlab.view(*view)
-        self._f.scene.disable_render = False
+        # Testing backend doesn't have disable_render option, view = None
+        if mlab.options.backend != 'test':
+            mlab.view(*view)
+            self._f.scene.disable_render = False
 
-    def add_text(self, x, y, text, name, color=(1, 1, 1), opacity=1.0):
+    def add_text(self, x, y, text, name, color=None, opacity=1.0):
         """ Add a text to the visualization
 
         Parameters
@@ -834,7 +1061,10 @@ class Brain(object):
             bg_color_name = config_opts['background']
         except KeyError:
             bg_color_name = config.get("visual", "background")
-        bg_color_code = colorConverter.to_rgb(bg_color_name)
+        if bg_color_name is not None:
+            bg_color_code = colorConverter.to_rgb(bg_color_name)
+        else:
+            bg_color_code = None
 
         try:
             fg_color_name = config_opts['foreground']
@@ -855,8 +1085,9 @@ class Brain(object):
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
         if self.hemi == "rh":
-            for light in self._f.scene.light_manager.lights:
-                light.azimuth *= -1
+            if self._f.scene is not None:
+                for light in self._f.scene.light_manager.lights:
+                    light.azimuth *= -1
 
     def _get_geo_colors(self, config_opts):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
@@ -946,7 +1177,6 @@ class Brain(object):
         ----------
         filename: string
             path to new image file
-
         """
         try:
             from mayavi import mlab
@@ -959,10 +1189,34 @@ class Brain(object):
         if not ftype in good_ftypes:
             raise ValueError("Supported image types are %s"
                                 % " ".join(good_ftypes))
-        mlab.savefig(fname)
+        mlab.draw(self._f)
+        mlab.savefig(fname, figure=self._f)
 
-    def save_imageset(self, prefix, views, filetype='png'):
-        """Convience wrapper for save_image
+    def screenshot(self, mode='rgb', antialiased=False):
+        """Generate a screenshot of current view
+
+        Wraps to mlab.screenshot for ease of use.
+
+        Parameters
+        ----------
+        mode: string
+            Either 'rgb' or 'rgba' for values to return
+        antialiased: bool
+            Antialias the image (see mlab.screenshot() for details)
+
+        Returns
+        -------
+        screenshot: array
+            Image pixel values
+        """
+        try:
+            from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+        return mlab.screenshot(self._f, mode, antialiased)
+
+    def save_imageset(self, prefix, views,  filetype='png', colorbar='auto'):
+        """Convenience wrapper for save_image
 
         Files created are prefix+'_$view'+filetype
 
@@ -974,6 +1228,10 @@ class Brain(object):
             desired views for images
         filetype: string
             image type
+        colorbar: None | 'auto' | [int], optional
+            if None no colorbar is visible. If 'auto' is given the colorbar
+            is only shown in the middle view. Otherwise on the listed
+            views when a list of int is passed.
 
         Returns
         -------
@@ -983,12 +1241,19 @@ class Brain(object):
         if isinstance(views, basestring):
             raise ValueError("Views must be a non-string sequence"
                              "Use show_view & save_image for a single view")
+        if colorbar == 'auto':
+            colorbar = [len(views) // 2]
         images_written = []
-        for view in views:
+        for iview, view in enumerate(views):
             try:
                 fname = "%s_%s.%s" % (prefix, view, filetype)
                 images_written.append(fname)
+                if colorbar is not None and iview in colorbar:
+                    self.show_colorbar()
+                else:
+                    self.hide_colorbar()
                 self.show_view(view)
+
                 try:
                     self.save_image(fname)
                 except ValueError:
@@ -1104,7 +1369,7 @@ class Brain(object):
         self.data["transparent"] = transparent
 
     def save_montage(self, filename, order=['lat', 'ven', 'med'],
-                     orientation='h', border_size=15):
+                     orientation='h', border_size=15, colorbar='auto'):
         """Create a montage from a given order of images
 
         Parameters
@@ -1117,61 +1382,36 @@ class Brain(object):
             montage image orientation (horizontal of vertical alignment)
         border_size: int
             Size of image border (more or less space between images)
+        colorbar: None | 'auto' | [int], optional
+            if None no colorbar is visible. If 'auto' is given the colorbar
+            is only shown in the middle view. Otherwise on the listed
+            views when a list of int is passed.
         """
-        assert orientation in ['h', 'v']
-        import Image
-        fnames = self.save_imageset("tmp", order)
-        images = map(Image.open, fnames)
-        # get bounding box for cropping
-        boxes = []
-        for im in images:
-            red = np.array(im)[:, :, 0]
-            red[red == red[0, 0]] = 0  # hack for find_objects that wants 0
-            labels, n_labels = ndimage.label(red)
-            s = ndimage.find_objects(labels, n_labels)[0]  # slice roi
-            # box = (left, top, width, height)
-            boxes.append([s[1].start - border_size, s[0].start - border_size,
-                          s[1].stop + border_size, s[0].stop + border_size])
-        if orientation == 'v':
-            min_left = min(box[0] for box in boxes)
-            max_width = max(box[2] for box in boxes)
-            for box in boxes:
-                box[0] = min_left
-                box[2] = max_width
-        else:
-            min_top = min(box[1] for box in boxes)
-            max_height = max(box[3] for box in boxes)
-            for box in boxes:
-                box[1] = min_top
-                box[3] = max_height
-        # crop images
-        cropped_images = []
-        for im, box in zip(images, boxes):
-            cropped_images.append(im.crop(box))
-        images = cropped_images
-        # Get full image size
-        if orientation == 'h':
-            w = sum(i.size[0] for i in images)
-            h = max(i.size[1] for i in images)
-        else:
-            h = sum(i.size[1] for i in images)
-            w = max(i.size[0] for i in images)
-        new = Image.new("RGBA", (w, h))
-        x = 0
-        for i in images:
-            if orientation == 'h':
-                pos = (x, 0)
-                x += i.size[0]
-            else:
-                pos = (0, x)
-                x += i.size[1]
-            new.paste(i, pos)
         try:
-            new.save(filename)
-        except Exception:
-            print("Error saving %s" % filename)
+            from mayavi import mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+
+        assert orientation in ['h', 'v']
+        if colorbar == 'auto':
+            colorbar = [len(order) // 2]
+
+        # store current view + colorbar visibility
+        current_view = mlab.view(figure=self._f)
+        colorbars = self._get_colorbars()
+        colorbars_visibility = dict()
+        for cb in colorbars:
+            colorbars_visibility[cb] = cb.visible
+
+        fnames = self.save_imageset("tmp", order, colorbar=colorbar)
+        make_montage(filename, fnames, orientation, colorbar, border_size)
         for f in fnames:
             os.remove(f)
+
+        # get back original view and colorbars
+        mlab.view(*current_view, figure=self._f)
+        for cb in colorbars:
+            cb.visible = colorbars_visibility[cb]
 
     def set_data_time_index(self, time_idx):
         """ Set the data time index to show
@@ -1192,8 +1432,9 @@ class Brain(object):
         self.data["time_idx"] = time_idx
 
         # Update time label
-        self.update_text(self.data["time_label"] % self.data["time"][time_idx],
-                         "time_label")
+        if self.data["time_label"]:
+            time = self.data["time"][time_idx]
+            self.update_text(self.data["time_label"] % time, "time_label")
 
     def set_data_smoothing_steps(self, smoothing_steps):
         """ Set the number of smoothing steps
@@ -1222,6 +1463,30 @@ class Brain(object):
 
         # Update data properties
         self.data["smoothing_steps"] = smoothing_steps
+
+    def set_time(self, time):
+        """Set the data time index to the time point closest to time
+
+        Parameters
+        ----------
+        time : scalar
+            Time.
+        """
+        times = getattr(self, '_times', None)
+        if times is None:
+            raise RuntimeError("Brain has no time axis")
+
+        # Check that time is in range
+        tmin = np.min(times)
+        tmax = np.max(times)
+        max_diff = (tmax - tmin) / (len(times) - 1) / 2
+        if time < tmin - max_diff or time > tmax + max_diff:
+            err = ("time = %s lies outside of the time axis "
+                   "[%s, %s]" % (time, tmin, tmax))
+            raise ValueError(err)
+
+        idx = np.argmin(np.abs(times - time))
+        self.set_data_time_index(idx)
 
     def update_text(self, text, name):
         """ Update text label
@@ -1363,6 +1628,35 @@ class Brain(object):
         else:
             return view
 
+    def _get_colorbars(self):
+        colorbars = []
+        if hasattr(self, 'data') and 'colorbar' in self.data:
+            colorbars.append(self.data['colorbar'])
+        if hasattr(self, 'morphometry') and 'colorbar' in self.morphometry:
+            colorbars.append(self.morphometry['colorbar'])
+        if hasattr(self, 'contour') and 'colorbar' in self.contour:
+            colorbars.append(self.contour['colorbar'])
+        if hasattr(self, 'overlays'):
+            for name, obj in self.overlays.items():
+                for bar in ["pos_bar", "neg_bar"]:
+                    try:
+                        colorbars.append(getattr(obj, bar))
+                    except AttributeError:
+                        pass
+        return colorbars
+
+    def _colorbar_visibility(self, visible):
+        for cb in self._get_colorbars():
+            cb.visible = visible
+
+    def show_colorbar(self):
+        "Show colorbar(s)"
+        self._colorbar_visibility(True)
+
+    def hide_colorbar(self):
+        "Hide colorbar(s)"
+        self._colorbar_visibility(False)
+
     def close(self):
         """Close the figure and cleanup data structure."""
         try:
@@ -1423,10 +1717,25 @@ class Brain(object):
 
         return min, max
 
+    def _prepare_data(self, data):
+        """Ensure data is float64 and has proper endianness.
+
+        Note: this is largely aimed at working around a Mayavi bug.
+
+        """
+        data = data.copy()
+        data = data.astype(np.float64)
+        if data.dtype.byteorder == '>':
+            data.byteswap(True)
+        return data
+
     def _format_cbar_text(self, cbar):
 
         bg_color = self.scene_properties["bgcolor"]
-        text_color = (1., 1., 1.) if sum(bg_color) < 2 else (0., 0., 0.)
+        if bg_color is None or sum(bg_color) < 2:
+            text_color = (1., 1., 1.)
+        else:
+            text_color = (0., 0., 0.)
         cbar.label_text_property.color = text_color
 
 
@@ -1447,6 +1756,7 @@ class Overlay(object):
 
         # Byte swap copy; due to mayavi bug
         mlab_data = scalar_data.copy()
+        mlab_data = mlab_data.astype(np.float64)
         if scalar_data.dtype.byteorder == '>':
             mlab_data.byteswap(True)
 
@@ -1536,7 +1846,9 @@ class TimeViewer(HasTraits):
     fmid = Float(enter_set=True, auto_set=False)
     fmin = Float(enter_set=True, auto_set=False)
     transparent = Bool(True)
-    smoothing_steps = Int(20, enter_set=True, auto_set=False)
+    smoothing_steps = Int(20, enter_set=True, auto_set=False,
+                          desc="number of smoothing steps. Use -1 for"
+                               "automatic number of steps")
     orientation = Enum("lateral", "medial", "rostral", "caudal",
                        "dorsal", "ventral", "frontal", "parietal")
 
@@ -1560,15 +1872,18 @@ class TimeViewer(HasTraits):
 
         Parameters
         ----------
-        brain : Brain
-            brain to control
+        brain : Brain (or list of Brain)
+            brain(s) to control
         """
         super(TimeViewer, self).__init__()
 
-        self.brain = brain
+        if isinstance(brain, (list, tuple)):
+            self.brains = brain
+        else:
+            self.brains = [brain]
 
-        # Initialize GUI with values from brain
-        props = brain.get_data_properties()
+        # Initialize GUI with values from first brain
+        props = self.brains[0].get_data_properties()
 
         self._disable_updates = True
         self.max_time = len(props["time"]) - 1
@@ -1577,8 +1892,18 @@ class TimeViewer(HasTraits):
         self.fmid = props["fmid"]
         self.fmax = props["fmax"]
         self.transparent = props["transparent"]
-        self.smoothing_steps = props["smoothing_steps"]
+        if props["smoothing_steps"] is None:
+            self.smoothing_steps = -1
+        else:
+            self.smoothing_steps = props["smoothing_steps"]
         self._disable_updates = False
+
+        # Make sure all brains have the same time points
+        for brain in self.brains[1:]:
+            this_props = brain.get_data_properties()
+            if not np.all(props["time"] == this_props["time"]):
+                raise ValueError("all brains must have the same time"
+                                 "points")
 
         # Show GUI
         self.configure_traits()
@@ -1590,7 +1915,12 @@ class TimeViewer(HasTraits):
         if self._disable_updates:
             return
 
-        self.brain.set_data_smoothing_steps(self.smoothing_steps)
+        smoothing_steps = self.smoothing_steps
+        if smoothing_steps < 0:
+            smoothing_steps = None
+
+        for brain in self.brains:
+            brain.set_data_smoothing_steps(self.smoothing_steps)
 
     @on_trait_change("orientation")
     def set_orientation(self):
@@ -1599,7 +1929,8 @@ class TimeViewer(HasTraits):
         if self._disable_updates:
             return
 
-        self.brain.show_view(view=self.orientation)
+        for brain in self.brains:
+            brain.show_view(view=self.orientation)
 
     @on_trait_change("current_time")
     def set_time_point(self):
@@ -1608,7 +1939,8 @@ class TimeViewer(HasTraits):
         if self._disable_updates:
             return
 
-        self.brain.set_data_time_index(self.current_time)
+        for brain in self.brains:
+            brain.set_data_time_index(self.current_time)
 
     @on_trait_change("fmin, fmid, fmax, transparent")
     def scale_colormap(self):
@@ -1617,5 +1949,6 @@ class TimeViewer(HasTraits):
         if self._disable_updates:
             return
 
-        self.brain.scale_data_colormap(self.fmin, self.fmid, self.fmax,
-                                       self.transparent)
+        for brain in self.brains:
+            brain.scale_data_colormap(self.fmin, self.fmid, self.fmax,
+                                      self.transparent)
