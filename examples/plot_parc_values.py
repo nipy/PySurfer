@@ -12,7 +12,8 @@ print __doc__
 import os
 import os.path as op
 import numpy as np
-from surfer import io, Brain
+import nibabel as nib
+from surfer import Brain
 
 subject_id = "fsaverage"
 hemi = "lh"
@@ -31,7 +32,7 @@ Read in the aparc annotation file
 aparc_file = op.join(os.environ["SUBJECTS_DIR"],
                      subject_id, "label",
                      hemi + ".aparc.a2009s.annot")
-labels, ctab, names = io.read_annot(aparc_file)
+labels, ctab, names = nib.freesurfer.read_annot(aparc_file)
 
 """
 Make a random vector of scalar data corresponding to

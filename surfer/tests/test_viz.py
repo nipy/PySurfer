@@ -3,6 +3,7 @@ import os
 from os.path import join as pjoin
 from numpy.testing import assert_raises
 from tempfile import mktemp
+import nibabel as nib
 
 from surfer import Brain
 from surfer import io
@@ -99,7 +100,7 @@ def test_foci():
     brain.add_foci(coords, map_surface="white", color="gold")
 
     annot_path = pjoin(subj_dir, subject_id, 'label', 'lh.aparc.a2009s.annot')
-    ids, ctab, names = io.read_annot(annot_path)
+    ids, ctab, names = nib.freesurfer.read_annot(annot_path)
     verts = np.arange(0, len(ids))
     coords = np.random.permutation(verts[ids == 74])[:10]
     scale_factor = 0.7

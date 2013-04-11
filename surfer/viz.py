@@ -7,6 +7,8 @@ from scipy import stats
 from scipy import ndimage
 from matplotlib.colors import colorConverter
 
+import nibabel as nib
+
 from . import io
 from . import utils
 from .io import Surface, _get_subjects_dir
@@ -598,7 +600,7 @@ class Brain(object):
                                  % filepath)
 
         # Read in the data
-        labels, cmap, _ = io.read_annot(filepath, orig_ids=True)
+        labels, cmap, _ = nib.freesurfer.read_annot(filepath, orig_ids=True)
 
         # Maybe zero-out the non-border vertices
         if borders:
@@ -828,7 +830,7 @@ class Brain(object):
         view = mlab.view()
 
         # Read in the morphometric data
-        morph_data = io.read_morph_data(morph_file)
+        morph_data = nib.freesurfer.read_morph_data(morph_file)
 
         # Get a cortex mask for robust range
         self._geo.load_label("cortex")
