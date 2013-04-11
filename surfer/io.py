@@ -75,19 +75,6 @@ def read_geometry(filepath):
     coords = coords.astype(np.float)  # XXX: due to mayavi bug on mac 32bits
     return coords, faces
 
-def write_geometry(filepath, create_stamp, coords, faces):
-    magic_bytes = np.array([255,255,254],dtype=np.uint8)
-    with open(filepath, 'wb') as fobj:
-        magic_bytes.tofile(fobj)
-        fobj.write("%s\n\n" % create_stamp)
-
-        # On a Linux box, numpy uses opposite byte order to freesurfer
-        np.int32(coords.shape[0]).byteswap().tofile(fobj)
-        np.int32(faces.shape[0]).byteswap().tofile(fobj)
-
-        # Coerce types, just to be safe
-        coords.astype('>f4').reshape(-1).tofile(fobj)
-        faces.astype('>i4').reshape(-1).tofile(fobj)
 
 def read_morph_data(filepath):
     """Read a Freesurfer morphometry data file.
@@ -477,8 +464,7 @@ class Surface(object):
     def save_geometry(self):
         surf_path = pjoin(self.data_path, "surf",
                           "%s.%s" % (self.hemi, self.surf))
-        create_stamp = "created by %s on %s" % (os.getlogin(),time.ctime())
-        write_geometry(surf_path, create_stamp, self.coords, self.faces)
+        nib.freesurfer.write_geometry(surf_path, self.coords, self.faces)
 
     @property
     def x(self):
