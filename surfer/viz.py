@@ -1345,7 +1345,8 @@ class Brain(object):
         n_colors2 = int(n_colors / 2)
 
         # Index of fmid in new colorbar
-        fmid_idx = np.round(n_colors * ((fmid - fmin) / (fmax - fmin))) - 1
+        fmid_idx = int(np.round(n_colors * ((fmid - fmin) / (fmax - fmin)))
+                       - 1)
 
         # Go through channels
         for i in range(4):
