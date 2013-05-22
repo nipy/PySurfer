@@ -21,13 +21,6 @@ except ImportError:
     from enthought.traits.api import (HasTraits, Range, Int, Float, \
                                       Bool, Enum, on_trait_change)
 
-try:
-    from traitsui.api import View, Item, VSplit, HSplit, Group
-except ImportError:
-    try:
-        from traits.ui.api import View, Item, VSplit, HSplit, Group
-    except ImportError:
-        from enthought.traits.ui.api import View, Item, VSplit, HSplit, Group
 
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
                 'medial': {'v': (0., 90.), 'r': -90.},
@@ -1841,6 +1834,15 @@ class TimeViewer(HasTraits):
     """ TimeViewer object providing a GUI for visualizing time series, such
         as M/EEG inverse solutions, on Brain object(s)
     """
+    # Nested import of traisui for setup.py without X server
+    try:
+        from traitsui.api import View, Item, VSplit, HSplit, Group
+    except ImportError:
+        try:
+            from traits.ui.api import View, Item, VSplit, HSplit, Group
+        except ImportError:
+            from enthought.traits.ui.api import View, Item, VSplit, HSplit, Group
+
     min_time = Int(0)
     max_time = Int(1E9)
     current_time = Range(low="min_time", high="max_time", value=0)
