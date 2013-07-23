@@ -7,6 +7,8 @@ from scipy import stats
 from scipy import ndimage
 from matplotlib.colors import colorConverter
 
+import nibabel as nib
+
 from . import io
 from . import utils
 from .io import Surface, _get_subjects_dir
@@ -18,39 +20,27 @@ logger = logging.getLogger('surfer')
 
 try:
     from traits.api import (HasTraits, Range, Int, Float,
-                            Bool, Enum, on_trait_change,
-                            Instance, Property)
+                            Bool, Enum, on_trait_change, Instance)
 except ImportError:
-    from enthought.traits.api import (HasTraits, Range, Int, Float, \
-                                      Bool, Enum, on_trait_change,
-                                      Instance, Property)
-try:
-    from traitsui.api import (View, Item, VSplit, HSplit, Group,
-                              VGroup, HGroup, InstanceEditor)
-except ImportError:
-    try:
-        from traits.ui.api import (View, Item, VSplit, HSplit, Group,
-                                   VGroup, HGroup, InstanceEditor)
-    except ImportError:
-        from enthought.traits.ui.api import (View, Item, VSplit, HSplit, Group,
-                                             VGroup, HGroup, InstanceEditor)
+    from enthought.traits.api import (HasTraits, Range, Int, Float,
+                                      Bool, Enum, on_trait_change, Instance)
 
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
-                'medial': {'v': (0., 90.), 'r': -90.},
-                'rostral': {'v': (90., 90.), 'r': -180.},
-                'caudal': {'v': (270., 90.), 'r': 0.},
-                'dorsal': {'v': (180., 0.), 'r': 90.},
-                'ventral': {'v': (180., 180.), 'r': 90.},
-                'frontal': {'v': (120., 80.), 'r': 106.739},
-                'parietal': {'v': (-120., 60.), 'r': 49.106}}
+               'medial': {'v': (0., 90.), 'r': -90.},
+               'rostral': {'v': (90., 90.), 'r': -180.},
+               'caudal': {'v': (270., 90.), 'r': 0.},
+               'dorsal': {'v': (180., 0.), 'r': 90.},
+               'ventral': {'v': (180., 180.), 'r': 90.},
+               'frontal': {'v': (120., 80.), 'r': 106.739},
+               'parietal': {'v': (-120., 60.), 'r': 49.106}}
 rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
-                'medial': {'v': (0., -90.), 'r': 90.},
-                'rostral': {'v': (-90., -90.), 'r': 180.},
-                'caudal': {'v': (90., -90.), 'r': 0.},
-                'dorsal': {'v': (180., 0.), 'r': 90.},
-                'ventral': {'v': (180., 180.), 'r': 90.},
-                'frontal': {'v': (60., 80.), 'r': -106.739},
-                'parietal': {'v': (-60., 60.), 'r': -49.106}}
+               'medial': {'v': (0., -90.), 'r': 90.},
+               'rostral': {'v': (-90., -90.), 'r': 180.},
+               'caudal': {'v': (90., -90.), 'r': 0.},
+               'dorsal': {'v': (180., 0.), 'r': 90.},
+               'ventral': {'v': (180., 180.), 'r': 90.},
+               'frontal': {'v': (60., 80.), 'r': -106.739},
+               'parietal': {'v': (-60., 60.), 'r': -49.106}}
 viewdicts = dict(lh=lh_viewdict, rh=rh_viewdict)
 
 
@@ -80,6 +70,10 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
         The montage image data array.
     """
     import Image
+    # This line is only necessary to overcome a PIL bug, see:
+    #     http://stackoverflow.com/questions/10854903/what-is-causing-
+    #          dimension-dependent-attributeerror-in-pil-fromarray-function
+    fnames = [f if isinstance(f, basestring) else f.copy() for f in fnames]
     if isinstance(fnames[0], basestring):
         images = map(Image.open, fnames)
     else:
@@ -187,6 +181,13 @@ def _force_render(figures):
 
 class _MlabGenerator(HasTraits):
     """TraitsUI mlab figure generator"""
+    try:
+        from traitsui.api import View
+    except ImportError:
+        try:
+            from traits.ui.api import View
+        except ImportError:
+            from enthought.traits.ui.api import View
 
     view = Instance(View)
 
@@ -197,6 +198,7 @@ class _MlabGenerator(HasTraits):
             assert MlabSceneModel
         except:
             from enthought.mayavi.tools.mlab_scene_model import MlabSceneModel
+
         self.mlab_names = []
         self.n_row = n_row
         self.n_col = n_col
@@ -231,6 +233,14 @@ class _MlabGenerator(HasTraits):
         except:
             from enthought.mayavi.core.ui.api import SceneEditor
             from enthought.mayavi.core.ui.mayavi_scene import MayaviScene
+        try:
+            from traitsui.api import (View, Item, VGroup, HGroup)
+        except ImportError:
+            try:
+                from traits.ui.api import (View, Item, VGroup, HGroup)
+            except ImportError:
+                from enthought.traits.ui.api import (View, Item,
+                                                     VGroup, HGroup)
         ind = 0
         va = []
         for ri in xrange(self.n_row):
@@ -651,8 +661,8 @@ class Brain(object):
             scalar_data = source
 
         if cast:
-            if (scalar_data.dtype.char == 'f' and
-                scalar_data.dtype.itemsize < 8):
+            if (scalar_data.dtype.char == 'f'
+                    and scalar_data.dtype.itemsize < 8):
                 scalar_data = scalar_data.astype(np.float)
 
         return scalar_data, name
@@ -684,8 +694,9 @@ class Brain(object):
                 else:
                     min = 2.0
                     warn("The 'min_thresh' value in your config value must be "
-                "a float, 'robust_min', or 'actual_min', but it is %s. "
-                "I'm setting the overlay min to the config default of 2" % min)
+                         "a float, 'robust_min', or 'actual_min', but it is "
+                         "%s. I'm setting the overlay min to the config "
+                         "default of 2" % min)
 
         if max is None:
             try:
@@ -699,9 +710,9 @@ class Brain(object):
                 else:
                     max = stats.scoreatpercentile(range_data, 98)
                     warn("The 'max_thresh' value in your config value must be "
-                "a float, 'robust_min', or 'actual_min', but it is %s. "
-                "I'm setting the overlay min to the config default "
-                "of robust_max" % max)
+                         "a float, 'robust_min', or 'actual_min', but it is "
+                         "%s. I'm setting the overlay min to the config "
+                         "default of robust_max" % max)
 
         return min, max
 
@@ -868,9 +879,11 @@ class Brain(object):
         views = self._toggle_render(False)
         for bi, brain in enumerate(self._brain_list):
             if brain['hemi'] == hemi:
-                s, ct, bar = brain['brain'].add_data(array, mlab_plot,
-                        vertices, smooth_mat, min, max, thresh, lut, colormap,
-                        alpha, time, time_label, colorbar)
+                out = brain['brain'].add_data(array, mlab_plot, vertices,
+                                              smooth_mat, min, max, thresh,
+                                              lut, colormap, alpha, time,
+                                              time_label, colorbar)
+                s, ct, bar = out
                 surfs.append(s)
                 bars.append(bar)
                 row, col = np.unravel_index(bi, self.brain_matrix.shape)
@@ -919,7 +932,7 @@ class Brain(object):
                                  % filepath)
 
         # Read in the data
-        labels, cmap, _ = io.read_annot(filepath, orig_ids=True)
+        labels, cmap, _ = nib.freesurfer.read_annot(filepath, orig_ids=True)
 
         # Maybe zero-out the non-border vertices
         if borders:
@@ -1117,7 +1130,7 @@ class Brain(object):
             m['colorbar'].visible = False
 
         # Read in the morphometric data
-        morph_data = io.read_morph_data(morph_file)
+        morph_data = nib.freesurfer.read_morph_data(morph_file)
 
         # Get a cortex mask for robust range
         self.geo[hemi].load_label("cortex")
@@ -1422,7 +1435,8 @@ class Brain(object):
         n_colors2 = int(n_colors / 2)
 
         # Index of fmid in new colorbar
-        fmid_idx = np.round(n_colors * ((fmid - fmin) / (fmax - fmin))) - 1
+        fmid_idx = int(np.round(n_colors * ((fmid - fmin)
+                                            / (fmax - fmin))) - 1)
 
         # Go through channels
         for i in range(4):
@@ -1621,10 +1635,10 @@ class Brain(object):
         brain = self.brain_matrix[row, col]
         ftype = fname[fname.rfind('.') + 1:]
         good_ftypes = ['png', 'jpg', 'bmp', 'tiff', 'ps',
-                        'eps', 'pdf', 'rib', 'oogl', 'iv', 'vrml', 'obj']
+                       'eps', 'pdf', 'rib', 'oogl', 'iv', 'vrml', 'obj']
         if not ftype in good_ftypes:
             raise ValueError("Supported image types are %s"
-                                % " ".join(good_ftypes))
+                             % " ".join(good_ftypes))
         mlab.draw(brain._f)
         mlab.savefig(fname, figure=brain._f)
 
@@ -1910,9 +1924,9 @@ class _Hemisphere(object):
             meshargs = dict()
             kwargs = dict(color=(.5, .5, .5))
         meshargs['figure'] = self._f
-        self._geo_mesh = mlab.pipeline.triangular_mesh_source(
-                                        self._geo.x, self._geo.y, self._geo.z,
-                                        self._geo.faces, **meshargs)
+        x, y, z, f = self._geo.x, self._geo.y, self._geo.z, self._geo.faces
+        self._geo_mesh = mlab.pipeline.triangular_mesh_source(x, y, z, f,
+                                                              **meshargs)
         self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                                figure=self._f, reset_zoom=True,
                                                **kwargs)
@@ -2092,11 +2106,11 @@ class _Hemisphere(object):
 
         # Create an mlab surface to visualize the annot
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
-                                                   self._geo.y,
-                                                   self._geo.z,
-                                                   self._geo.faces,
-                                                   scalars=ids,
-                                                   figure=self._f)
+                                                    self._geo.y,
+                                                    self._geo.z,
+                                                    self._geo.faces,
+                                                    scalars=ids,
+                                                    figure=self._f)
         surf = mlab.pipeline.surface(mesh, name=annot, figure=self._f)
 
         # Set the color table
@@ -2115,11 +2129,11 @@ class _Hemisphere(object):
             from enthought.mayavi import mlab
 
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
-                                                   self._geo.y,
-                                                   self._geo.z,
-                                                   self._geo.faces,
-                                                   scalars=label,
-                                                   figure=self._f)
+                                                    self._geo.y,
+                                                    self._geo.z,
+                                                    self._geo.faces,
+                                                    scalars=label,
+                                                    figure=self._f)
         surf = mlab.pipeline.surface(mesh, name=label_name, figure=self._f)
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color]) * 255
@@ -2182,9 +2196,10 @@ class _Hemisphere(object):
 
         # Set up the pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y,
-                                                  self._geo.z, self._geo.faces,
-                                                  scalars=scalar_data,
-                                                  figure=self._f)
+                                                    self._geo.z,
+                                                    self._geo.faces,
+                                                    scalars=scalar_data,
+                                                    figure=self._f)
         thresh = mlab.pipeline.threshold(mesh, low=min)
         surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
                                              line_width=line_width)
@@ -2380,6 +2395,15 @@ class TimeViewer(HasTraits):
     brain : Brain (or list of Brain)
         brain(s) to control
     """
+     # Nested import of traisui for setup.py without X server
+    try:
+        from traitsui.api import (View, Item, VSplit, HSplit, Group)
+    except ImportError:
+        try:
+            from traits.ui.api import (View, Item, VSplit, HSplit, Group)
+        except ImportError:
+            from enthought.traits.ui.api import (View, Item, VSplit,
+                                                 HSplit, Group)
     min_time = Int(0)
     max_time = Int(1E9)
     current_time = Range(low="min_time", high="max_time", value=0)
@@ -2399,14 +2423,13 @@ class TimeViewer(HasTraits):
                        Group(HSplit(Item(name="fmin"),
                                     Item(name="fmid"),
                                     Item(name="fmax"),
-                                    Item(name="transparent"),
-                                   ),
+                                    Item(name="transparent")
+                                    ),
                              label="Color scale",
-                             show_border=True
-                            ),
-                        Item(name="smoothing_steps"),
-                        Item(name="orientation")
-                      )
+                             show_border=True),
+                       Item(name="smoothing_steps"),
+                       Item(name="orientation")
+                       )
                 )
 
     def __init__(self, brain):

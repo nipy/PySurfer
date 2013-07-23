@@ -34,6 +34,19 @@ requires_fs = np.testing.dec.skipif(not has_freesurfer(),
                                     'Requires FreeSurfer command line tools')
 
 
+def test_image():
+    """Test image saving
+    """
+    mlab.options.backend = 'auto'
+    brain = Brain(*std_args, config_opts=small_brain)
+    tmp_name = mktemp() + '.png'
+    brain.save_image(tmp_name)
+    brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
+    brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
+    brain.screenshot()
+    brain.close()
+
+
 def test_brains():
     """Test plotting of Brain with different arguments
     """
@@ -245,19 +258,6 @@ def test_animate():
     brain.animate(['l', 'l'], n_steps=2, fname=tmp_name)
     # can't rotate in axial plane
     assert_raises(ValueError, brain.animate, ['l', 'd'])
-    brain.close()
-
-
-def test_image():
-    """Test image saving
-    """
-    mlab.options.backend = 'auto'
-    brain = Brain(*std_args, config_opts=small_brain)
-    tmp_name = mktemp() + '.png'
-    brain.save_image(tmp_name)
-    brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
-    brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
-    brain.screenshot()
     brain.close()
 
 
