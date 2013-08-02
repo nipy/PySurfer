@@ -11,7 +11,7 @@ print __doc__
 from surfer import Brain
 
 sub = 'fsaverage'
-hemi = 'lh'
+hemi = 'both'
 surf = 'inflated'
 
 brain = Brain(sub, hemi, surf)
