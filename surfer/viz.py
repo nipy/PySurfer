@@ -3,8 +3,7 @@ from os.path import join as pjoin
 from warnings import warn
 
 import numpy as np
-from scipy import stats
-from scipy import ndimage
+from scipy import stats, ndimage, misc
 from matplotlib.colors import colorConverter
 
 import nibabel as nib
@@ -1697,7 +1696,7 @@ class Brain(object):
             self._v = None
 
     def __del__(self):
-        if self._v is not None:
+        if hasattr(self, '_v') and self._v is not None:
             self._v.dispose()
             self._v = None
 
@@ -1760,8 +1759,7 @@ class Brain(object):
         a Mayavi figure to plot instead of TraitsUI) if you intend to
         script plotting commands.
         """
-        data = self.screenshot()
-        make_montage(filename, [data])
+        misc.imsave(filename, self.screenshot())
 
     def screenshot(self, mode='rgb', antialiased=False):
         """Generate a screenshot of current view
@@ -1796,7 +1794,8 @@ class Brain(object):
         row = []
         for ri in range(self.brain_matrix.shape[0]):
             col = []
-            for ci in range(self.brain_matrix.shape[1]):
+            n_col = 2 if self._hemi == 'split' else 1
+            for ci in range(n_col):
                 col += [self.screenshot_single(mode, antialiased,
                                                ri, ci)]
             row += [np.concatenate(col, axis=1)]
