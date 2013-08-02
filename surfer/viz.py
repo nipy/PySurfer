@@ -470,13 +470,18 @@ class Brain(object):
 
     def _set_window_properties(self, config_opts):
         """Set window properties using config_opts"""
-        try:
-            width = config_opts['width']
-        except KeyError:
+        # old option "size" sets both width and height
+        if "size" in config_opts:
+            width = config_opts["size"]
+            height = width
+
+        if "width" in config_opts:
+            width = config_opts["width"]
+        else:
             width = config.getfloat("visual", "width")
-        try:
+        if 'height' in config_opts:
             height = config_opts['height']
-        except KeyError:
+        else:
             height = config.getfloat("visual", "height")
         self._scene_size = (height, width)
 
@@ -1975,7 +1980,8 @@ class _Hemisphere(object):
             view['reset_roll'] = True
             view['figure'] = self._f
             view['distance'] = distance
-            view['focalpoint'] = (0.0, 0.0, 0.0)
+            # DO NOT set focal point, can screw up non-centered brains
+            #view['focalpoint'] = (0.0, 0.0, 0.0)
             mlab.view(**view)
         if roll is not None:
             mlab.roll(roll=roll, figure=self._f)
