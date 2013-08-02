@@ -179,6 +179,52 @@ def _force_render(figures):
     _gui.process_events()
 
 
+def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
+    """Triage viewer creation
+
+    If n_row == n_col == 1, then we can use a Mayavi figure, which
+    generally guarantees that things will be drawn before control
+    is returned to the command line. With the multi-view, TraitsUI
+    unfortunately has no such support, so we only use it if needed.
+    """
+    try:
+        from mayavi import mlab
+        assert mlab
+    except:
+        from enthought.mayavi import mlab
+    if figure is None:
+        # spawn scenes
+        h, w = scene_size
+        if offscreen is True:
+            orig_val = mlab.options.offscreen
+            mlab.options.offscreen = True
+            figures = [[mlab.figure(size=(h / n_row, w / n_col))
+                        for _ in xrange(n_col)] for __ in xrange(n_row)]
+            mlab.options.offscreen = orig_val
+            _v = None
+        else:
+            # Triage: don't make TraitsUI if we don't have to
+            if n_row == 1 and n_col == 1:
+                figure = mlab.figure(title, size=(w, h))
+                mlab.clf(figure)
+                figures = [[figure]]
+                _v = None
+            else:
+                window = _MlabGenerator(n_row, n_col, w, h, title)
+                figures, _v = window._get_figs_view()
+    else:
+        if not isinstance(figure, (list, tuple)):
+            figure = [figure]
+        if not len(figure) == n_row * n_col:
+            raise ValueError('For the requested view, figure must be a '
+                             'list or tuple with exactly %i elements, '
+                             'not %i' % (n_row * n_col, len(figure)))
+        _v = None
+        figures = [figure[slice(ri * n_col, (ri + 1) * n_col)]
+                   for ri in range(n_row)]
+    return figures, _v
+
+
 class _MlabGenerator(HasTraits):
     """TraitsUI mlab figure generator"""
     try:
@@ -191,7 +237,7 @@ class _MlabGenerator(HasTraits):
 
     view = Instance(View)
 
-    def __init__(self, n_row, n_col, width, height, **traits):
+    def __init__(self, n_row, n_col, width, height, title, **traits):
         HasTraits.__init__(self, **traits)
         try:
             from mayavi.tools.mlab_scene_model import MlabSceneModel
@@ -209,9 +255,10 @@ class _MlabGenerator(HasTraits):
             self.mlab_names.append(name)
             self.add_trait(name, Instance(MlabSceneModel, ()))
         self.view = self._get_gen_view()
+        self._v = self.edit_traits(view=self.view)
+        self._v.title = title
 
-    def _get_figs_scenes(self):
-        scenes = []
+    def _get_figs_view(self):
         figures = []
         ind = 0
         for ri in range(self.n_row):
@@ -219,10 +266,9 @@ class _MlabGenerator(HasTraits):
             for ci in range(self.n_col):
                 x = getattr(self, self.mlab_names[ind])
                 rfigs.append(x.mayavi_scene)
-                scenes.append(x)
                 ind += 1
             figures.append(rfigs)
-        return figures, scenes
+        return figures, self._v
 
     def _get_gen_view(self):
         try:
@@ -264,7 +310,10 @@ class Brain(object):
     subject_id : str
         subject name in Freesurfer subjects dir
     hemi : str
-        hemisphere id (ie 'lh', 'rh', or 'split')
+        hemisphere id (ie 'lh', 'rh', 'both', or 'split'). In the case
+        of 'both', both hemispheres are shown in the same window.
+        In the case of 'split' hemispheres are displayed side-by-side
+        in different viewing panes.
     surf :  geometry name
         freesurfer surface mesh name (ie 'white', 'inflated', etc.)
     curv : boolean
@@ -281,7 +330,7 @@ class Brain(object):
         If not None, this directory will be used as the subjects directory
         instead of the value set using the SUBJECTS_DIR environment
         variable.
-    views : list (or str)
+    views : list | str
         views to use
     show_toolbar : bool
         If True, toolbars will be shown for each view.
@@ -337,39 +386,9 @@ class Brain(object):
 
         # deal with making figures
         self._set_window_properties(config_opts)
-        if figure is None:
-            # spawn scenes
-            h, w = self._scene_size
-            if offscreen is True:
-                try:
-                    from mayavi import mlab
-                    assert mlab
-                except:
-                    from enthought.mayavi import mlab
-                orig_val = mlab.options.offscreen
-                mlab.options.offscreen = True
-                figures = [[mlab.figure(size=(h / n_row, w / n_col))
-                            for _ in xrange(n_col)] for __ in xrange(n_row)]
-                mlab.options.offscreen = orig_val
-                scenes, _v = None, None
-            else:
-                window = _MlabGenerator(n_row, n_col, w, h)
-                _v = window.edit_traits(view=window._get_gen_view())
-                _v.title = title
-                figures, scenes = window._get_figs_scenes()
-        else:
-            if not isinstance(figure, (list, tuple)):
-                figure = [figure]
-            if not len(figure) == n_row * n_col:
-                raise ValueError('For the requested view, figure must be a '
-                                 'list or tuple with exactly %i elements, '
-                                 'not %i' % (n_row * n_col, len(figure)))
-            scenes = None
-            _v = None
-            figures = [figure[slice(ri * n_col, (ri + 1) * n_col)]
-                       for ri in range(n_row)]
+        figures, _v = _make_viewer(figure, n_row, n_col, title,
+                                   self._scene_size, offscreen)
         self._figures = figures
-        self._scenes = scenes
         self._v = _v
         for ff in self._figures:
             for f in ff:
@@ -378,8 +397,7 @@ class Brain(object):
                     f.scene.foreground = self._fg_color
         # force rendering so scene.lights exists
         _force_render(self._figures)
-        if self._scenes is not None:
-            self.toggle_toolbars(show_toolbar)
+        self.toggle_toolbars(show_toolbar)
         _force_render(self._figures)
         self._toggle_render(False)
 
@@ -520,27 +538,27 @@ class Brain(object):
             If None, the state is toggled. If True, the toolbar will
             be shown, if False, hidden.
         """
-        if self._scenes is None:
-            raise ValueError('Cannot toggle toolbars when figures are '
-                             'passed in')
+        # this may not work if QT is not the backend (?), or in testing
+        if hasattr(self._figures[0][0].scene, 'scene_editor'):
+            # Within TraitsUI
+            bars = [f.scene.scene_editor._tool_bar
+                    for ff in self._figures for f in ff]
+        else:
+            # Mayavi figure
+            bars = [f.scene._tool_bar for ff in self._figures for f in ff]
+
         if show is None:
-            try:
+            if hasattr(bars[0], 'isVisible'):
                 # QT4
-                show = self._scenes[0][0].scene_editor._tool_bar.isVisible()
-                show = not show
-            except:
+                show = not bars[0].isVisible()
+            else:
                 # WX
-                show = not self._scenes[0][0].scene_editor._tool_bar.Shown()
-                show = not show
-        for s in self._scenes:
-            # this may not work if QT is not the backend (?), or in testing
-            try:
-                s.scene_editor._tool_bar.setVisible(show)
-            except:
-                try:
-                    s.scene_editor._tool_bar.Show(show)
-                except:
-                    pass
+                show = not bars[0].Shown()
+        for bar in bars:
+            if hasattr(bar, 'setVisible'):
+                bar.setVisible(show)
+            else:
+                bar.Show(show)
 
     def _get_one_brain(self, d, name):
         """Helper for various properties"""

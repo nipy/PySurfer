@@ -1,6 +1,17 @@
 PySurfer Changes
 ================
 
+Version 0.3.2
+-------------
+
+Enhancements
+~~~~~~~~~~~~
+
+- Support for displaying data from both hemispheres simultaneously
+- Support for displaying multiple views simultaneously
+- Support for toggling Mayavi toolbars
+- Use nibabel for IO functions
+
 Version 0.3.1
 -------------
 

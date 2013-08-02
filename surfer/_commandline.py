@@ -32,7 +32,8 @@ parser = argparse.ArgumentParser(prog='pysurfer',
                   description=help_text)
 parser.add_argument("subject_id",
                     help="subject id as in subjects dir")
-parser.add_argument("hemi", metavar="hemi", choices=["lh", "rh"],
+parser.add_argument("hemi", metavar="hemi", choices=["lh", "rh",
+                                                     "both", "split"],
                     help="hemisphere to load")
 parser.add_argument("surf",
                     help="surface mesh (e.g. 'pial', 'inflated')")

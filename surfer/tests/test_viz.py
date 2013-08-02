@@ -50,7 +50,9 @@ def test_image():
 def test_brains():
     """Test plotting of Brain with different arguments
     """
-    mlab.options.backend = 'test'
+    # testing backend breaks when passing in a figure, so we use 'auto' here
+    # (shouldn't affect usability, but it makes testing more annoying)
+    mlab.options.backend = 'auto'
     surfs = ['inflated', 'sphere']
     hemis = ['lh', 'rh']
     curvs = [True, False]
@@ -60,6 +62,7 @@ def test_brains():
     subj_dirs = [None, subj_dir]
     for surf, hemi, curv, title, co, fig, sd \
             in zip(surfs, hemis, curvs, titles, config_opts, figs, subj_dirs):
+        print 'hello'
         brain = Brain(subject_id, hemi, surf, curv, title, co, fig, sd)
         brain.close()
     assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
