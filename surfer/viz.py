@@ -1648,6 +1648,13 @@ class Brain(object):
             row index of the brain to use
         col : int
             column index of the brain to use
+
+        Due to limitations in TraitsUI, if multiple views or hemi='split'
+        is used, there is no guarantee painting of the windows will
+        complete before control is returned to the command line. Thus
+        we strongly recommend using only one figure window (which uses
+        a Mayavi figure to plot instead of TraitsUI) if you intend to
+        script plotting commands.
         """
         try:
             from mayavi import mlab
@@ -1685,6 +1692,15 @@ class Brain(object):
         -------
         screenshot: array
             Image pixel values
+
+        Notes
+        -----
+        Due to limitations in TraitsUI, if multiple views or hemi='split'
+        is used, there is no guarantee painting of the windows will
+        complete before control is returned to the command line. Thus
+        we strongly recommend using only one figure window (which uses
+        a Mayavi figure to plot instead of TraitsUI) if you intend to
+        script plotting commands.
         """
         try:
             from mayavi import mlab
