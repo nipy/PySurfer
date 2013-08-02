@@ -180,6 +180,7 @@ def generate_file_rst(fname, target_dir, src_dir, plot_gallery):
                     plt.savefig(image_file)
 
                 brain.save_image(image_file)
+                brain.close()
 
             except:
                 print 80 * '_'
