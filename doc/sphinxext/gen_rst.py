@@ -186,14 +186,7 @@ def generate_file_rst(fname, target_dir, src_dir, plot_gallery):
                     plt.savefig(image_file)
 
                 try:
-                    try:
-                        from mayavi import mlab
-                    except ImportError:
-                        from enthought.mayavi import mlab
-
-                    e = mlab.get_engine()
-                    if len(e.scenes) > 0:
-                        mlab.savefig(image_file, size=(400, 400))
+                    brain.save_image(image_file)
                 except:
                     pass
 

@@ -157,9 +157,8 @@ def _prepare_data(data):
     return data
 
 
-def _force_render(figures):
+def _force_render(figures, backend):
     """Ensure plots are updated before properties are used"""
-    from pyface.api import GUI
     try:
         from mayavi import mlab
         assert mlab
@@ -171,12 +170,14 @@ def _force_render(figures):
         for f in ff:
             f.render()
             mlab.draw(figure=f)
-    _gui = GUI()
-    orig_val = _gui.busy
-    _gui.set_busy(busy=True)
-    _gui.process_events()
-    _gui.set_busy(busy=orig_val)
-    _gui.process_events()
+    if backend == 'TraitsUI':
+        from pyface.api import GUI
+        _gui = GUI()
+        orig_val = _gui.busy
+        _gui.set_busy(busy=True)
+        _gui.process_events()
+        _gui.set_busy(busy=orig_val)
+        _gui.process_events()
 
 
 def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
@@ -390,15 +391,16 @@ class Brain(object):
                                    self._scene_size, offscreen)
         self._figures = figures
         self._v = _v
+        self._window_backend = 'Mayavi' if self._v is None else 'TraitsUI'
         for ff in self._figures:
             for f in ff:
                 if f.scene is not None:
                     f.scene.background = self._bg_color
                     f.scene.foreground = self._fg_color
         # force rendering so scene.lights exists
-        _force_render(self._figures)
+        _force_render(self._figures, self._window_backend)
         self.toggle_toolbars(show_toolbar)
-        _force_render(self._figures)
+        _force_render(self._figures, self._window_backend)
         self._toggle_render(False)
 
         # fill figures with brains
@@ -415,13 +417,13 @@ class Brain(object):
                     kwargs['hemi'] = h
                     kwargs['geo'] = self.geo[h]
                     kwargs['figure'] = figures[ri][ci]
+                    kwargs['backend'] = self._window_backend
                     brain = _Hemisphere(subject_id, **kwargs)
                     brain.show_view(view)
                     brains += [dict(row=ri, col=ci, brain=brain, hemi=h)]
                     brain_row += [brain]
             brain_matrix += [brain_row]
         self._toggle_render(True)
-        _force_render(self._figures)
         self._original_views = views
         self._brain_list = brains
         for brain in self._brain_list:
@@ -466,6 +468,9 @@ class Brain(object):
             if state is True and view is not None:
                 mlab.draw(figure=_f)
                 mlab.view(*view, figure=_f)
+        # let's do the ugly force draw
+        if state is True:
+            _force_render(self._figures, self._window_backend)
         return views
 
     def _set_window_properties(self, config_opts):
@@ -543,27 +548,29 @@ class Brain(object):
             If None, the state is toggled. If True, the toolbar will
             be shown, if False, hidden.
         """
-        # this may not work if QT is not the backend (?), or in testing
-        if hasattr(self._figures[0][0].scene, 'scene_editor'):
-            # Within TraitsUI
-            bars = [f.scene.scene_editor._tool_bar
-                    for ff in self._figures for f in ff]
-        else:
-            # Mayavi figure
-            bars = [f.scene._tool_bar for ff in self._figures for f in ff]
+        # don't do anything if testing is on
+        if self._figures[0][0].scene is not None:
+            # this may not work if QT is not the backend (?), or in testing
+            if hasattr(self._figures[0][0].scene, 'scene_editor'):
+                # Within TraitsUI
+                bars = [f.scene.scene_editor._tool_bar
+                        for ff in self._figures for f in ff]
+            else:
+                # Mayavi figure
+                bars = [f.scene._tool_bar for ff in self._figures for f in ff]
 
-        if show is None:
-            if hasattr(bars[0], 'isVisible'):
-                # QT4
-                show = not bars[0].isVisible()
-            else:
-                # WX
-                show = not bars[0].Shown()
-        for bar in bars:
-            if hasattr(bar, 'setVisible'):
-                bar.setVisible(show)
-            else:
-                bar.Show(show)
+            if show is None:
+                if hasattr(bars[0], 'isVisible'):
+                    # QT4
+                    show = not bars[0].isVisible()
+                else:
+                    # WX
+                    show = not bars[0].Shown()
+            for bar in bars:
+                if hasattr(bar, 'setVisible'):
+                    bar.setVisible(show)
+                else:
+                    bar.Show(show)
 
     def _get_one_brain(self, d, name):
         """Helper for various properties"""
@@ -1672,14 +1679,33 @@ class Brain(object):
 
     def close(self):
         """Close all figures and cleanup data structure."""
-        [b['brain'].close() for b in self._brain_list]
+        try:
+            from mayavi import mlab
+            assert mlab
+        except ImportError:
+            from enthought.mayavi import mlab
+
+        for ri, ff in enumerate(self._figures):
+            for ci, f in enumerate(ff):
+                if f is not None:
+                    mlab.close(f)
+                    self._figures[ri][ci] = None
+
+        #should we tear down other variables?
         if self._v is not None:
             self._v.dispose()
+            self._v = None
+
+    def __del__(self):
+        if self._v is not None:
+            self._v.dispose()
+            self._v = None
+
 
     ###########################################################################
     # SAVING OUTPUT
-    def save_image(self, fname=None, row=-1, col=-1):
-        """Save current view to disk
+    def save_single_image(self, filename, row=-1, col=-1):
+        """Save view from one panel to disk
 
         Only mayavi image types are supported:
         (png jpg bmp tiff ps eps pdf rib  oogl iv  vrml obj
@@ -1707,17 +1733,78 @@ class Brain(object):
             from enthought.mayavi import mlab
 
         brain = self.brain_matrix[row, col]
-        ftype = fname[fname.rfind('.') + 1:]
+        ftype = filename[filename.rfind('.') + 1:]
         good_ftypes = ['png', 'jpg', 'bmp', 'tiff', 'ps',
                        'eps', 'pdf', 'rib', 'oogl', 'iv', 'vrml', 'obj']
         if not ftype in good_ftypes:
             raise ValueError("Supported image types are %s"
                              % " ".join(good_ftypes))
         mlab.draw(brain._f)
-        mlab.savefig(fname, figure=brain._f)
+        mlab.savefig(filename, figure=brain._f)
 
-    def screenshot(self, mode='rgb', antialiased=False, row=-1, col=-1):
+    def save_image(self, filename):
+        """Save view from all panels to disk
+
+        Only mayavi image types are supported:
+        (png jpg bmp tiff ps eps pdf rib  oogl iv  vrml obj
+
+        Parameters
+        ----------
+        filename: string
+            path to new image file
+
+        Due to limitations in TraitsUI, if multiple views or hemi='split'
+        is used, there is no guarantee painting of the windows will
+        complete before control is returned to the command line. Thus
+        we strongly recommend using only one figure window (which uses
+        a Mayavi figure to plot instead of TraitsUI) if you intend to
+        script plotting commands.
+        """
+        data = self.screenshot()
+        make_montage(filename, [data])
+
+    def screenshot(self, mode='rgb', antialiased=False):
         """Generate a screenshot of current view
+
+        Wraps to mlab.screenshot for ease of use.
+
+        Parameters
+        ----------
+        mode: string
+            Either 'rgb' or 'rgba' for values to return
+        antialiased: bool
+            Antialias the image (see mlab.screenshot() for details)
+        row : int
+            row index of the brain to use
+        col : int
+            column index of the brain to use
+
+        Returns
+        -------
+        screenshot: array
+            Image pixel values
+
+        Notes
+        -----
+        Due to limitations in TraitsUI, if multiple views or hemi='split'
+        is used, there is no guarantee painting of the windows will
+        complete before control is returned to the command line. Thus
+        we strongly recommend using only one figure window (which uses
+        a Mayavi figure to plot instead of TraitsUI) if you intend to
+        script plotting commands.
+        """
+        row = []
+        for ri in range(self.brain_matrix.shape[0]):
+            col = []
+            for ci in range(self.brain_matrix.shape[1]):
+                col += [self.screenshot_single(mode, antialiased,
+                                               ri, ci)]
+            row += [np.concatenate(col, axis=1)]
+        data = np.concatenate(row, axis=0)
+        return data
+
+    def screenshot_single(self, mode='rgb', antialiased=False, row=-1, col=-1):
+        """Generate a screenshot of current view from a single panel
 
         Wraps to mlab.screenshot for ease of use.
 
@@ -1799,9 +1886,10 @@ class Brain(object):
                 if prefix is not None:
                     fname = "%s_%s.%s" % (prefix, view, filetype)
                     images_written.append(fname)
-                    self.save_image(fname, row, col)
+                    self.save_single_image(fname, row, col)
                 else:
-                    images_written.append(self.screenshot(row=row, col=col))
+                    images_written.append(self.screenshot_single(row=row,
+                                                                 col=col))
             except ValueError:
                 print("Skipping %s: not in view dict" % view)
         return images_written
@@ -1839,7 +1927,7 @@ class Brain(object):
         for idx in time_idx:
             self.set_data_time_index(idx)
             fname = fname_pattern % (idx if use_abs_idx else rel_pos)
-            self.save_image(fname, row, col)
+            self.save_single_image(fname, row, col)
             images_written.append(fname)
             rel_pos += 1
 
@@ -1952,10 +2040,10 @@ class Brain(object):
                     brain._f.scene.camera.azimuth(dv[0])
                     brain._f.scene.camera.elevation(dv[1])
                     brain._f.scene.renderer.reset_camera_clipping_range()
-                    brain._f.scene.render()
+                    _force_render([[brain._f]], self._window_backend)
                     if fname is not None:
                         if not (os.path.isfile(tmp_fname % i) and use_cache):
-                            self.save_image(tmp_fname % i, row, col)
+                            self.save_single_image(tmp_fname % i, row, col)
             except IndexError:
                 pass
         if fname is not None:
@@ -1978,7 +2066,7 @@ class Brain(object):
 class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
     def __init__(self, subject_id, hemi, surf, figure, geo, curv, title,
-                 config_opts, subjects_dir, bg_color, offset):
+                 config_opts, subjects_dir, bg_color, offset, backend):
         try:
             from mayavi import mlab
             assert mlab
@@ -1994,6 +2082,7 @@ class _Hemisphere(object):
         self.surf = surf
         self._f = figure
         self._bg_color = bg_color
+        self._backend = backend
 
         # mlab pipeline mesh and surface for geomtery
         self._geo = geo
@@ -2035,7 +2124,7 @@ class _Hemisphere(object):
                 print(v)
                 raise
 
-        _force_render(self._f)
+        _force_render(self._f, self._backend)
         if view is not None:
             view['reset_roll'] = True
             view['figure'] = self._f
@@ -2045,7 +2134,7 @@ class _Hemisphere(object):
             mlab.view(**view)
         if roll is not None:
             mlab.roll(roll=roll, figure=self._f)
-        _force_render(self._f)
+        _force_render(self._f, self._backend)
 
         view = mlab.view(figure=self._f)
         roll = mlab.roll(figure=self._f)
@@ -2358,17 +2447,6 @@ class _Hemisphere(object):
             color_data = colormap_map['classic']
 
         return color_data
-
-    def close(self):
-        """Close the figure and cleanup data structure."""
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
-        mlab.close(self._f)
-        #should we tear down other variables?
 
     def _format_cbar_text(self, cbar):
         bg_color = self._bg_color
