@@ -635,7 +635,7 @@ class Brain(object):
         return data
 
     def _check_hemi(self, hemi):
-        """Check for safe hemi input"""
+        """Check for safe single-hemi input, returns str"""
         if hemi is None:
             if self._hemi not in ['lh', 'rh']:
                 raise ValueError('hemi must not be None when both '
@@ -645,6 +645,20 @@ class Brain(object):
         elif hemi not in ['lh', 'rh']:
             extra = ' or None' if self._hemi in ['lh', 'rh'] else ''
             raise ValueError('hemi must be either "lh" or "rh"' + extra)
+        return hemi
+
+    def _check_hemis(self, hemi):
+        """Check for safe dual or single-hemi input, returns list"""
+        if hemi is None:
+            if self._hemi not in ['lh', 'rh']:
+                hemi = ['lh', 'rh']
+            else:
+                hemi = [self._hemi]
+        elif hemi not in ['lh', 'rh']:
+            extra = ' or None' if self._hemi in ['lh', 'rh'] else ''
+            raise ValueError('hemi must be either "lh" or "rh"' + extra)
+        else:
+            hemi = [hemi]
         return hemi
 
     def _read_scalar_data(self, source, hemi, name=None, cast=True):
@@ -919,7 +933,8 @@ class Brain(object):
         data['orig_ctable'] = ct
         self.data_dict[hemi] = data
 
-    def add_annotation(self, annot, borders=True, alpha=1, hemi=None):
+    def add_annotation(self, annot, borders=True, alpha=1, hemi=None,
+                       remove_existing=True):
         """Add an annotation file.
 
         Parameters
@@ -932,62 +947,83 @@ class Brain(object):
             Alpha level to control opacity
         hemi : str | None
             If None, it is assumed to belong to the hemipshere being
-            shown. If two hemispheres are being shown, an error will
-            be thrown.
+            shown. If two hemispheres are being shown, data must exist
+            for both hemispheres.
+        remove_existing : bool
+            If True (default), remove old annotations.
         """
-        hemi = self._check_hemi(hemi)
-
-        # Get rid of any old annots
-        for a in self.annot_list:
-            a['surface'].remove()
+        hemis = self._check_hemis(hemi)
 
         # Figure out where the data is coming from
         if os.path.isfile(annot):
             filepath = annot
-            annot = os.path.basename(filepath).split('.')[1]
+            path = os.path.split(filepath)[0]
+            file_hemi, annot = os.path.basename(filepath).split('.')[:2]
+            if len(hemis) > 1:
+                if annot[:2] == 'lh.':
+                    filepaths = [filepath, pjoin(path, 'rh' + annot[2:])]
+                elif annot[:2] == 'rh.':
+                    filepaths = [pjoin(path, 'lh' + annot[2:], filepath)]
+                else:
+                    raise RuntimeError('To add both hemispheres '
+                                       'simultaneously, filename must '
+                                       'begin with "lh." or "rh."')
+            else:
+                filepaths = [filepath]
         else:
-            filepath = pjoin(self.subjects_dir,
-                             self.subject_id,
-                             'label',
-                             ".".join([hemi, annot, 'annot']))
-            if not os.path.exists(filepath):
-                raise ValueError('Annotation file %s does not exist'
-                                 % filepath)
+            filepaths = []
+            for hemi in hemis:
+                filepath = pjoin(self.subjects_dir,
+                                 self.subject_id,
+                                 'label',
+                                 ".".join([hemi, annot, 'annot']))
+                if not os.path.exists(filepath):
+                    raise ValueError('Annotation file %s does not exist'
+                                     % filepath)
+                filepaths += [filepath]
 
-        # Read in the data
-        labels, cmap, _ = nib.freesurfer.read_annot(filepath, orig_ids=True)
-
-        # Maybe zero-out the non-border vertices
-        if borders:
-            n_vertices = labels.size
-            edges = utils.mesh_edges(self.geo[hemi].faces)
-            border_edges = labels[edges.row] != labels[edges.col]
-            show = np.zeros(n_vertices, dtype=np.int)
-            show[np.unique(edges.row[border_edges])] = 1
-            labels *= show
-
-        # Handle null labels properly
-        # (tksurfer doesn't use the alpha channel, so sometimes this
-        # is set weirdly. For our purposes, it should always be 0.
-        # Unless this sometimes causes problems?
-        cmap[np.where(cmap[:, 4] == 0), 3] = 0
-        if np.any(labels == 0) and not np.any(cmap[:, -1] == 0):
-            cmap = np.vstack((cmap, np.zeros(5, int)))
-
-        # Set label ids sensibly
-        ord = np.argsort(cmap[:, -1])
-        ids = ord[np.searchsorted(cmap[ord, -1], labels)]
-        cmap = cmap[:, :4]
-
-        #  Set the alpha level
-        alpha_vec = cmap[:, 3]
-        alpha_vec[alpha_vec > 0] = alpha * 255
-
-        al = []
         views = self._toggle_render(False)
-        for brain in self._brain_list:
-            if brain['hemi'] == hemi:
-                al.append(brain['brain'].add_annotation(annot, ids, cmap))
+        if remove_existing is True:
+            # Get rid of any old annots
+            for a in self.annot_list:
+                a['surface'].remove()
+            self.annot_list = []
+
+        al = self.annot_list
+        for hemi, filepath in zip(hemis, filepaths):
+            # Read in the data
+            labels, cmap, _ = nib.freesurfer.read_annot(filepath,
+                                                        orig_ids=True)
+
+            # Maybe zero-out the non-border vertices
+            if borders:
+                n_vertices = labels.size
+                edges = utils.mesh_edges(self.geo[hemi].faces)
+                border_edges = labels[edges.row] != labels[edges.col]
+                show = np.zeros(n_vertices, dtype=np.int)
+                show[np.unique(edges.row[border_edges])] = 1
+                labels *= show
+
+            # Handle null labels properly
+            # (tksurfer doesn't use the alpha channel, so sometimes this
+            # is set weirdly. For our purposes, it should always be 0.
+            # Unless this sometimes causes problems?
+            cmap[np.where(cmap[:, 4] == 0), 3] = 0
+            if np.any(labels == 0) and not np.any(cmap[:, -1] == 0):
+                cmap = np.vstack((cmap, np.zeros(5, int)))
+
+            # Set label ids sensibly
+            ord = np.argsort(cmap[:, -1])
+            ids = ord[np.searchsorted(cmap[ord, -1], labels)]
+            cmap = cmap[:, :4]
+
+            #  Set the alpha level
+            alpha_vec = cmap[:, 3]
+            alpha_vec[alpha_vec > 0] = alpha * 255
+
+            for brain in self._brain_list:
+                if brain['hemi'] == hemi:
+                    al.append(brain['brain'].add_annotation(annot, ids, cmap))
         self.annot_list = al
         self._toggle_render(True, views)
 
@@ -1117,7 +1153,8 @@ class Brain(object):
             for ll in label:
                 ll.remove()
 
-    def add_morphometry(self, measure, grayscale=False, hemi=None):
+    def add_morphometry(self, measure, grayscale=False, hemi=None,
+                        remove_existing=True):
         """Add a morphometry overlay to the image.
 
         Parameters
@@ -1128,57 +1165,64 @@ class Brain(object):
             whether to load the overlay with a grayscale colormap
         hemi : str | None
             If None, it is assumed to belong to the hemipshere being
-            shown. If two hemispheres are being shown, an error will
-            be thrown.
+            shown. If two hemispheres are being shown, data must exist
+            for both hemispheres.
+        remove_existing : bool
+            If True (default), remove old annotations.
         """
-        hemi = self._check_hemi(hemi)
-
-        # Find the source data
-        surf_dir = pjoin(self.subjects_dir, self.subject_id, 'surf')
-        morph_file = pjoin(surf_dir, '.'.join([hemi, measure]))
-        if not os.path.exists(morph_file):
-            raise ValueError(
-                'Could not find %s in subject directory' % morph_file)
-
-        # Preset colormaps
-        cmap_dict = dict(area="pink",
-                         curv="RdBu",
-                         jacobian_white="pink",
-                         sulc="RdBu",
-                         thickness="pink")
-
-        # Get rid of any old overlays
-        for m in self.morphometry_list:
-            m['surface'].remove()
-            m['colorbar'].visible = False
-
-        # Read in the morphometric data
-        morph_data = nib.freesurfer.read_morph_data(morph_file)
-
-        # Get a cortex mask for robust range
-        self.geo[hemi].load_label("cortex")
-        ctx_idx = self.geo[hemi].labels["cortex"]
-
-        # Get the display range
-        if measure == "thickness":
-            min, max = 1, 4
-        else:
-            min, max = stats.describe(morph_data[ctx_idx])[1]
-
-        # Set up the Mayavi pipeline
-        morph_data = _prepare_data(morph_data)
-
-        if grayscale:
-            colormap = "gray"
-        else:
-            colormap = cmap_dict[measure]
+        hemis = self._check_hemis(hemi)
+        morph_files = []
+        for hemi in hemis:
+            # Find the source data
+            surf_dir = pjoin(self.subjects_dir, self.subject_id, 'surf')
+            morph_file = pjoin(surf_dir, '.'.join([hemi, measure]))
+            if not os.path.exists(morph_file):
+                raise ValueError(
+                    'Could not find %s in subject directory' % morph_file)
+            morph_files += [morph_file]
 
         views = self._toggle_render(False)
-        ml = []
-        for brain in self._brain_list:
-            if brain['hemi'] == hemi:
-                ml.append(brain['brain'].add_morphometry(morph_data, colormap,
-                                                         measure, min, max))
+        if remove_existing is True:
+            # Get rid of any old overlays
+            for m in self.morphometry_list:
+                m['surface'].remove()
+                m['colorbar'].visible = False
+            self.morphometry_list = []
+        ml = self.morphometry_list
+        for hemi, morph_file in zip(hemis, morph_files):
+            # Preset colormaps
+            cmap_dict = dict(area="pink",
+                             curv="RdBu",
+                             jacobian_white="pink",
+                             sulc="RdBu",
+                             thickness="pink")
+
+            # Read in the morphometric data
+            morph_data = nib.freesurfer.read_morph_data(morph_file)
+
+            # Get a cortex mask for robust range
+            self.geo[hemi].load_label("cortex")
+            ctx_idx = self.geo[hemi].labels["cortex"]
+
+            # Get the display range
+            if measure == "thickness":
+                min, max = 1, 4
+            else:
+                min, max = stats.describe(morph_data[ctx_idx])[1]
+
+            # Set up the Mayavi pipeline
+            morph_data = _prepare_data(morph_data)
+
+            if grayscale:
+                colormap = "gray"
+            else:
+                colormap = cmap_dict[measure]
+
+            for brain in self._brain_list:
+                if brain['hemi'] == hemi:
+                    ml.append(brain['brain'].add_morphometry(morph_data,
+                                                             colormap, measure,
+                                                             min, max))
         self.morphometry_list = ml
         self._toggle_render(True, views)
 
