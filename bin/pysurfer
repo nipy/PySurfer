@@ -24,10 +24,16 @@ if __name__ == '__main__':
     # boot up mlab/IPython
     if len(sys.argv) > 3:
         subjects_dir = os.environ['SUBJECTS_DIR']
-        surf_file = os.path.join(subjects_dir,
-                                 "%s/surf/%s.%s" % tuple(sys.argv[1:4]))
-        if not os.path.exists(surf_file):
-            sys.exit("ERROR: Could not find %s" % surf_file)
+        if sys.argv[2] in ['both', 'split']:
+            hemi_checks = ['lh', 'rh']
+        else:
+            hemi_checks = [sys.argv[2]]
+        for h in hemi_checks:
+            surf_file = os.path.join(subjects_dir,
+                                     "%s/surf/%s.%s" % (sys.argv[1], h,
+                                                        sys.argv[3]))
+            if not os.path.exists(surf_file):
+                sys.exit("ERROR: Could not find %s" % surf_file)
 
     if not is_ipython:
         # Parse the args so that --help exits back to the shell
