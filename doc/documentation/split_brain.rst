@@ -4,22 +4,28 @@ Working with a split-screen brain
 =================================
 
 The split-screen view can be activated by using the argument ``hemi='split'``.
-This will put views of the left hemisphere in consecutive vertical frames
-on the left, and views of the right hemisphere in consecutive vertical
-frames on the right. For example, running the following::
+Using this option will put views of the left hemisphere in consecutive
+vertical frames on the left, and views of the right hemisphere in
+consecutive vertical frames on the right. For example, running the following::
 
-    brain = Brain('fsaverage', 'split', 'inflated',
-                  views=['lat', 'med', 'ven'])
+    brain = Brain('fsaverage', 'split', 'inflated', views=['lat', 'med'])
 
-Will produce a window with two columns (hemispheres) and three rows (the
-lateral, medial, and vental views, respectively).
+Will produce a window with two columns (hemispheres) and two rows (the
+lateral and medial views, respectively), shown below.
+
+.. image:: ../../_static/split_view.png
 
 Adding and displaying data
 --------------------------
 
 Data can be added to either hemisphere using the same functions that are
 normally used, e.g. ``add_data``, ``add_overlay``, ``add_morphometry``.
-The objects are automatically shown on all views of the brain.
+The objects are automatically shown on all views of the brain. When
+calling these functions, the ``hemi`` keyword argument can be set to
+``hemi='lh'`` or ``hemi='rh'`` to specify the hemisphere to plot to.
+In some instances (e.g., ``add_morphometry``), if no keyword argument
+is provided, PySurfer will attempt to load data or both hemispheres
+automtically.
 
 Note that the ``show_view`` method accepts arguments for the ``row`` and
 ``col`` values, which allow the user to control which ``Brain`` panel
