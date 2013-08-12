@@ -34,10 +34,25 @@ requires_fs = np.testing.dec.skipif(not has_freesurfer(),
                                     'Requires FreeSurfer command line tools')
 
 
+def test_image():
+    """Test image saving
+    """
+    mlab.options.backend = 'auto'
+    brain = Brain(*std_args, config_opts=small_brain)
+    tmp_name = mktemp() + '.png'
+    brain.save_image(tmp_name)
+    brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
+    brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
+    brain.screenshot()
+    brain.close()
+
+
 def test_brains():
     """Test plotting of Brain with different arguments
     """
-    mlab.options.backend = 'test'
+    # testing backend breaks when passing in a figure, so we use 'auto' here
+    # (shouldn't affect usability, but it makes testing more annoying)
+    mlab.options.backend = 'auto'
     surfs = ['inflated', 'sphere']
     hemis = ['lh', 'rh']
     curvs = [True, False]
@@ -47,7 +62,9 @@ def test_brains():
     subj_dirs = [None, subj_dir]
     for surf, hemi, curv, title, co, fig, sd \
             in zip(surfs, hemis, curvs, titles, config_opts, figs, subj_dirs):
-        Brain(subject_id, hemi, surf, curv, title, co, fig, sd)
+        print 'hello'
+        brain = Brain(subject_id, hemi, surf, curv, title, co, fig, sd)
+        brain.close()
     assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   subjects_dir='')
 
@@ -62,6 +79,7 @@ def test_annot():
     brain = Brain(*std_args)
     for a, b, p in zip(annots, borders, alphas):
         brain.add_annotation(a, b, p)
+    brain.close()
 
 
 def test_contour():
@@ -75,6 +93,7 @@ def test_contour():
                               line_width=2)
     brain.contour['surface'].actor.property.line_width = 1
     brain.contour['surface'].contour.number_of_contours = 10
+    brain.close()
 
 
 @requires_fs
@@ -87,6 +106,7 @@ def test_data():
     reg_file = pjoin(data_dir, 'register.dat')
     surf_data = io.project_volume_data(mri_file, "lh", reg_file)
     brain.add_data(surf_data, -.7, .7, colormap="jet", alpha=.7)
+    brain.close()
 
 
 def test_foci():
@@ -106,6 +126,7 @@ def test_foci():
     scale_factor = 0.7
     brain.add_foci(coords, coords_as_verts=True,
                    scale_factor=scale_factor, color="#A52A2A")
+    brain.close()
 
 
 def test_label():
@@ -127,6 +148,7 @@ def test_label():
     brain.add_label("V1", color="steelblue", alpha=.6)
     brain.add_label("V2", color="#FF6347", alpha=.6)
     brain.add_label("entorhinal", color=(.2, 1, .5), alpha=.6)
+    brain.close()
 
 
 def test_meg_inverse():
@@ -148,6 +170,7 @@ def test_meg_inverse():
     brain.set_data_time_index(2)
     brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
     # viewer = TimeViewer(brain)
+    brain.close()
 
 
 def test_morphometry():
@@ -158,6 +181,7 @@ def test_morphometry():
     brain.add_morphometry("curv")
     brain.add_morphometry("sulc", grayscale=True)
     brain.add_morphometry("thickness")
+    brain.close()
 
 
 def test_overlay():
@@ -189,6 +213,7 @@ def test_overlay():
     brain.add_overlay(conjunct, 4, 30, name="conjunct")
     brain.overlays["conjunct"].pos_bar.lut_mode = "Purples"
     brain.overlays["conjunct"].pos_bar.visible = False
+    brain.close()
 
 
 def test_probabilistic_labels():
@@ -213,6 +238,7 @@ def test_probabilistic_labels():
 
     brain.data["colorbar"].number_of_colors = 10
     brain.data["colorbar"].number_of_labels = 11
+    brain.close()
 
 
 def test_text():
@@ -221,6 +247,7 @@ def test_text():
     mlab.options.backend = 'test'
     brain = Brain(*std_args)
     brain.add_text(0.1, 0.1, 'Hello', 'blah')
+    brain.close()
 
 
 def test_animate():
@@ -235,18 +262,6 @@ def test_animate():
     # can't rotate in axial plane
     assert_raises(ValueError, brain.animate, ['l', 'd'])
     brain.close()
-
-
-def test_image():
-    """Test image saving
-    """
-    mlab.options.backend = 'auto'
-    brain = Brain(*std_args, config_opts=small_brain)
-    tmp_name = mktemp() + '.png'
-    brain.save_image(tmp_name)
-    brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
-    brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
-    brain.screenshot()
 
 
 def test_views():
@@ -264,3 +279,4 @@ def test_views():
     brain.show_view('dor')
     brain.show_view({'distance': 432})
     brain.show_view({'azimuth': 135, 'elevation': 79}, roll=107)
+    brain.close()

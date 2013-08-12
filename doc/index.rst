@@ -10,14 +10,14 @@ MRI and MEG data.
 
 PySurfer offers both a command-line interface designed to broadly
 replicate Freesurfer's Tksurfer program as well as a Python library
-for writing scripts to efficiently explore complex datasets. 
+for writing scripts to efficiently explore complex datasets.
 
 Contents
 --------
 
 .. toctree::
     :maxdepth: 2
-    
+
     install
     examples/index.rst
     documentation/index.rst
@@ -32,6 +32,8 @@ Alexandre Gramfort, Harvard Med. School MGH Martinos Center - INRIA
 Scott Burns, Harvard Med. School MGH Martinos Center
 
 Martin Luessi, Harvard Med. School MGH Martinos Center
+
+Eric Larson, University of Washington ILABS
 
 License
 -------
