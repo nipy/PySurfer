@@ -68,10 +68,7 @@ if __name__ == '__main__':
         argdict = args.__dict__
         config_opts = dict([(k, v) for k, v in argdict.items()
                                                 if k in confkeys and v])
-        if 'views' in argdict.keys():
-            views = argdict['views'].split(',')
-        else:
-            views = 'lat'
+        views = argdict['views']
 
         # Load  up the figure and underlying brain object
         b = Brain(args.subject_id, args.hemi, args.surf, args.curv,

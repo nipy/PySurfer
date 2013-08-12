@@ -67,5 +67,5 @@ parser.add_argument("-cortex", metavar="COLOR",
                     help="colormap for binary cortex curvature")
 parser.add_argument("-title",
                     help="title to use for the figure")
-parser.add_argument("-views",
-                    help="view list (comma-separated) to use")
+parser.add_argument("-views", nargs="*", default=['lat'],
+                    help="view list (space-separated) to use")
