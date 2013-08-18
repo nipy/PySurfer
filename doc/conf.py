@@ -45,7 +45,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'PySurfer'
-copyright = u'2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi'
+copyright = (u'2011-2013, Michael Waskom, Alexandre Gramfort, Scott Burns, '
+             'Martin Luessi, Eric Larson')
 
 # Generate the plots for the gallery
 plot_gallery = True
@@ -222,5 +223,5 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'pysurfer', u'PySurfer Documentation',
-     [u'Michael Waskom, Alexandre Gramfort, Scott Burns'], 1)
+     [u'Michael Waskom, Alexandre Gramfort, Scott Burns, Eric Larson'], 1)
 ]

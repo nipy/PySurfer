@@ -8,6 +8,9 @@ import numpy as np
 import nibabel as nib
 from nibabel.spatialimages import ImageFileError
 
+import logging
+logger = logging.getLogger('surfer')
+
 
 def _get_subjects_dir(subjects_dir=None):
     """Get the subjects directory from parameter or environment variable
@@ -29,8 +32,8 @@ def _get_subjects_dir(subjects_dir=None):
         if 'SUBJECTS_DIR' in os.environ:
             subjects_dir = os.environ['SUBJECTS_DIR']
         else:
-            raise ValueError('The subjects directory has to be specified using '
-                             'either the subjects_dir parameter or the '
+            raise ValueError('The subjects directory has to be specified '
+                             'using either the subjects_dir parameter or the '
                              'SUBJECTS_DIR environment variable.')
 
     if not os.path.exists(subjects_dir):
@@ -217,11 +220,9 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         Path to label file to constrain projection; otherwise uses cortex
     target_subject : string
         Subject to warp data to in surface space after projection
-    verbose : boolean
-        If true, print command line
-
+    verbose : bool
+        If True, print the command used
     """
-
     # Set the basic commands
     cmd_list = ["mri_vol2surf",
                 "--mov", filepath,
@@ -301,7 +302,8 @@ class Surface(object):
         instead of the value set using the SUBJECTS_DIR environment variable.
     """
 
-    def __init__(self, subject_id, hemi, surf, subjects_dir=None):
+    def __init__(self, subject_id, hemi, surf, subjects_dir=None,
+                 offset=None):
         """Surface
 
         Parameters
@@ -312,10 +314,17 @@ class Surface(object):
             Which hemisphere to load
         surf : string
             Name of the surface to load (eg. inflated, orig ...)
+        offset : float | None
+            If 0.0, the surface will be offset such that the medial
+            wall is aligned with the origin. If None, no offset will
+            be applied. If != 0.0, an additional offset will be used.
         """
+        if hemi not in ['lh', 'rh']:
+            raise ValueError('hemi must be "lh" or "rh')
         self.subject_id = subject_id
         self.hemi = hemi
         self.surf = surf
+        self.offset = offset
 
         subjects_dir = _get_subjects_dir(subjects_dir)
         self.data_path = pjoin(subjects_dir, subject_id)
@@ -324,6 +333,11 @@ class Surface(object):
         surf_path = pjoin(self.data_path, "surf",
                           "%s.%s" % (self.hemi, self.surf))
         self.coords, self.faces = nib.freesurfer.read_geometry(surf_path)
+        if self.offset is not None:
+            if self.hemi == 'lh':
+                self.coords[:, 0] -= (np.max(self.coords[:, 0]) + self.offset)
+            else:
+                self.coords[:, 0] -= (np.min(self.coords[:, 0]) + self.offset)
 
     def save_geometry(self):
         surf_path = pjoin(self.data_path, "surf",
