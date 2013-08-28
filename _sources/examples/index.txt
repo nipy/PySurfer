@@ -37,9 +37,3 @@ Please contribute_ it!
     ./plot_to_montage
     ./rotate_animation
     ./save_views
-
-
-
-
-.. toctree::
-

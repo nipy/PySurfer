@@ -54,3 +54,8 @@ contour dictionary attribute.
 """
 brain.contour['surface'].actor.property.line_width = 1
 brain.contour['surface'].contour.number_of_contours = 10
+
+"""
+We can save several different views of this hemisphere to one file.
+"""
+brain.save_montage('examples/fmri_activation.png', colorbar='auto')

@@ -14,46 +14,50 @@ from surfer import Brain, TimeViewer
 from surfer.io import read_stc
 
 """
-define subject, surface and hemisphere
+define subject, surface and hemisphere(s) to plot
 """
-subject_id, surface, hemi = 'fsaverage', 'inflated', 'lh'
+subject_id, surface = 'fsaverage', 'inflated'
+hemi = 'split'
 
 """
 create Brain object for visualization
 """
-brain = Brain(subject_id, hemi, surface)
+brain = Brain(subject_id, hemi, surface,
+              config_opts=dict(width=800, height=400))
 
 """
 read MNE dSPM inverse solution
 """
-stc_fname = os.path.join('example_data',
-                         'meg_source_estimate-' + hemi + '.stc')
-stc = read_stc(stc_fname)
+for hemi in ['lh', 'rh']:
+    stc_fname = os.path.join('example_data',
+                             'meg_source_estimate-' + hemi + '.stc')
+    stc = read_stc(stc_fname)
 
-"""
-data and vertices for which the data is defined
-"""
-data = stc['data']
-vertices = stc['vertices']
+    """
+    data and vertices for which the data is defined
+    """
+    data = stc['data']
+    vertices = stc['vertices']
 
-"""
-time points in milliseconds
-"""
-time = 1e3 * np.linspace(stc['tmin'],
-                         stc['tmin'] + data.shape[1] * stc['tstep'],
-                         data.shape[1])
-"""
-colormap to use
-"""
-colormap = 'hot'
+    """
+    time points in milliseconds
+    """
+    time = 1e3 * np.linspace(stc['tmin'],
+                             stc['tmin'] + data.shape[1] * stc['tstep'],
+                             data.shape[1])
+    """
+    colormap to use
+    """
+    colormap = 'hot'
 
-"""
-label for time annotation
-"""
-time_label = 'time=%0.2f ms'
+    """
+    label for time annotation
+    """
+    time_label = 'time=%0.2f ms'
 
-brain.add_data(data, colormap=colormap, vertices=vertices, smoothing_steps=10,
-               time=time, time_label=time_label)
+    brain.add_data(data, colormap=colormap, vertices=vertices,
+                   smoothing_steps=10, time=time, time_label=time_label,
+                   hemi=hemi)
 
 """
 scale colormap and set time (index) to display

@@ -13,13 +13,15 @@ from surfer import Brain
 
 
 subject_id = 'fsaverage'
-hemi = 'lh'
+hemi = 'both'
 surface = 'inflated'
+view = 'frontal'
+
 
 """
 Bring up the visualization
 """
-brain = Brain(subject_id, hemi, surface,
+brain = Brain(subject_id, hemi, surface, views=view,
               config_opts={"cortex": "bone",
                            "background": "ivory"})
 
@@ -37,8 +39,11 @@ brain.add_annotation("aparc", borders=False)
 
 """
 You may also provide a full path to an annotation file
-at an arbitray location on the disc.
+at an arbitray location on the disc. You can also
+plot things separately for the left and right hemispheres.
 """
 subjects_dir = os.environ["SUBJECTS_DIR"]
 annot_path = pjoin(subjects_dir, subject_id, "label", "lh.aparc.annot")
-brain.add_annotation(annot_path)
+brain.add_annotation(annot_path, hemi='lh', borders=False)
+annot_path = pjoin(subjects_dir, subject_id, "label", "rh.aparc.a2009s.annot")
+brain.add_annotation(annot_path, hemi='rh', remove_existing=False)

@@ -1,0 +1,159 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="top" title="PySurfer 0.4 documentation" href="../index.html" />
+    <link rel="up" title="Documentation" href="index.html" />
+    <link rel="next" title="The Config File" href="config_file.html" />
+    <link rel="prev" title="Customizing the Visualization" href="custom_viz.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../index.html">
+  <img src="../_static/banner.png" alt="PySurfer logo"  border="0" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="config_file.html" title="The Config File"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="custom_viz.html" title="Customizing the Visualization"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Working with a split-screen brain</a><ul>
+<li><a class="reference internal" href="#adding-and-displaying-data">Adding and displaying data</a></li>
+<li><a class="reference internal" href="#caveats">Caveats</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="custom_viz.html"
+                        title="previous chapter">Customizing the Visualization</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="config_file.html"
+                        title="next chapter">The Config File</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="working-with-a-split-screen-brain">
+<span id="split-brain"></span><h1>Working with a split-screen brain<a class="headerlink" href="#working-with-a-split-screen-brain" title="Permalink to this headline">¶</a></h1>
+<p>The split-screen view can be activated by using the argument <tt class="docutils literal"><span class="pre">hemi='split'</span></tt>.
+Using this option will put views of the left hemisphere in consecutive
+vertical frames on the left, and views of the right hemisphere in
+consecutive vertical frames on the right. For example, running the following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">brain</span> <span class="o">=</span> <span class="n">Brain</span><span class="p">(</span><span class="s">&#39;fsaverage&#39;</span><span class="p">,</span> <span class="s">&#39;split&#39;</span><span class="p">,</span> <span class="s">&#39;inflated&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;lat&#39;</span><span class="p">,</span> <span class="s">&#39;med&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Will produce a window with two columns (hemispheres) and two rows (the
+lateral and medial views, respectively), shown below.</p>
+<img alt="documentation/../../_static/split_view.png" src="documentation/../../_static/split_view.png" />
+<div class="section" id="adding-and-displaying-data">
+<h2>Adding and displaying data<a class="headerlink" href="#adding-and-displaying-data" title="Permalink to this headline">¶</a></h2>
+<p>Data can be added to either hemisphere using the same functions that are
+normally used, e.g. <tt class="docutils literal"><span class="pre">add_data</span></tt>, <tt class="docutils literal"><span class="pre">add_overlay</span></tt>, <tt class="docutils literal"><span class="pre">add_morphometry</span></tt>.
+The objects are automatically shown on all views of the brain. When
+calling these functions, the <tt class="docutils literal"><span class="pre">hemi</span></tt> keyword argument can be set to
+<tt class="docutils literal"><span class="pre">hemi='lh'</span></tt> or <tt class="docutils literal"><span class="pre">hemi='rh'</span></tt> to specify the hemisphere to plot to.
+In some instances (e.g., <tt class="docutils literal"><span class="pre">add_morphometry</span></tt>), if no keyword argument
+is provided, PySurfer will attempt to load data or both hemispheres
+automtically.</p>
+<p>Note that the <tt class="docutils literal"><span class="pre">show_view</span></tt> method accepts arguments for the <tt class="docutils literal"><span class="pre">row</span></tt> and
+<tt class="docutils literal"><span class="pre">col</span></tt> values, which allow the user to control which <tt class="docutils literal"><span class="pre">Brain</span></tt> panel
+gets the updated view.</p>
+</div>
+<div class="section" id="caveats">
+<h2>Caveats<a class="headerlink" href="#caveats" title="Permalink to this headline">¶</a></h2>
+<p>The multi-view support is available thanks to the capabilities of the
+TraitsUI framework. However, due to some limitations in the implementation
+of TraitsUI, there is no guarantee that a set of scripted commands will
+result in a painted window when the user may think it will. For
+example, making a series of calls to <tt class="docutils literal"><span class="pre">brain.add_label()</span></tt> followed by
+<tt class="docutils literal"><span class="pre">brain.save_image('out.png')</span></tt> may result in some or all of the labels
+being absent from the saved <tt class="docutils literal"><span class="pre">out.png</span></tt>. While we have implemented some
+workarounds to help prevent this occurrance, we cannot guarantee it will
+work. Thus we recommend that for critical non-interactive plotting (e.g.,
+if scripting figure generation for a paper) only a single view is used
+with <tt class="docutils literal"><span class="pre">hemi</span></tt> set to <tt class="docutils literal"><span class="pre">'lh'</span></tt>, <tt class="docutils literal"><span class="pre">'rh'</span></tt>, or <tt class="docutils literal"><span class="pre">'both'</span></tt>. This will use a single,
+pure Mayavi window, thereby bypassing TraisUI entirely &#8211; this helps
+guarantee that drawing commands result in updated visual display.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="config_file.html" title="The Config File"
+             >next</a></li>
+        <li class="right" >
+          <a href="custom_viz.html" title="Customizing the Visualization"
+             >previous</a> |</li>
+        <li><a href="../index.html">PySurfer 0.4 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2013, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi, Eric Larson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

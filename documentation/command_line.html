@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4.dev documentation</title>
+    <title>PySurfer Python Neuroimaging Visualization &mdash; PySurfer 0.4 documentation</title>
     
     <link rel="stylesheet" href="../_static/navy.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.dev',
+        VERSION:     '0.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
-    <link rel="top" title="PySurfer 0.4.dev documentation" href="../index.html" />
+    <link rel="top" title="PySurfer 0.4 documentation" href="../index.html" />
     <link rel="up" title="Documentation" href="index.html" />
     <link rel="next" title="Customizing the Visualization" href="custom_viz.html" />
     <link rel="prev" title="Documentation" href="index.html" /> 
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="index.html" title="Documentation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+        <li><a href="../index.html">PySurfer 0.4 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Documentation</a> &raquo;</li> 
       </ul>
     </div>
@@ -145,27 +145,29 @@ loading. Please see the PySurfer documentation for more information
 about how to interact with the Brain object.
 
 positional arguments:
-  subject_id           subject id as in subjects dir
-  hemi                 hemisphere to load
-  surf                 surface mesh (e.g. 'pial', 'inflated')
+  subject_id            subject id as in subjects dir
+  hemi                  hemisphere to load
+  surf                  surface mesh (e.g. 'pial', 'inflated')
 
 optional arguments:
-  -h, --help           show this help message and exit
-  -no-curv             do not display the binarized surface curvature
-  -morphometry MEAS    load morphometry file (e.g. thickness, curvature)
-  -annotation ANNOT    load annotation (by name or filepath)
-  -label LABEL         load label (by name or filepath
-  -borders             only show label/annot borders
-  -overlay FILE        load scalar overlay file
-  -range MIN MAX       overlay threshold and saturation point
-  -min MIN             overlay threshold
-  -max MAX             overlay saturation point
-  -sign {abs,pos,neg}  overlay sign
-  -name NAME           name to use for the overlay
-  -size SIZE           size of the display window (in pixels)
-  -background COLOR    background color for display
-  -cortex COLOR        colormap for binary cortex curvature
-  -title TITLE         title to use for the figure
+  -h, --help            show this help message and exit
+  -no-curv              do not display the binarized surface curvature
+  -morphometry MEAS     load morphometry file (e.g. thickness, curvature)
+  -annotation ANNOT     load annotation (by name or filepath)
+  -label LABEL          load label (by name or filepath
+  -borders              only show label/annot borders
+  -overlay FILE         load scalar overlay file
+  -range MIN MAX        overlay threshold and saturation point
+  -min MIN              overlay threshold
+  -max MAX              overlay saturation point
+  -sign {abs,pos,neg}   overlay sign
+  -name NAME            name to use for the overlay
+  -size SIZE            size of the display window (in pixels)
+  -background COLOR     background color for display
+  -cortex COLOR         colormap for binary cortex curvature
+  -title TITLE          title to use for the figure
+  -views [VIEWS [VIEWS ...]]
+                        view list (space-separated) to use
 </pre>
 </div>
 </div>
@@ -186,13 +188,13 @@ optional arguments:
         <li class="right" >
           <a href="index.html" title="Documentation"
              >previous</a> |</li>
-        <li><a href="../index.html">PySurfer 0.4.dev documentation</a> &raquo;</li>
+        <li><a href="../index.html">PySurfer 0.4 documentation</a> &raquo;</li>
           <li><a href="index.html" >Documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2011-2012, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+        &copy; Copyright 2011-2013, Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi, Eric Larson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>
