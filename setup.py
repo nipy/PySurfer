@@ -19,6 +19,9 @@ LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/nipy/PySurfer'
 VERSION = surfer.__version__
 
+# deal with MPL sandbox violations during easy_install
+os.environ['MPLCONFIGDIR'] = '.'
+
 import setuptools  # we are using a setuptools namespace
 from numpy.distutils.core import setup
 
