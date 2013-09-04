@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from os.path import join as pjoin
-from numpy.testing import assert_raises
+from numpy.testing import assert_raises, assert_array_equal
 from tempfile import mktemp
 import nibabel as nib
 
@@ -32,6 +32,15 @@ def has_freesurfer():
 
 requires_fs = np.testing.dec.skipif(not has_freesurfer(),
                                     'Requires FreeSurfer command line tools')
+
+
+def test_offscreen():
+    """Test offscreen rendering
+    """
+    mlab.options.backend = 'auto'
+    brain = Brain(*std_args, offscreen=True)
+    shot = brain.screenshot()
+    assert_array_equal(shot.shape, (800, 800, 3))
 
 
 def test_image():
