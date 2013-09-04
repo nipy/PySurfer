@@ -562,13 +562,13 @@ class Brain(object):
                 if hasattr(bars[0], 'isVisible'):
                     # QT4
                     show = not bars[0].isVisible()
-                else:
+                elif hasattr(bars[0], 'Shown'):
                     # WX
                     show = not bars[0].Shown()
             for bar in bars:
                 if hasattr(bar, 'setVisible'):
                     bar.setVisible(show)
-                else:
+                elif hasattr(bar, 'Show'):
                     bar.Show(show)
 
     def _get_one_brain(self, d, name):
