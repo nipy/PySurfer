@@ -2,7 +2,7 @@ import ConfigParser
 import os
 from StringIO import StringIO
 
-homedir = os.environ['HOME']
+homedir = os.getenv('APPDATA' if 'nt' == os.name.lower() else 'HOME', None)
 default_cfg = StringIO("""
 [visual]
 background = black
