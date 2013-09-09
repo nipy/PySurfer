@@ -219,11 +219,7 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
 
 class _MlabGenerator(HasTraits):
     """TraitsUI mlab figure generator"""
-    try:
-        from traitsui.api import View
-    except ImportError:
-        from traits.ui.api import View
-
+    from traitsui.api import View
     view = Instance(View)
 
     def __init__(self, n_row, n_col, width, height, title, **traits):
@@ -254,10 +250,7 @@ class _MlabGenerator(HasTraits):
         return figures, self._v
 
     def _get_gen_view(self):
-        try:
-            from traitsui.api import (View, Item, VGroup, HGroup)
-        except ImportError:
-            from traits.ui.api import (View, Item, VGroup, HGroup)
+        from traitsui.api import (View, Item, VGroup, HGroup)
         ind = 0
         va = []
         for ri in xrange(self.n_row):
@@ -2437,10 +2430,7 @@ class TimeViewer(HasTraits):
         brain(s) to control
     """
      # Nested import of traisui for setup.py without X server
-    try:
-        from traitsui.api import (View, Item, VSplit, HSplit, Group)
-    except ImportError:
-        from traits.ui.api import (View, Item, VSplit, HSplit, Group)
+    from traitsui.api import (View, Item, VSplit, HSplit, Group)
     min_time = Int(0)
     max_time = Int(1E9)
     current_time = Range(low="min_time", high="max_time", value=0)
