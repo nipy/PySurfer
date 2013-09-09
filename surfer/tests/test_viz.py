@@ -7,11 +7,7 @@ import nibabel as nib
 
 from surfer import Brain
 from surfer import io
-try:
-    from mayavi import mlab
-    assert mlab
-except ImportError:
-    from enthought.mayavi import mlab
+from mayavi import mlab
 
 if 'SUBJECTS_DIR' not in os.environ:
     raise ValueError('Test suite relies on the definition of SUBJECTS_DIR')

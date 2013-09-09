@@ -8,6 +8,11 @@ from matplotlib.colors import colorConverter
 
 import nibabel as nib
 
+from mayavi import mlab
+from mayavi.tools.mlab_scene_model import MlabSceneModel
+from mayavi.core.ui.api import SceneEditor
+from mayavi.core.ui.mayavi_scene import MayaviScene
+
 from . import io
 from . import utils
 from .io import Surface, _get_subjects_dir
@@ -18,12 +23,8 @@ import logging
 logging.basicConfig()  # suppress "No handlers found for logger" error
 logger = logging.getLogger('surfer')
 
-try:
-    from traits.api import (HasTraits, Range, Int, Float,
-                            Bool, Enum, on_trait_change, Instance)
-except ImportError:
-    from enthought.traits.api import (HasTraits, Range, Int, Float,
-                                      Bool, Enum, on_trait_change, Instance)
+from traits.api import (HasTraits, Range, Int, Float,
+                        Bool, Enum, on_trait_change, Instance)
 
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
                'medial': {'v': (0., 90.), 'r': -90.},
@@ -159,11 +160,6 @@ def _prepare_data(data):
 
 def _force_render(figures, backend):
     """Ensure plots are updated before properties are used"""
-    try:
-        from mayavi import mlab
-        assert mlab
-    except:
-        from enthought.mayavi import mlab
     if not isinstance(figures, list):
         figures = [[figures]]
     for ff in figures:
@@ -188,11 +184,6 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
     is returned to the command line. With the multi-view, TraitsUI
     unfortunately has no such support, so we only use it if needed.
     """
-    try:
-        from mayavi import mlab
-        assert mlab
-    except:
-        from enthought.mayavi import mlab
     if figure is None:
         # spawn scenes
         h, w = scene_size
@@ -228,24 +219,11 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
 
 class _MlabGenerator(HasTraits):
     """TraitsUI mlab figure generator"""
-    try:
-        from traitsui.api import View
-    except ImportError:
-        try:
-            from traits.ui.api import View
-        except ImportError:
-            from enthought.traits.ui.api import View
-
+    from traitsui.api import View
     view = Instance(View)
 
     def __init__(self, n_row, n_col, width, height, title, **traits):
         HasTraits.__init__(self, **traits)
-        try:
-            from mayavi.tools.mlab_scene_model import MlabSceneModel
-            assert MlabSceneModel
-        except:
-            from enthought.mayavi.tools.mlab_scene_model import MlabSceneModel
-
         self.mlab_names = []
         self.n_row = n_row
         self.n_col = n_col
@@ -272,22 +250,7 @@ class _MlabGenerator(HasTraits):
         return figures, self._v
 
     def _get_gen_view(self):
-        try:
-            from mayavi.core.ui.api import SceneEditor
-            from mayavi.core.ui.mayavi_scene import MayaviScene
-            assert SceneEditor
-            assert MayaviScene
-        except:
-            from enthought.mayavi.core.ui.api import SceneEditor
-            from enthought.mayavi.core.ui.mayavi_scene import MayaviScene
-        try:
-            from traitsui.api import (View, Item, VGroup, HGroup)
-        except ImportError:
-            try:
-                from traits.ui.api import (View, Item, VGroup, HGroup)
-            except ImportError:
-                from enthought.traits.ui.api import (View, Item,
-                                                     VGroup, HGroup)
+        from traitsui.api import (View, Item, VGroup, HGroup)
         ind = 0
         va = []
         for ri in xrange(self.n_row):
@@ -447,12 +410,6 @@ class Brain(object):
     # HELPERS
     def _toggle_render(self, state, views=None):
         """Turn rendering on (True) or off (False)"""
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         figs = []
         [figs.extend(f) for f in self._figures]
         if views is None:
@@ -1440,11 +1397,6 @@ class Brain(object):
         distance : float
             The distance used.
         """
-        try:
-            from mayavi import mlab
-            assert mlab
-        except:
-            from enthought.mayavi import mlab
         if distance is None:
             distance = []
             for ff in self._figures:
@@ -1679,12 +1631,6 @@ class Brain(object):
 
     def close(self):
         """Close all figures and cleanup data structure."""
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         for ri, ff in enumerate(self._figures):
             for ci, f in enumerate(ff):
                 if f is not None:
@@ -1726,12 +1672,6 @@ class Brain(object):
         a Mayavi figure to plot instead of TraitsUI) if you intend to
         script plotting commands.
         """
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         brain = self.brain_matrix[row, col]
         ftype = filename[filename.rfind('.') + 1:]
         good_ftypes = ['png', 'jpg', 'bmp', 'tiff', 'ps',
@@ -1833,11 +1773,6 @@ class Brain(object):
         a Mayavi figure to plot instead of TraitsUI) if you intend to
         script plotting commands.
         """
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
         brain = self.brain_matrix[row, col]
         return mlab.screenshot(brain._f, mode, antialiased)
 
@@ -1965,12 +1900,6 @@ class Brain(object):
         out : array
             The montage image, useable with matplotlib.imshow().
         """
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         assert orientation in ['h', 'v']
         if colorbar == 'auto':
             colorbar = [len(order) // 2]
@@ -2067,11 +1996,6 @@ class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
     def __init__(self, subject_id, hemi, surf, figure, geo, curv, title,
                  config_opts, subjects_dir, bg_color, offset, backend):
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
         if not hemi in ['lh', 'rh']:
             raise ValueError('hemi must be either "lh" or "rh"')
         # Set the identifying info
@@ -2109,12 +2033,6 @@ class _Hemisphere(object):
 
     def show_view(self, view=None, roll=None, distance=None):
         """Orient camera to display view"""
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         if isinstance(view, basestring):
             try:
                 vd = self._xfm_view(view, 'd')
@@ -2229,11 +2147,6 @@ class _Hemisphere(object):
         else:
             raise ValueError("data has to be 1D or 2D")
 
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
         # Set up the visualization pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
@@ -2271,12 +2184,6 @@ class _Hemisphere(object):
 
     def add_annotation(self, annot, ids, cmap):
         """Add an annotation file"""
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         # Create an mlab surface to visualize the annot
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
@@ -2295,12 +2202,6 @@ class _Hemisphere(object):
 
     def add_label(self, label, label_name, color, alpha):
         """Add an ROI label to the image"""
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
                                                     self._geo.z,
@@ -2315,12 +2216,6 @@ class _Hemisphere(object):
 
     def add_morphometry(self, morph_data, colormap, measure, min, max):
         """Add a morphometry overlay to the image"""
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
                                                     self._geo.z,
@@ -2342,12 +2237,6 @@ class _Hemisphere(object):
 
     def add_foci(self, foci_coords, scale_factor, color, alpha, name):
         """Add spherical foci, possibly mapping to displayed surf"""
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         # Create the visualization
         points = mlab.points3d(foci_coords[:, 0],
                                foci_coords[:, 1],
@@ -2361,12 +2250,6 @@ class _Hemisphere(object):
     def add_contour_overlay(self, scalar_data, min=None, max=None,
                             n_contours=7, line_width=1.5):
         """Add a topographic contour overlay of the positive data"""
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         # Set up the pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y,
                                                     self._geo.z,
@@ -2390,12 +2273,6 @@ class _Hemisphere(object):
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0):
         """ Add a text to the visualization"""
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
-
         return mlab.text(x, y, text, name=name, color=color,
                          opacity=opacity, figure=self._f)
 
@@ -2498,11 +2375,6 @@ class OverlayDisplay():
     """Encapsulation of overlay viz plotting"""
 
     def __init__(self, ol, figure):
-        try:
-            from mayavi import mlab
-            assert mlab
-        except ImportError:
-            from enthought.mayavi import mlab
         args = [ol.geo.x, ol.geo.y, ol.geo.z, ol.geo.faces]
         kwargs = dict(scalars=ol.mlab_data, figure=figure)
         if ol.pos_lims is not None:
@@ -2558,14 +2430,7 @@ class TimeViewer(HasTraits):
         brain(s) to control
     """
      # Nested import of traisui for setup.py without X server
-    try:
-        from traitsui.api import (View, Item, VSplit, HSplit, Group)
-    except ImportError:
-        try:
-            from traits.ui.api import (View, Item, VSplit, HSplit, Group)
-        except ImportError:
-            from enthought.traits.ui.api import (View, Item, VSplit,
-                                                 HSplit, Group)
+    from traitsui.api import (View, Item, VSplit, HSplit, Group)
     min_time = Int(0)
     max_time = Int(1E9)
     current_time = Range(low="min_time", high="max_time", value=0)
