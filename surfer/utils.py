@@ -1,6 +1,7 @@
 import logging
 import warnings
 import sys
+import os
 from os import path as op
 import inspect
 from functools import wraps
@@ -8,7 +9,6 @@ from functools import wraps
 import numpy as np
 from scipy import sparse
 from scipy.spatial.distance import cdist
-from .io import Surface
 from .config import config
 
 logger = logging.getLogger('surfer')
@@ -215,11 +215,11 @@ def mesh_edges(faces):
     nfaces = len(faces)
     a, b, c = faces.T
     edges = sparse.coo_matrix((np.ones(nfaces), (a, b)),
-                                            shape=(npoints, npoints))
+                              shape=(npoints, npoints))
     edges = edges + sparse.coo_matrix((np.ones(nfaces), (b, c)),
-                                            shape=(npoints, npoints))
+                                      shape=(npoints, npoints))
     edges = edges + sparse.coo_matrix((np.ones(nfaces), (c, a)),
-                                            shape=(npoints, npoints))
+                                      shape=(npoints, npoints))
     edges = edges + edges.T
     edges = edges.tocoo()
     return edges
@@ -268,7 +268,7 @@ def smoothing_matrix(vertices, adj_mat, smoothing_steps=20, verbose=None):
         data1 = e_use * np.ones(len(idx_use))
         idx_use = np.where(data1)[0]
         scale_mat = sparse.dia_matrix((1 / data1[idx_use], 0),
-                                  shape=(len(idx_use), len(idx_use)))
+                                      shape=(len(idx_use), len(idx_use)))
 
         smooth_mat = scale_mat * e_use[idx_use, :] * smooth_mat
 
@@ -283,7 +283,7 @@ def smoothing_matrix(vertices, adj_mat, smoothing_steps=20, verbose=None):
                                    (idx_use[smooth_mat.row],
                                    smooth_mat.col)),
                                    shape=(n_vertices,
-                                         len(vertices)))
+                                          len(vertices)))
 
     return smooth_mat
 
@@ -336,3 +336,50 @@ def coord_to_label(subject_id, coord, label, hemi='lh', n_steps=30,
     for i in idx:
         x, y, z = geo.coords[i]
         f.write('%d  %f  %f  %f 0.000000\n' % (i, x, y, z))
+
+
+def _get_subjects_dir(subjects_dir=None):
+    """Get the subjects directory from parameter or environment variable
+
+    Parameters
+    ----------
+    subjects_dir : str | None
+        The subjects directory.
+
+    Returns
+    -------
+    subjects_dir : str
+        The subjects directory. If the subjects_dir input parameter is not
+        None, its value will be returned, otherwise it will be obtained from
+        the SUBJECTS_DIR environment variable. If that does not exist,
+        it will be obtained from the configuration file.
+    """
+    if subjects_dir is None:
+        if 'SUBJECTS_DIR' in os.environ:
+            subjects_dir = os.environ['SUBJECTS_DIR']
+        else:
+            subjects_dir = config.get('options', 'subjects_dir')
+            if subjects_dir == '':
+                raise ValueError('The subjects directory has to be specified '
+                                 'using the subjects_dir parameter, the '
+                                 'SUBJECTS_DIR environment variable, or the '
+                                 '"subjects_dir" entry in the config file')
+
+    if not os.path.exists(subjects_dir):
+        raise ValueError('The subjects directory %s does not exist.'
+                         % subjects_dir)
+
+    return subjects_dir
+
+
+def has_fsaverage(subjects_dir=None):
+    """Determine whether the user has a usable fsaverage"""
+    fs_dir = op.join(_get_subjects_dir(subjects_dir), 'fsaverage')
+    if not op.isdir(fs_dir):
+        return False
+    if not op.isdir(op.join(fs_dir, 'surf')):
+        return False
+    return True
+
+requires_fsaverage = np.testing.dec.skipif(not has_fsaverage(),
+                                           'Requires fsaverage subject data')
