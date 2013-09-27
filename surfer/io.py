@@ -11,36 +11,8 @@ from nibabel.spatialimages import ImageFileError
 import logging
 logger = logging.getLogger('surfer')
 
-
-def _get_subjects_dir(subjects_dir=None):
-    """Get the subjects directory from parameter or environment variable
-
-    Parameters
-    ----------
-    subjects_dir : str | None
-        The subjects directory.
-
-    Returns
-    -------
-    subjects_dir : str
-        The subjects directory. If the subjects_dir input parameter is not
-        None, its value will be returned, otherwise it will be obtained from
-        the SUBJECTS_DIR environment variable.
-    """
-
-    if subjects_dir is None:
-        if 'SUBJECTS_DIR' in os.environ:
-            subjects_dir = os.environ['SUBJECTS_DIR']
-        else:
-            raise ValueError('The subjects directory has to be specified '
-                             'using either the subjects_dir parameter or the '
-                             'SUBJECTS_DIR environment variable.')
-
-    if not os.path.exists(subjects_dir):
-        raise ValueError('The subjects directory %s does not exist.'
-                         % subjects_dir)
-
-    return subjects_dir
+from .config import config
+from .utils import _get_subjects_dir
 
 
 def read_scalar_data(filepath):
@@ -188,7 +160,7 @@ def read_stc(filepath):
 def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
                         projmeth="frac", projsum="avg", projarg=[0, 1, .1],
                         surf="white", smooth_fwhm=3, mask_label=None,
-                        target_subject=None, verbose=False):
+                        target_subject=None, verbose=None):
     """Sample MRI volume onto cortical manifold.
 
     Note: this requires Freesurfer to be installed with correct
@@ -220,8 +192,8 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         Path to label file to constrain projection; otherwise uses cortex
     target_subject : string
         Subject to warp data to in surface space after projection
-    verbose : bool
-        If True, print the command used
+    verbose : bool, str, int, or None
+        If not None, override default verbose level (see surfer.verbose).
     """
     # Set the basic commands
     cmd_list = ["mri_vol2surf",
@@ -259,8 +231,7 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
     # Execute the command
     out_file = mktemp(prefix="pysurfer-v2s", suffix='.mgz')
     cmd_list.extend(["--o", out_file])
-    if verbose:
-        print " ".join(cmd_list)
+    logger.info(" ".join(cmd_list))
     p = Popen(cmd_list, stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()
     out = p.returncode
