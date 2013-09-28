@@ -18,6 +18,7 @@ max_thresh = robust_max
 
 [options]
 logging_level = INFO
+subjects_dir =
 """)
 
 config = ConfigParser.ConfigParser()

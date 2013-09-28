@@ -7,12 +7,10 @@ import nibabel as nib
 
 from surfer import Brain
 from surfer import io
+from surfer.utils import requires_fsaverage
 from mayavi import mlab
 
-if 'SUBJECTS_DIR' not in os.environ:
-    raise ValueError('Test suite relies on the definition of SUBJECTS_DIR')
-
-subj_dir = os.environ["SUBJECTS_DIR"]
+subj_dir = io._get_subjects_dir()
 subject_id = 'fsaverage'
 std_args = [subject_id, 'lh', 'inflated']
 data_dir = pjoin(os.path.split(__file__)[0], '..', '..',
@@ -30,6 +28,7 @@ requires_fs = np.testing.dec.skipif(not has_freesurfer(),
                                     'Requires FreeSurfer command line tools')
 
 
+@requires_fsaverage
 def test_offscreen():
     """Test offscreen rendering
     """
@@ -39,6 +38,7 @@ def test_offscreen():
     assert_array_equal(shot.shape, (800, 800, 3))
 
 
+@requires_fsaverage
 def test_image():
     """Test image saving
     """
@@ -52,6 +52,7 @@ def test_image():
     brain.close()
 
 
+@requires_fsaverage
 def test_brains():
     """Test plotting of Brain with different arguments
     """
@@ -67,13 +68,13 @@ def test_brains():
     subj_dirs = [None, subj_dir]
     for surf, hemi, curv, title, co, fig, sd \
             in zip(surfs, hemis, curvs, titles, config_opts, figs, subj_dirs):
-        print 'hello'
         brain = Brain(subject_id, hemi, surf, curv, title, co, fig, sd)
         brain.close()
     assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   subjects_dir='')
 
 
+@requires_fsaverage
 def test_annot():
     """Test plotting of annot
     """
@@ -87,6 +88,7 @@ def test_annot():
     brain.close()
 
 
+@requires_fsaverage
 def test_contour():
     """Test plotting of contour overlay
     """
@@ -101,6 +103,7 @@ def test_contour():
     brain.close()
 
 
+@requires_fsaverage
 @requires_fs
 def test_data():
     """Test plotting of data
@@ -114,6 +117,7 @@ def test_data():
     brain.close()
 
 
+@requires_fsaverage
 def test_foci():
     """Test plotting of foci
     """
@@ -134,6 +138,7 @@ def test_foci():
     brain.close()
 
 
+@requires_fsaverage
 def test_label():
     """Test plotting of label
     """
@@ -156,6 +161,7 @@ def test_label():
     brain.close()
 
 
+@requires_fsaverage
 def test_meg_inverse():
     """Test plotting of MEG inverse solution
     """
@@ -178,6 +184,7 @@ def test_meg_inverse():
     brain.close()
 
 
+@requires_fsaverage
 def test_morphometry():
     """Test plotting of morphometry
     """
@@ -189,6 +196,7 @@ def test_morphometry():
     brain.close()
 
 
+@requires_fsaverage
 def test_overlay():
     """Test plotting of overlay
     """
@@ -221,6 +229,7 @@ def test_overlay():
     brain.close()
 
 
+@requires_fsaverage
 def test_probabilistic_labels():
     """Test plotting of probabilistic labels
     """
@@ -246,6 +255,7 @@ def test_probabilistic_labels():
     brain.close()
 
 
+@requires_fsaverage
 def test_text():
     """Test plotting of text
     """
@@ -255,6 +265,7 @@ def test_text():
     brain.close()
 
 
+@requires_fsaverage
 def test_animate():
     """Test animation
     """
@@ -269,6 +280,7 @@ def test_animate():
     brain.close()
 
 
+@requires_fsaverage
 def test_views():
     """Test showing different views
     """

@@ -1,22 +1,19 @@
-import os
 from os.path import join as pjoin
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_equal
+from numpy.testing import assert_array_almost_equal
 
-from .. import io
+from surfer import io
+from surfer.utils import requires_fsaverage
 
-if 'SUBJECTS_DIR' not in os.environ:
-    raise ValueError('Test suite relies on the definition of SUBJECTS_DIR')
-
-subj_dir = os.environ["SUBJECTS_DIR"]
+subj_dir = io._get_subjects_dir()
 subject_id = 'fsaverage'
-# subject_id = 'sample'
 data_path = pjoin(subj_dir, subject_id)
 
 
+@requires_fsaverage
 def test_surface():
-    """Test of Surface class"""
+    """Test IO for Surface class"""
     for subjects_dir in [None, subj_dir]:
         surface = io.Surface('fsaverage', 'lh', 'inflated',
                              subjects_dir=subjects_dir)
