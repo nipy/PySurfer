@@ -338,13 +338,16 @@ def coord_to_label(subject_id, coord, label, hemi='lh', n_steps=30,
         f.write('%d  %f  %f  %f 0.000000\n' % (i, x, y, z))
 
 
-def _get_subjects_dir(subjects_dir=None):
+def _get_subjects_dir(subjects_dir=None, raise_error=True):
     """Get the subjects directory from parameter or environment variable
 
     Parameters
     ----------
     subjects_dir : str | None
         The subjects directory.
+    raise_error : bool
+        If True, raise a ValueError if no value for SUBJECTS_DIR can be found
+        or the corresponding directory does not exist.
 
     Returns
     -------
@@ -359,13 +362,13 @@ def _get_subjects_dir(subjects_dir=None):
             subjects_dir = os.environ['SUBJECTS_DIR']
         else:
             subjects_dir = config.get('options', 'subjects_dir')
-            if subjects_dir == '':
+            if raise_error and subjects_dir == '':
                 raise ValueError('The subjects directory has to be specified '
                                  'using the subjects_dir parameter, the '
                                  'SUBJECTS_DIR environment variable, or the '
                                  '"subjects_dir" entry in the config file')
 
-    if not os.path.exists(subjects_dir):
+    if raise_error and not os.path.exists(subjects_dir):
         raise ValueError('The subjects directory %s does not exist.'
                          % subjects_dir)
 
@@ -374,7 +377,7 @@ def _get_subjects_dir(subjects_dir=None):
 
 def has_fsaverage(subjects_dir=None):
     """Determine whether the user has a usable fsaverage"""
-    fs_dir = op.join(_get_subjects_dir(subjects_dir), 'fsaverage')
+    fs_dir = op.join(_get_subjects_dir(subjects_dir, False), 'fsaverage')
     if not op.isdir(fs_dir):
         return False
     if not op.isdir(op.join(fs_dir, 'surf')):
