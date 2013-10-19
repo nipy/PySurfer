@@ -7,6 +7,9 @@ IPython on itself to then drop the user into an IPython environment.
 import os
 import sys
 from surfer._commandline import parser
+from distutils.version import LooseVersion
+import importlib
+
 
 if __name__ == '__main__':
     is_ipython = False
@@ -49,12 +52,18 @@ if __name__ == '__main__':
         path = os.path.split(__file__)[0]
         load_file = __file__
         import IPython
-        if IPython.__version__ < '0.11':
+        if LooseVersion(IPython.__version__) < '0.11':
             flag = '-nobanner '
             flag += '-wthread '
         else:
             flag = '--no-banner '
-            flag += '--gui=wx -i '
+            try:
+                gui = 'wx'
+                importlib.import_module(gui)
+            except ImportError:
+                pass
+                gui = 'qt'
+            flag += '--gui={gui} -i '.format(gui=gui)
         cmd = 'ipython %s ' % (flag + __file__ +
                                ' "%s"' % ' '.join(sys.argv[1:]))
         os.system(cmd)
@@ -67,7 +76,7 @@ if __name__ == '__main__':
         confkeys = ["size", "background", "cortex"]
         argdict = args.__dict__
         config_opts = dict([(k, v) for k, v in argdict.items()
-                                                if k in confkeys and v])
+                            if k in confkeys and v])
         views = args.views
 
         # Load  up the figure and underlying brain object
