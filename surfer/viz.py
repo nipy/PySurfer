@@ -19,7 +19,6 @@ from .io import Surface, _get_subjects_dir
 from .config import config
 from .utils import verbose
 
-
 import logging
 logging.basicConfig()  # suppress "No handlers found for logger" error
 logger = logging.getLogger('surfer')
