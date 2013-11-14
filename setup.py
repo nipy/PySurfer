@@ -10,7 +10,7 @@ import os
 # deal with MPL sandbox violations during easy_install
 os.environ['MPLCONFIGDIR'] = '.'
 
-import surfer
+from surfer.__version__ import __version__
 
 DISTNAME = 'pysurfer'
 DESCRIPTION = descr
@@ -20,7 +20,7 @@ MAINTAINER_EMAIL = 'mwaskom@stanford.edu'
 URL = 'http://pysurfer.github.com'
 LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/nipy/PySurfer'
-VERSION = surfer.__version__
+VERSION = __version__
 
 import setuptools  # we are using a setuptools namespace
 from numpy.distutils.core import setup
