@@ -10,7 +10,15 @@ import os
 # deal with MPL sandbox violations during easy_install
 os.environ['MPLCONFIGDIR'] = '.'
 
-import surfer
+# get the version, don't import surfer here so setup works on headless systems
+version = None
+with open(os.path.join('surfer', '__init__.py'), 'r') as fid:
+    for line in (line.strip() for line in fid):
+        if line.startswith('__version__'):
+            version = line.split('=')[1].strip().strip('"')
+            break
+if version is None:
+    raise RuntimeError('Could not determine version')
 
 DISTNAME = 'pysurfer'
 DESCRIPTION = descr
@@ -20,7 +28,7 @@ MAINTAINER_EMAIL = 'mwaskom@stanford.edu'
 URL = 'http://pysurfer.github.com'
 LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/nipy/PySurfer'
-VERSION = surfer.__version__
+VERSION = version
 
 import setuptools  # we are using a setuptools namespace
 from numpy.distutils.core import setup
