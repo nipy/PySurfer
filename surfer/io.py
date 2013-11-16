@@ -1,5 +1,4 @@
 import os
-from os.path import join as pjoin
 from tempfile import mktemp
 
 from subprocess import Popen, PIPE
@@ -10,9 +9,6 @@ from nibabel.spatialimages import ImageFileError
 
 import logging
 logger = logging.getLogger('surfer')
-
-from .config import config
-from .utils import _get_subjects_dir
 
 
 def read_scalar_data(filepath):
@@ -243,115 +239,3 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
     surf_data = read_scalar_data(out_file)
     os.remove(out_file)
     return surf_data
-
-
-class Surface(object):
-    """Container for surface object
-
-    Attributes
-    ----------
-    subject_id : string
-        Name of subject
-    hemi : {'lh', 'rh'}
-        Which hemisphere to load
-    surf : string
-        Name of the surface to load (eg. inflated, orig ...)
-    data_path : string
-        Path where to look for data
-    x: 1d array
-        x coordinates of vertices
-    y: 1d array
-        y coordinates of vertices
-    z: 1d array
-        z coordinates of vertices
-    coords : 2d array of shape [n_vertices, 3]
-        The vertices coordinates
-    faces : 2d array
-        The faces ie. the triangles
-    subjects_dir : str | None
-        If not None, this directory will be used as the subjects directory
-        instead of the value set using the SUBJECTS_DIR environment variable.
-    """
-
-    def __init__(self, subject_id, hemi, surf, subjects_dir=None,
-                 offset=None):
-        """Surface
-
-        Parameters
-        ----------
-        subject_id : string
-            Name of subject
-        hemi : {'lh', 'rh'}
-            Which hemisphere to load
-        surf : string
-            Name of the surface to load (eg. inflated, orig ...)
-        offset : float | None
-            If 0.0, the surface will be offset such that the medial
-            wall is aligned with the origin. If None, no offset will
-            be applied. If != 0.0, an additional offset will be used.
-        """
-        if hemi not in ['lh', 'rh']:
-            raise ValueError('hemi must be "lh" or "rh')
-        self.subject_id = subject_id
-        self.hemi = hemi
-        self.surf = surf
-        self.offset = offset
-
-        subjects_dir = _get_subjects_dir(subjects_dir)
-        self.data_path = pjoin(subjects_dir, subject_id)
-
-    def load_geometry(self):
-        surf_path = pjoin(self.data_path, "surf",
-                          "%s.%s" % (self.hemi, self.surf))
-        self.coords, self.faces = nib.freesurfer.read_geometry(surf_path)
-        if self.offset is not None:
-            if self.hemi == 'lh':
-                self.coords[:, 0] -= (np.max(self.coords[:, 0]) + self.offset)
-            else:
-                self.coords[:, 0] -= (np.min(self.coords[:, 0]) + self.offset)
-
-    def save_geometry(self):
-        surf_path = pjoin(self.data_path, "surf",
-                          "%s.%s" % (self.hemi, self.surf))
-        nib.freesurfer.write_geometry(surf_path, self.coords, self.faces)
-
-    @property
-    def x(self):
-        return self.coords[:, 0]
-
-    @property
-    def y(self):
-        return self.coords[:, 1]
-
-    @property
-    def z(self):
-        return self.coords[:, 2]
-
-    def load_curvature(self):
-        """Load in curvature values from the ?h.curv file."""
-        curv_path = pjoin(self.data_path, "surf", "%s.curv" % self.hemi)
-        self.curv = nib.freesurfer.read_morph_data(curv_path)
-        self.bin_curv = np.array(self.curv > 0, np.int)
-
-    def load_label(self, name):
-        """Load in a Freesurfer .label file.
-
-        Label files are just text files indicating the vertices included
-        in the label. Each Surface instance has a dictionary of labels, keyed
-        by the name (which is taken from the file name if not given as an
-        argument.
-
-        """
-        label = nib.freesurfer.read_label(pjoin(self.data_path, 'label',
-                                          '%s.%s.label' % (self.hemi, name)))
-        label_array = np.zeros(len(self.x), np.int)
-        label_array[label] = 1
-        try:
-            self.labels[name] = label_array
-        except AttributeError:
-            self.labels = {name: label_array}
-
-    def apply_xfm(self, mtx):
-        """Apply an affine transformation matrix to the x,y,z vectors."""
-        self.coords = np.dot(np.c_[self.coords, np.ones(len(self.coords))],
-                                     mtx.T)[:, :3]

@@ -13,11 +13,10 @@ from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
 
-from . import io
-from . import utils
-from .io import Surface, _get_subjects_dir
+from . import utils, io
 from .config import config
-from .utils import verbose
+from .utils import Surface, verbose, _get_subjects_dir
+
 
 import logging
 logging.basicConfig()  # suppress "No handlers found for logger" error
@@ -1233,8 +1232,8 @@ class Brain(object):
         if map_surface is None:
             foci_coords = np.atleast_2d(coords)
         else:
-            foci_surf = io.Surface(self.subject_id, hemi, map_surface,
-                                   subjects_dir=self.subjects_dir)
+            foci_surf = Surface(self.subject_id, hemi, map_surface,
+                                subjects_dir=self.subjects_dir)
             foci_surf.load_geometry()
             foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
             foci_coords = self.geo[hemi].coords[foci_vtxs]

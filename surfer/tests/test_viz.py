@@ -6,11 +6,11 @@ from tempfile import mktemp
 import nibabel as nib
 
 from surfer import Brain
-from surfer import io
+from surfer import io, utils
 from surfer.utils import requires_fsaverage
 from mayavi import mlab
 
-subj_dir = io._get_subjects_dir()
+subj_dir = utils._get_subjects_dir()
 subject_id = 'fsaverage'
 std_args = [subject_id, 'lh', 'inflated']
 data_dir = pjoin(os.path.split(__file__)[0], '..', '..',
