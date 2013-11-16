@@ -30,9 +30,7 @@ LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/nipy/PySurfer'
 VERSION = version
 
-import setuptools  # we are using a setuptools namespace
-from numpy.distutils.core import setup
-
+from setuptools import setup
 
 if __name__ == "__main__":
     if os.path.exists('MANIFEST'):
