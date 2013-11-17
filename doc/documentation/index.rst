@@ -1,5 +1,5 @@
-Documentation
-=============
+Detailed Documentation
+======================
 
 .. _doc-index:
 

@@ -1,5 +1,5 @@
-PySurfer Examples
-=================
+PySurfer Example Gallery
+========================
 
 This page offers a set of example scripts intended to demonstrate the
 functionality offered by PySurfer, from the most basic tasks to more complex
