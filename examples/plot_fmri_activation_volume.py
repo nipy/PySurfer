@@ -62,4 +62,20 @@ zstat = project_volume_data(volume_file, "lh",
 Once you have the statistical data loaded into Python, you can simply pass it
 to the `add_overlay` method of the Brain object.
 """
-brain.add_overlay(zstat, min=2, max=10)
+brain.add_overlay(zstat, min=2, max=12)
+
+"""
+It can also be a good idea to plot the inverse of the mask that was used in the
+analysis, so you can be clear about areas that were not included.
+
+It's good to change some parameters of the sampling to account for the fact that
+you are projecting binary (0, 1) data.
+"""
+mask_file = "example_data/mask.nii.gz"
+mask = project_volume_data(mask_file, "lh", subject_id="fsaverage",
+                           smooth_fwhm=0, projsum="max").astype(bool)
+mask = ~mask
+brain.add_data(mask, min=0, max=10, thresh=.5,
+               colormap="bone", alpha=.6, colorbar=False)
+
+brain.show_view("medial")
