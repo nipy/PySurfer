@@ -1,22 +1,18 @@
 Introduction
 ============
 
-PySurfer is a Python based program for visualization and interaction
-with cortical surface representations of neuroimaging data from
-`Freesurfer <http://surfer.nmr.mgh.harvard.edu/>`_. It extends
-`Mayavi's <http://github.enthought.com/mayavi/mayavi/index.html>`_ powerful
-visualization engine with a high-level interface for working with
-MRI and MEG data.
+PySurfer is a Python library for visualizing cortical surface representations
+of neuroimaging data. The package is primarily intended for use with
+`Freesurfer <http://surfer.nmr.mgh.harvard.edu/>`_, but it can plot data that
+are drawn from a variety of sources. PySurfer extends `Mayavi's
+<http://github.enthought.com/mayavi/mayavi/index.html>`_ powerful rendering 
+engine with a high-level interface for working with MRI and MEG data.
 
-PySurfer offers both a command-line interface designed to broadly
-replicate Freesurfer's Tksurfer program as well as a Python library
-for writing scripts to efficiently explore complex datasets.
-
-Contents
---------
+More Information
+----------------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     install
     examples/index.rst
@@ -25,20 +21,16 @@ Contents
 Authors
 -------
 
-Michael Waskom, Stanford University
-
-Alexandre Gramfort, Harvard Med. School MGH Martinos Center - INRIA
-
-Scott Burns, Harvard Med. School MGH Martinos Center
-
-Martin Luessi, Harvard Med. School MGH Martinos Center
-
-Eric Larson, University of Washington ILABS
+- Michael Waskom, Stanford University
+- Alexandre Gramfort, Telecom ParisTech - CNRS, CEA - Neurospin
+- Scott Burns, Vanderbilt University
+- Martin Luessi, Harvard Medical School MGH Martinos Center
+- Eric Larson, University of Washington ILABS
 
 License
 -------
 
-The PySurfer source code is available under the simplified BSD license
+The PySurfer source code is available under the Revised BSD (3-Clause) license
 
 Support
 -------

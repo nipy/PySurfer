@@ -1,16 +1,16 @@
 """
+==================
 Display ROI Values
 ==================
 
-Here we demonstrate how to take the results of an ROI analysis
-performed within each region of some parcellation and display
-those values on the surface to quickly summarize the analysis.
+Here we demonstrate how to take the results of an ROI analysis performed within
+each region of some parcellation and display those values on the surface to
+quickly summarize the analysis.
 
 """
 print __doc__
 
 import os
-import os.path as op
 import numpy as np
 import nibabel as nib
 from surfer import Brain
@@ -20,36 +20,36 @@ hemi = "lh"
 surface = "inflated"
 
 """
-Bring up the visualization
+Bring up the visualization.
 """
 brain = Brain(subject_id, hemi, surface,
-              config_opts=dict(background="lightslategray",
-                               cortex="high_contrast"))
+              config_opts=dict(background="white"))
 
 """
-Read in the aparc annotation file
+Read in the Buckner resting state network annotation. (This requires a
+relatively recent version of Freesurfer, or it can be downloaded separately).
 """
-aparc_file = op.join(os.environ["SUBJECTS_DIR"],
-                     subject_id, "label",
-                     hemi + ".aparc.a2009s.annot")
+aparc_file = os.path.join(os.environ["SUBJECTS_DIR"],
+                          subject_id, "label",
+                          hemi + ".Yeo2011_17Networks_N1000.annot")
 labels, ctab, names = nib.freesurfer.read_annot(aparc_file)
 
 """
-Make a random vector of scalar data corresponding to
-a value for each region in the parcellation.
+Make a random vector of scalar data corresponding to a value for each region in
+the parcellation.
+
 """
-roi_data = np.random.random(len(names))
+rs = np.random.RandomState(4)
+roi_data = rs.uniform(.5, .75, size=len(names))
 
 """
 Make a vector containing the data point at each vertex.
 """
-vtx_data = np.zeros(len(labels))
-for i, data in enumerate(roi_data):
-    vtx_data[labels == i] = data
+vtx_data = roi_data[labels]
 
 """
-Display these values on the brain.
-Use the hot colormap and add an alpha channel
-so the underlying anatomy is visible.
+Display these values on the brain. Use a sequential colormap (assuming
+these data move from low to high values), and add an alpha channel so the
+underlying anatomy is visible.
 """
-brain.add_data(vtx_data, 0, 1, colormap="hot", alpha=.7)
+brain.add_data(vtx_data, .5, .75, colormap="GnBu", alpha=.8)
