@@ -43,7 +43,7 @@ http://pysurfer.github.com/install.html
 License
 -------
 
-Available under the BSD (3-clause) license.
+Available under the Revised BSD (3-clause) license.
 
 Testing
 -------

@@ -38,7 +38,7 @@ Eric Larson, University of Washington ILABS
 License
 -------
 
-The PySurfer source code is available under the simplified BSD license
+The PySurfer source code is available under the Revised BSD (3-Clause) license
 
 Support
 -------
