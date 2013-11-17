@@ -436,10 +436,6 @@ def generate_example_rst(app):
     }
     </style>
 
-Examples
-========
-
-.. _examples-index:
 """)
     # Here we don't use an os.walk, but we recurse only twice: flat is
     # better than nested.
