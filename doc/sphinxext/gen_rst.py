@@ -482,7 +482,7 @@ def generate_dir_rst(dir, fhindex, example_dir, root_dir, plot_gallery):
             continue
         if fname.endswith('py'):
             generate_file_rst(fname, target_dir, src_dir, plot_gallery)
-            thumb = os.path.join(dir, 'images', 'thumb', fname[:-3] + '.png')
+            thumb = os.path.join(dir, 'images', 'thumb', fname[:-3] + '_thumb.png')
             link_name = os.path.join(dir, fname).replace(os.path.sep, '_')
             fhindex.write('.. figure:: %s\n' % thumb)
             if link_name.startswith('._'):
@@ -585,7 +585,7 @@ def generate_file_rst(fname, target_dir, src_dir, plot_gallery):
                                'stdout_%s.txt' % base_image_name)
     time_path = os.path.join(image_dir,
                              'time_%s.txt' % base_image_name)
-    thumb_file = os.path.join(thumb_dir, fname[:-3] + '.png')
+    thumb_file = os.path.join(thumb_dir, fname[:-3] + '_thumb.png')
     time_elapsed = 0
     if plot_gallery:
         # generate the plot as png image if file name
