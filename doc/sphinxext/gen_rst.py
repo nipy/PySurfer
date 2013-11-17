@@ -420,10 +420,10 @@ def generate_example_rst(app):
 
     .figure {
         float: left;
-        margin: 10px;
+        margin: 25px;
         width: auto;
-        height: 200px;
-        width: 180px;
+        height: 250px;
+        width: 250px;
     }
 
     .figure img {
@@ -431,7 +431,7 @@ def generate_example_rst(app):
         }
 
     .figure .caption {
-        width: 180px;
+        width: 230px;
         text-align: center !important;
     }
     </style>
@@ -645,11 +645,11 @@ def generate_file_rst(fname, target_dir, src_dir, plot_gallery):
         # generate thumb file
         this_template = plot_rst_template
         if os.path.exists(first_image_file):
-            make_thumbnail(first_image_file, thumb_file, 180, 120)
+            make_thumbnail(first_image_file, thumb_file, 250, 250)
 
     if not os.path.exists(thumb_file):
         # use the default thumbnail
-        make_thumbnail('_static/pysurfer_logo_small.png', thumb_file, 180, 120)
+        make_thumbnail('_static/pysurfer_logo_small.png', thumb_file, 250, 250)
 
     docstring, short_desc, end_row = extract_docstring(example_file)
 
