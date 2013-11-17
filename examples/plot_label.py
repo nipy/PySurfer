@@ -39,7 +39,8 @@ brain.add_label("BA44", borders=True)
 brain.add_label("BA6", alpha=.7)
 
 # Finally, you can plot the label in any color you want.
-brain.show_view("medial")
+brain.show_view(dict(azimuth=-42, elevation=105, distance=225,
+                     focalpoint=[-30, -20, 15]))
 
 # Use any valid matplotlib color.
 brain.add_label("V1", color="steelblue", alpha=.6)
