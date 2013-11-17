@@ -44,6 +44,6 @@ plot things separately for the left and right hemispheres.
 """
 subjects_dir = os.environ["SUBJECTS_DIR"]
 annot_path = pjoin(subjects_dir, subject_id, "label", "lh.aparc.annot")
-brain.add_annotation(annot_path, hemi='lh', borders=False)
+brain.add_annotation(annot_path, hemi='lh', borders=False, alpha=.75)
 annot_path = pjoin(subjects_dir, subject_id, "label", "rh.aparc.a2009s.annot")
 brain.add_annotation(annot_path, hemi='rh', remove_existing=False)
