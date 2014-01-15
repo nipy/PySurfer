@@ -171,7 +171,6 @@ def _fast_cross_3d(x, y):
 def _compute_normals(rr, tris):
     """Efficiently compute vertex normals for triangulated surface"""
     # first, compute triangle normals
-    t0 = time.time()
     r1 = rr[tris[:, 0], :]
     r2 = rr[tris[:, 1], :]
     r3 = rr[tris[:, 2], :]
@@ -197,6 +196,9 @@ def _compute_normals(rr, tris):
         vals = np.r_[np.zeros((1, 3)), np.cumsum(tri_nn[reord, :], 0)]
         idx = np.cumsum(np.r_[0, counts])
         nn += vals[idx[1:], :] - vals[idx[:-1], :]
+    size = np.sqrt(np.sum(nn * nn, axis=1))
+    size[size == 0] = 1.0  # prevent ugly divide-by-zero
+    nn /= size[:, np.newaxis]
     return nn
 
 
