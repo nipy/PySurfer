@@ -2022,6 +2022,9 @@ class _Hemisphere(object):
         x, y, z, f = self._geo.x, self._geo.y, self._geo.z, self._geo.faces
         self._geo_mesh = mlab.pipeline.triangular_mesh_source(x, y, z, f,
                                                               **meshargs)
+        # add surface normals
+        self._geo_mesh.data.point_data.normals = self._geo.nn
+        self._geo_mesh.data.cell_data.normals = None
         self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                                figure=self._f, reset_zoom=True,
                                                **kwargs)
