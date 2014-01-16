@@ -51,5 +51,6 @@ def test_surface():
         assert_array_almost_equal(x + 2, x_)
 
         # normals
-        nn = _slow_compute_normals(surface.coords, surface.faces)
-        assert_array_almost_equal(nn, surface.nn)
+        nn = _slow_compute_normals(surface.coords, surface.faces[:100])
+        nn_fast = utils._compute_normals(surface.coords, surface.faces[:100])
+        assert_array_almost_equal(nn, nn_fast)
