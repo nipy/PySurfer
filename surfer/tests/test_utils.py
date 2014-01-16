@@ -1,7 +1,7 @@
 from os.path import join as pjoin
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from surfer import utils
 
@@ -51,6 +51,16 @@ def test_surface():
         assert_array_almost_equal(x + 2, x_)
 
         # normals
-        nn = _slow_compute_normals(surface.coords, surface.faces[:100])
-        nn_fast = utils._compute_normals(surface.coords, surface.faces[:100])
+        nn = _slow_compute_normals(surface.coords, surface.faces[:10000])
+        nn_fast = utils._compute_normals(surface.coords, surface.faces[:10000])
         assert_array_almost_equal(nn, nn_fast)
+
+
+def test_huge_cross():
+    """Test cross product with lots of elements
+    """
+    x = np.random.rand(100000, 3)
+    y = np.random.rand(1, 3)
+    z = np.cross(x, y)
+    zz = utils._fast_cross_3d(x, y)
+    assert_array_equal(z, zz)
