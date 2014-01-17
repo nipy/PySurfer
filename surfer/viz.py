@@ -2731,18 +2731,20 @@ class ImageTiler(object):
         """
         row_height = [0] * self.nrow
         col_width = [0] * self.ncol
+        image_list = []
         for r, row in enumerate(images):
             for c, im in enumerate(row):
                 if im is None:
                     continue
+                image_list.append(im)
                 row_height[r] = max(row_height[r], im.shape[0])
                 col_width[c] = max(col_width[c], im.shape[1])
 
         self._rpos = rpos = np.cumsum([0] + row_height)
         self._cpos = cpos = np.cumsum([0] + col_width)
         if self.res is None:
-            n_chan = max(im.shape[2] for im in images)
-            self.res = (cpos[-1], rpos[-1], n_chan)
+            n_chan = max(im.shape[2] for im in image_list)
+            self.res = (rpos[-1], cpos[-1], n_chan)
 
     def _make_frame(self, t=0, redo=False):
         """Produce a given frame from its tiles
@@ -2772,13 +2774,13 @@ class ImageTiler(object):
             for c in xrange(self.ncol):
                 fname = self.get_tile_fname(c, r, t)
                 if os.path.exists(fname):
-                    im = readim(fname)
+                    im = imread(fname)
                 else:
                     im = None
                 row.append(im)
             images.append(row)
 
-        if self.cpos is None:
+        if self._cpos is None:
             self._make_grid(images)
 
         out = np.zeros(self.res, np.float32)
@@ -2787,8 +2789,10 @@ class ImageTiler(object):
                 if im is None:
                     pass
                 else:
-                    c0, c1 = cpos[c:c + 1]
-                    r0, r1 = rpos[r:r + 1]
+                    r0 = self._rpos[r]
+                    r1 = r0 + im.shape[0]
+                    c0 = self._cpos[c]
+                    c1 = c0 + im.shape[1]
                     out[r0:r1, c0:c1] = im
 
         imsave(dst, out, origin='upper')
