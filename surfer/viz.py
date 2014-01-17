@@ -2596,11 +2596,11 @@ class ImageTiler(object):
     ----------
     ext : str
         Extension to use for image files.
-    nrow : int
+    n_rows : int
         Number of rows of tiles in a frame.
-    ncol : int
+    n_cols : int
         Number of columns of tiles in a frame.
-    nt : int
+    n_times : int
         Number of time points in the animation.
     dst : str(directory)
         Directory in which to place files. If None, a temporary directory
@@ -2610,7 +2610,8 @@ class ImageTiler(object):
         RGBA. If None (default), it is determined based on the first frame that
         is rendered.
     """
-    def __init__(self, nrow=1, ncol=1, nt=1, res=None, ext='.png', dst=None):
+    def __init__(self, n_rows=1, n_cols=1, n_times=1, res=None, ext='.png',
+                 dst=None):
         # test the res parameter
         if res is not None:
             try:
@@ -2631,16 +2632,16 @@ class ImageTiler(object):
             self._dir = dst
 
         # find number of digits necessary to name images
-        row_fmt = '%%0%id' % (np.floor(np.log10(nrow)) + 1)
-        col_fmt = '%%0%id' % (np.floor(np.log10(ncol)) + 1)
-        t_fmt = '%%0%id' % (np.floor(np.log10(nt)) + 1)
+        row_fmt = '%%0%id' % (np.floor(np.log10(n_rows)) + 1)
+        col_fmt = '%%0%id' % (np.floor(np.log10(n_cols)) + 1)
+        t_fmt = '%%0%id' % (np.floor(np.log10(n_times)) + 1)
         self._tile_fmt = 'tile_%s_%s_%s%s' % (row_fmt, col_fmt, t_fmt, ext)
         self._frame_fmt = 'frame_%s%s' % (t_fmt, ext)
 
         self.dst = dst
-        self.ncol = ncol
-        self.nrow = nrow
-        self.nt = nt
+        self.n_cols = n_cols
+        self.n_rows = n_rows
+        self.n_times = n_times
         self.res = res
         self._rpos = None
         self._cpos = None
@@ -2654,12 +2655,12 @@ class ImageTiler(object):
         args = []
         if self.ext != '.png':
             args.append(('ext', repr(self.ext)))
-        if self.nrow != 1:
-            args.append(('nrow', repr(self.nrow)))
-        if self.ncol != 1:
-            args.append(('ncol', repr(self.ncol)))
-        if self.nt != 1:
-            args.append(('nt', repr(self.nt)))
+        if self.n_rows != 1:
+            args.append(('n_rows', repr(self.n_rows)))
+        if self.n_cols != 1:
+            args.append(('n_cols', repr(self.n_cols)))
+        if self.n_times != 1:
+            args.append(('n_times', repr(self.n_times)))
         if self.dst is not None:
             args.append(('dst', repr(self.dst)))
         if self.res is not None:
@@ -2684,19 +2685,20 @@ class ImageTiler(object):
         fname : str
             Path to the image file for the requested tile.
         """
-        if col >= self.ncol:
-            err = ("col (%i) is bigger than ImageTiler's ncol "
-                   "(%i)" % (col, self.ncol))
+        if col >= self.n_cols:
+            err = ("col (%i) is bigger than ImageTiler's n_cols "
+                   "(%i)" % (col, self.n_cols))
             raise ValueError(err)
-        if row >= self.nrow:
-            err = ("row (%i) is bigger than ImageTiler's nrow "
-                   "(%i)" % (row, self.nrow))
+        if row >= self.n_rows:
+            err = ("row (%i) is bigger than ImageTiler's n_rows "
+                   "(%i)" % (row, self.n_rows))
             raise ValueError(err)
-        if t >= self.nt:
-            err = ("t (%i) is bigger than ImageTiler's nt (%i)" % (t, self.nt))
+        if t >= self.n_times:
+            err = ("t (%i) is bigger than ImageTiler's n_times "
+                   "(%i)" % (t, self.n_times))
             raise ValueError(err)
 
-        if self.ncol == 1 and self.nrow == 1:
+        if self.n_cols == 1 and self.n_rows == 1:
             return self.get_frame_fname(t)
         else:
             fname = self._tile_fmt % (col, row, t)
@@ -2715,8 +2717,9 @@ class ImageTiler(object):
         fname : str
             Path to the image file for the requested frame.
         """
-        if t >= self.nt:
-            err = ("t (%i) is bigger than ImageTiler's nt (%i)" % (t, self.nt))
+        if t >= self.n_times:
+            err = ("t (%i) is bigger than ImageTiler's n_times "
+                   "(%i)" % (t, self.n_times))
             raise ValueError(err)
 
         fname = self._frame_fmt % (t,)
@@ -2729,8 +2732,8 @@ class ImageTiler(object):
         ----------
         images : nested list of image arrays
         """
-        row_height = [0] * self.nrow
-        col_width = [0] * self.ncol
+        row_height = [0] * self.n_rows
+        col_width = [0] * self.n_cols
         image_list = []
         for r, row in enumerate(images):
             for c, im in enumerate(row):
@@ -2758,7 +2761,7 @@ class ImageTiler(object):
         """
         dst = self.get_frame_fname(t)
 
-        if self.nrow == 1 and self.ncol == 1:
+        if self.n_rows == 1 and self.n_cols == 1:
             return
 
         if os.path.exists(dst):
@@ -2769,9 +2772,9 @@ class ImageTiler(object):
 
         # collect tiles
         images = []
-        for r in xrange(self.nrow):
+        for r in xrange(self.n_rows):
             row = []
-            for c in xrange(self.ncol):
+            for c in xrange(self.n_cols):
                 fname = self.get_tile_fname(c, r, t)
                 if os.path.exists(fname):
                     im = imread(fname)
@@ -2805,7 +2808,7 @@ class ImageTiler(object):
         redo : bool
             If the file already exists, delete and recreate it (default False).
         """
-        for t in xrange(self.nt):
+        for t in xrange(self.n_times):
             self._make_frame(t, redo)
 
     def save_frame(self, dst, t=0):
@@ -2823,7 +2826,7 @@ class ImageTiler(object):
         shutil.copyfile(src, dst)
 
     def save_movie(self, dst, opt="-f image2 -r 10", outopt="-c mpeg4"):
-        """Save a movie using ffmpg
+        """Save a movie using FFmpeg
 
         Parameters
         ----------
