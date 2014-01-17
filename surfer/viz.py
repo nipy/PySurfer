@@ -2391,7 +2391,7 @@ class OverlayDisplay():
         kwargs = dict(scalars=ol.mlab_data, figure=figure)
         if ol.pos_lims is not None:
             pos_mesh = mlab.pipeline.triangular_mesh_source(*args, **kwargs)
-            pos_mesh.data.point_data.normals = self._geo.nn
+            pos_mesh.data.point_data.normals = ol.geo.nn
             pos_mesh.data.cell_data.normals = None
             pos_thresh = mlab.pipeline.threshold(pos_mesh, low=ol.pos_lims[0])
             self.pos = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
@@ -2405,7 +2405,7 @@ class OverlayDisplay():
 
         if ol.neg_lims is not None:
             neg_mesh = mlab.pipeline.triangular_mesh_source(*args, **kwargs)
-            neg_mesh.data.point_data.normals = self._geo.nn
+            neg_mesh.data.point_data.normals = ol.geo.nn
             neg_mesh.data.cell_data.normals = None
             neg_thresh = mlab.pipeline.threshold(neg_mesh,
                                                  up=ol.neg_lims[0])
