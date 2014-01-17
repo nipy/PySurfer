@@ -1,6 +1,7 @@
 from os.path import join as pjoin
 
 import numpy as np
+import nose.tools as nt
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from surfer import utils
@@ -64,3 +65,29 @@ def test_huge_cross():
     z = np.cross(x, y)
     zz = utils._fast_cross_3d(x, y)
     assert_array_equal(z, zz)
+
+
+def test_create_color_lut():
+    """Test various ways of making a colormap."""
+    # Test valid lut
+    cmap_in = (np.random.rand(256, 4) * 255).astype(np.int)
+    cmap_out = utils.create_color_lut(cmap_in)
+    assert_array_equal(cmap_in, cmap_out)
+
+    # Test mostly valid lut
+    cmap_in = cmap_in[:, :3]
+    cmap_out = utils.create_color_lut(cmap_in)
+    assert_array_equal(cmap_in, cmap_out[:, :3])
+    assert_array_equal(cmap_out[:, 3], np.ones(256, np.int) * 255)
+
+    # Test matplotlib lut
+    cmap_out = utils.create_color_lut("BuGn_r")
+    nt.assert_equal(cmap_out.shape, (256, 4))
+
+    # Test list of colors lut
+    cmap_out = utils.create_color_lut(["purple", "pink", "white"])
+    nt.assert_equal(cmap_out.shape, (256, 4))
+
+    # Test that we can ask for a specific number of colors
+    cmap_out = utils.create_color_lut("Reds", 12)
+    nt.assert_equal(cmap_out.shape, (12, 4))
