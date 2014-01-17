@@ -1249,7 +1249,7 @@ class Brain(object):
         self._toggle_render(True, views)
 
     def add_contour_overlay(self, source, min=None, max=None,
-                            n_contours=7, line_width=1.5, colormap="RdBu_r",
+                            n_contours=7, line_width=1.5, colormap="YlOrRd_r",
                             hemi=None):
         """Add a topographic contour overlay of the positive data.
 

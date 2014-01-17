@@ -28,7 +28,8 @@ for hemi in ["lh", "rh"]:
     curv_bin = (curv.get_data() > 0).squeeze()
 
     # Add the data as a contour overlay, but turn off the colorbar
-    brain.add_contour_overlay(curv_bin, 0, 1.15, 2, 3, hemi=hemi)
+    brain.add_contour_overlay(curv_bin, min=0, max=1.5, n_contours=2,
+                              line_width=3, hemi=hemi)
     brain.contour_list[-1]["colorbar"].visible = False
 
 brain.show_view("dorsal")
