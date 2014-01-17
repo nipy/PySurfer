@@ -2156,6 +2156,8 @@ class _Hemisphere(object):
                                                     self._geo.faces,
                                                     scalars=mlab_plot,
                                                     figure=self._f)
+        mesh.data.point_data.normals = self._geo.nn
+        mesh.data.cell_data.normals = None
         if thresh is not None:
             if array_plot.min() >= thresh:
                 warn("Data min is greater than threshold.")
@@ -2193,6 +2195,8 @@ class _Hemisphere(object):
                                                     self._geo.faces,
                                                     scalars=ids,
                                                     figure=self._f)
+        mesh.data.point_data.normals = self._geo.nn
+        mesh.data.cell_data.normals = None
         surf = mlab.pipeline.surface(mesh, name=annot, figure=self._f)
 
         # Set the color table
@@ -2210,6 +2214,8 @@ class _Hemisphere(object):
                                                     self._geo.faces,
                                                     scalars=label,
                                                     figure=self._f)
+        mesh.data.point_data.normals = self._geo.nn
+        mesh.data.cell_data.normals = None
         surf = mlab.pipeline.surface(mesh, name=label_name, figure=self._f)
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color]) * 255
@@ -2224,6 +2230,8 @@ class _Hemisphere(object):
                                                     self._geo.faces,
                                                     scalars=morph_data,
                                                     figure=self._f)
+        mesh.data.point_data.normals = self._geo.nn
+        mesh.data.cell_data.normals = None
 
         surf = mlab.pipeline.surface(mesh, colormap=colormap,
                                      vmin=min, vmax=max,
@@ -2258,6 +2266,8 @@ class _Hemisphere(object):
                                                     self._geo.faces,
                                                     scalars=scalar_data,
                                                     figure=self._f)
+        mesh.data.point_data.normals = self._geo.nn
+        mesh.data.cell_data.normals = None
         thresh = mlab.pipeline.threshold(mesh, low=min)
         surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
                                              line_width=line_width)
@@ -2381,6 +2391,8 @@ class OverlayDisplay():
         kwargs = dict(scalars=ol.mlab_data, figure=figure)
         if ol.pos_lims is not None:
             pos_mesh = mlab.pipeline.triangular_mesh_source(*args, **kwargs)
+            pos_mesh.data.point_data.normals = self._geo.nn
+            pos_mesh.data.cell_data.normals = None
             pos_thresh = mlab.pipeline.threshold(pos_mesh, low=ol.pos_lims[0])
             self.pos = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
                                              vmin=ol.pos_lims[1],
@@ -2393,6 +2405,8 @@ class OverlayDisplay():
 
         if ol.neg_lims is not None:
             neg_mesh = mlab.pipeline.triangular_mesh_source(*args, **kwargs)
+            neg_mesh.data.point_data.normals = self._geo.nn
+            neg_mesh.data.cell_data.normals = None
             neg_thresh = mlab.pipeline.threshold(neg_mesh,
                                                  up=ol.neg_lims[0])
             self.neg = mlab.pipeline.surface(neg_thresh, colormap="PuBu",
