@@ -1,3 +1,4 @@
+from copy import deepcopy
 import os
 from os.path import join as pjoin
 import shutil
@@ -1926,7 +1927,7 @@ class Brain(object):
             cb.visible = colorbars_visibility[cb]
         return out
 
-    def save_movie(self, dst, step=1, tmin=None, tmax=None,
+    def save_movie(self, dst, step=1, tmin=None, tmax=None, views=None,
                    opt="-f image2 -r 10", outopt="-c mpeg4"):
         """Save a movie (requires data with time axis)
 
@@ -1939,6 +1940,12 @@ class Brain(object):
             (default 1).
         tmin, tmax : float
             Minimum and maximum time to include.
+        views : None | list
+            If None, the movie is created with the current view. If a list of
+            view names, the views are tiled horizontally. If a nested list,
+            each sublist specifies one row of views. All view names should be
+            valid arguments for :meth:`.show_view` or None to include an empty
+            tile.
         opt : str
             FFmpeg options and infile options (default "-f image2 -r 10", see
             ffmpg help).
@@ -1964,12 +1971,34 @@ class Brain(object):
             stop = np.sum(self._times <= tmax)
 
         times = self._times[start:stop:step]
-        it = ImageTiler(1, 1, len(times))
 
+        if views is None:
+            n_cols = n_rows = 1
+        else:
+            views = deepcopy(views)
+            if all(isinstance(x, (str, dict)) for x in views):
+                views = [views]
+            n_rows = len(views)
+            n_cols = max(map(len, views))
+            for row in views:
+                while len(row) < n_cols:
+                    row.append(None)
+
+        it = ImageTiler(n_rows, n_cols, len(times))
         for i, t in enumerate(times):
             self.set_time(t)
-            frame_fname = it.get_frame_fname(i)
-            self.save_image(frame_fname)
+
+            if views is None:
+                frame_fname = it.get_frame_fname(i)
+                self.save_image(frame_fname)
+            else:
+                for r, row in enumerate(views):
+                    for c, view in enumerate(row):
+                        if view is None:
+                            continue
+                        self.show_view(view)
+                        tile_fname = it.get_tile_fname(c, r, i)
+                        self.save_image(tile_fname)
 
         it.save_movie(dst, opt, outopt)
 
