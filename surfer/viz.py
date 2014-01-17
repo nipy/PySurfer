@@ -1249,7 +1249,8 @@ class Brain(object):
         self._toggle_render(True, views)
 
     def add_contour_overlay(self, source, min=None, max=None,
-                            n_contours=7, line_width=1.5, hemi=None):
+                            n_contours=7, line_width=1.5, colormap="RdBu_r",
+                            hemi=None):
         """Add a topographic contour overlay of the positive data.
 
         Note: This visualization will look best when using the "low_contrast"
@@ -1267,6 +1268,10 @@ class Brain(object):
             number of contours to use in the display
         line_width : float
             width of contour lines
+        colormap : string, list of colors, or array
+            name of matplotlib colormap to use, a list of matplotlib colors,
+            or a custom look up table (an n x 4 array coded with RBGA values
+            between 0 and 255).
         hemi : str | None
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
@@ -1287,6 +1292,9 @@ class Brain(object):
                 c['surface'].remove()
                 c['colorbar'].visible = False
 
+        # Process colormap argument into a lut
+        lut = create_color_lut(colormap)
+
         views = self._toggle_render(False)
         cl = []
         for brain in self._brain_list:
@@ -1294,7 +1302,7 @@ class Brain(object):
                 cl.append(brain['brain'].add_contour_overlay(scalar_data,
                                                              min, max,
                                                              n_contours,
-                                                             line_width))
+                                                             line_width, lut))
         self.contour_list = cl
         self._toggle_render(True, views)
 
@@ -2243,7 +2251,7 @@ class _Hemisphere(object):
         return points
 
     def add_contour_overlay(self, scalar_data, min=None, max=None,
-                            n_contours=7, line_width=1.5):
+                            n_contours=7, line_width=1.5, lut=None):
         """Add a topographic contour overlay of the positive data"""
         # Set up the pipeline
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y,
@@ -2254,6 +2262,8 @@ class _Hemisphere(object):
         thresh = mlab.pipeline.threshold(mesh, low=min)
         surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
                                              line_width=line_width)
+        if lut is not None:
+            surf.module_manager.scalar_lut_manager.lut.table = lut
 
         # Set the colorbar and range correctly
         bar = mlab.scalarbar(surf,
