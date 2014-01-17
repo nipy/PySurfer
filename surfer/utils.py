@@ -10,6 +10,8 @@ import numpy as np
 import nibabel as nib
 from scipy import sparse
 from scipy.spatial.distance import cdist
+import matplotlib as mpl
+from matplotlib import cm
 
 from .config import config
 
@@ -411,6 +413,60 @@ def mesh_edges(faces):
     edges = edges + edges.T
     edges = edges.tocoo()
     return edges
+
+
+def create_color_lut(cmap, n_colors=256):
+    """Return a colormap suitable for setting as a Mayavi LUT.
+
+    Parameters
+    ----------
+    cmap : string, list of colors, n x 3 or n x 4 array
+        Input colormap definition. This can be the name of a matplotlib
+        colormap, a list of valid matplotlib colors, or a suitable
+        mayavi LUT (possibly missing the alpha channel).
+    n_colors : int, optional
+        Number of colors in the resulting LUT. This is ignored if cmap
+        is a 2d array.
+    Returns
+    -------
+    lut : n_colors x 4 integer array
+        Color LUT suitable for passing to mayavi
+    """
+    if isinstance(cmap, np.ndarray):
+        if np.ndim(cmap) == 2:
+            if cmap.shape[1] == 4:
+                # This looks likes a LUT that's ready to go
+                lut = cmap.astype(np.int)
+            elif cmap.shape[1] == 3:
+                # This looks like a LUT, but it's missing the alpha channel
+                alpha = np.ones(len(cmap), np.int) * 255
+                lut = np.c_[cmap, alpha]
+
+            return lut
+
+    # Otherwise, we're going to try and use matplotlib to create it
+
+    if cmap in dir(cm):
+        # This is probably a matplotlib colormap, so build from that
+        # The matplotlib colormaps are a superset of the mayavi colormaps
+        # except for one or two cases (i.e. blue-red, which is a crappy
+        # rainbow colormap and shouldn't be used for anything, although in
+        # its defense it's better than "Jet")
+        cmap = getattr(cm, cmap)
+
+    elif np.iterable(cmap):
+        # This looks like a list of colors? Let's try that.
+        colors = list(map(mpl.colors.colorConverter.to_rgb, cmap))
+        cmap = mpl.colors.LinearSegmentedColormap.from_list("_", colors)
+
+    else:
+        # If we get here, it's a bad input
+        raise ValueError("Input %s was not valid for making a lut" % cmap)
+
+    # Convert from a matplotlib colormap to a lut array
+    lut = (cmap(np.linspace(0, 1, n_colors)) * 255).astype(np.int)
+
+    return lut
 
 
 @verbose

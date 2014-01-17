@@ -50,17 +50,8 @@ from negative correlations to positive correlations.
 We'll also plot the map with some transparency so that we can see through to the
 underlying anatomy.
 """
-brain.add_data(surf_data_lh, -.7, .7, colormap="RdBu", alpha=.75, hemi='lh')
-brain.add_data(surf_data_rh, -.7, .7, colormap="RdBu", alpha=.75, hemi='rh')
-
-"""
-We'll next flip the colormap so negative correlations are blue and positive
-correlations are red, which is better aligned with the conventions in fMRI
-visualization.
-"""
-for hemi in ["lh", "rh"]:
-    for cbar in brain.data_dict[hemi]["colorbars"]:
-        cbar.reverse_lut = True
+brain.add_data(surf_data_lh, -.7, .7, colormap="coolwarm", alpha=.75, hemi='lh')
+brain.add_data(surf_data_rh, -.7, .7, colormap="coolwarm", alpha=.75, hemi='rh')
 
 """
 This overlay represents resting-state correlations with a
