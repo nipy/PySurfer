@@ -1569,6 +1569,26 @@ class Brain(object):
                     self.update_text(data["time_label"] % time, "time_label")
         self._toggle_render(True, views)
 
+    def get_data_time_index(self):
+        """Retrieve the currently displayed data time index
+
+        Returns
+        -------
+        time_idx : int
+            Current time index.
+
+        Notes
+        -----
+        Raises a RuntimeError if the Brain instance has not data overlay.
+        """
+        time_idx = None
+        for hemi in ['lh', 'rh']:
+            data = self.data_dict[hemi]
+            if data is not None:
+                time_idx = data["time_idx"]
+                return time_idx
+        raise RuntimeError("Brain instance has no data overlay")
+
     @verbose
     def set_data_smoothing_steps(self, smoothing_steps, verbose=None):
         """Set the number of smoothing steps
@@ -1879,7 +1899,8 @@ class Brain(object):
         return images_written
 
     def save_image_sequence(self, time_idx, fname_pattern, use_abs_idx=True,
-                            row=-1, col=-1):
+                            row=-1, col=-1, montage='single', orientation='h',
+                            border_size=15, colorbar='auto'):
         """Save a temporal image sequence
 
         The files saved are named "fname_pattern % (pos)" where "pos" is a
@@ -1888,30 +1909,50 @@ class Brain(object):
         Parameters
         ----------
         time_idx : array-like
-            time indices to save
+            Time indices to save.
         fname_pattern : str
-            filename pattern, e.g. 'movie-frame_%0.4d.png'
+            Filename pattern, e.g. 'movie-frame_%0.4d.png'.
         use_abs_idx : boolean
-            if True the indices given by "time_idx" are used in the filename
+            If True the indices given by "time_idx" are used in the filename
             if False the index in the filename starts at zero and is
-            incremented by one for each image (Default: True)
+            incremented by one for each image (Default: True).
         row : int
-            row index of the brain to use
+            Row index of the brain to use.
         col : int
-            column index of the brain to use
+            Column index of the brain to use.
+        montage: 'current' | 'single' | list
+            Views to include in the images: 'current' uses the currently
+            displayed image; 'single' (default) uses a single view, specified
+            by the ``row`` and ``col`` parameters; a list can be used to
+            specify a complete montage (see :meth:`save_montage`).
+        orientation: {'h' | 'v'}
+            Montage image orientation (horizontal of vertical alignment; only
+            applies if ``montage`` is a flat list).
+        border_size: int
+            Size of image border (more or less space between images).
+        colorbar: None | 'auto' | [int], optional
+            If None no colorbar is visible. If 'auto' is given the colorbar
+            is only shown in the middle view. Otherwise on the listed
+            views when a list of int is passed.
 
         Returns
         -------
         images_written: list
             all filenames written
         """
-        current_time_idx = self.data["time_idx"]
+        current_time_idx = self.get_data_time_index()
         images_written = list()
         rel_pos = 0
         for idx in time_idx:
             self.set_data_time_index(idx)
             fname = fname_pattern % (idx if use_abs_idx else rel_pos)
-            self.save_single_image(fname, row, col)
+            if montage == 'single':
+                self.save_single_image(fname, row, col)
+            elif montage == 'current':
+                self.save_image(fname)
+            else:
+                self.save_montage(fname, montage, orientation, border_size,
+                                  colorbar, row, col)
             images_written.append(fname)
             rel_pos += 1
 
