@@ -56,8 +56,9 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
     fnames : list of str | list of array
         The images to make the montage of. Can be a list of filenames
         or a list of image data arrays.
-    orientation : 'h' | 'v'
-        The orientation of the montage: horizontal or vertical
+    orientation : 'h' | 'v' | list
+        The orientation of the montage: horizontal, vertical, or a nested
+        list of int (indexes into fnames).
     colorbar : None | list of int
         If None remove colorbars, else keep the ones whose index
         is present.
@@ -102,13 +103,21 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
         # box = (left, top, width, height)
         boxes.append([s[1].start - border_size, s[0].start - border_size,
                       s[1].stop + border_size, s[0].stop + border_size])
-    if orientation == 'v':
+    # convert orientation to nested list of int
+    if orientation == 'h':
+        orientation = [range(len(images))]
+    elif orientation == 'v':
+        orientation = [[i] for i in range(len(images))]
+    # find bounding box
+    n_rows = len(orientation)
+    n_cols = max(len(row) for row in orientation)
+    if n_rows > 1:
         min_left = min(box[0] for box in boxes)
         max_width = max(box[2] for box in boxes)
         for box in boxes:
             box[0] = min_left
             box[2] = max_width
-    else:
+    if n_cols > 1:
         min_top = min(box[1] for box in boxes)
         max_height = max(box[3] for box in boxes)
         for box in boxes:
@@ -120,22 +129,21 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
         cropped_images.append(im.crop(box))
     images = cropped_images
     # Get full image size
-    if orientation == 'h':
-        w = sum(i.size[0] for i in images)
-        h = max(i.size[1] for i in images)
-    else:
-        h = sum(i.size[1] for i in images)
-        w = max(i.size[0] for i in images)
-    new = Image.new("RGBA", (w, h))
-    x = 0
-    for i in images:
-        if orientation == 'h':
-            pos = (x, 0)
-            x += i.size[0]
-        else:
-            pos = (0, x)
-            x += i.size[1]
-        new.paste(i, pos)
+    row_w = [sum(images[i].size[0] for i in row) for row in orientation]
+    row_h = [max(images[i].size[1] for i in row) for row in orientation]
+    out_w = max(row_w)
+    out_h = sum(row_h)
+    # compose image
+    new = Image.new("RGBA", (out_w, out_h))
+    y = 0
+    for row, h in zip(orientation, row_h):
+        x = 0
+        for i in row:
+            im = images[i]
+            pos = (x, y)
+            new.paste(im, pos)
+            x += im.size[0]
+        y += h
     if filename is not None:
         try:
             new.save(filename)
@@ -1881,9 +1889,12 @@ class Brain(object):
         filename: string | None
             path to final image. If None, the image will not be saved.
         order: list
-            order of views to build montage
+            list of views: order of views to build montage (default ['lat',
+            'ven', 'med']; nested list of views to specify views in a
+            2-dimensional grid (e.g, [['lat', 'ven'], ['med', 'fro']])
         orientation: {'h' | 'v'}
-            montage image orientation (horizontal of vertical alignment)
+            montage image orientation (horizontal of vertical alignment; only
+            applies if ``order`` is a flat list)
         border_size: int
             Size of image border (more or less space between images)
         colorbar: None | 'auto' | [int], optional
@@ -1900,9 +1911,25 @@ class Brain(object):
         out : array
             The montage image, useable with matplotlib.imshow().
         """
+        # find flat list of views and nested list of view indexes
         assert orientation in ['h', 'v']
+        if all(isinstance(x, (str, dict)) for x in order):
+            views = order
+        else:
+            views = []
+            orientation = []
+            for row_order in order:
+                if isinstance(row_order, (str, dict)):
+                    orientation.append([len(views)])
+                    views.append(row_order)
+                else:
+                    orientation.append([])
+                    for view in row_order:
+                        orientation[-1].append(len(views))
+                        views.append(view)
+
         if colorbar == 'auto':
-            colorbar = [len(order) // 2]
+            colorbar = [len(views) // 2]
         brain = self.brain_matrix[row, col]
 
         # store current view + colorbar visibility
@@ -1912,8 +1939,8 @@ class Brain(object):
         for cb in colorbars:
             colorbars_visibility[cb] = cb.visible
 
-        images = self.save_imageset(None, order, colorbar=colorbar,
-                                    row=row, col=col)
+        images = self.save_imageset(None, views, colorbar=colorbar, row=row,
+                                    col=col)
         out = make_montage(filename, images, orientation, colorbar,
                            border_size)
 

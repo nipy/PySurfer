@@ -48,6 +48,8 @@ def test_image():
     brain.save_image(tmp_name)
     brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
     brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
+    brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
+    brain.save_montage(tmp_name, [['l', 'v'], ['m', 'f']])
     brain.screenshot()
     brain.close()
 
