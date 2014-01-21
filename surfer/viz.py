@@ -1026,10 +1026,11 @@ class Brain(object):
                 filepath = label
                 label_name = os.path.basename(filepath).split('.')[1]
             else:
-                label_name = label
+                dirname, label_name = os.path.split(label)
                 filepath = pjoin(self.subjects_dir,
                                  self.subject_id,
                                  'label',
+                                 dirname,
                                  ".".join([hemi, label_name, 'label']))
                 if not os.path.exists(filepath):
                     raise ValueError('Label file %s does not exist'
