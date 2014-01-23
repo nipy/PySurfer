@@ -1611,7 +1611,8 @@ class Brain(object):
 
     def _colorbar_visibility(self, visible, row, col):
         for cb in self._get_colorbars(row, col):
-            cb.visible = visible
+            if cb is not None:
+                cb.visible = visible
 
     def show_colorbar(self, row=-1, col=-1):
         """Show colorbar(s) for given plot
@@ -1937,7 +1938,8 @@ class Brain(object):
         colorbars = self._get_colorbars(row, col)
         colorbars_visibility = dict()
         for cb in colorbars:
-            colorbars_visibility[cb] = cb.visible
+            if cb is not None:
+                colorbars_visibility[cb] = cb.visible
 
         images = self.save_imageset(None, views, colorbar=colorbar, row=row,
                                     col=col)
@@ -1947,7 +1949,8 @@ class Brain(object):
         # get back original view and colorbars
         mlab.view(*current_view, figure=brain._f)
         for cb in colorbars:
-            cb.visible = colorbars_visibility[cb]
+            if cb is not None:
+                cb.visible = colorbars_visibility[cb]
         return out
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False,
