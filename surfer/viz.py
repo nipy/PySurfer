@@ -1,5 +1,6 @@
 import os
 from os.path import join as pjoin
+from tempfile import mkdtemp
 from warnings import warn
 
 import numpy as np
@@ -16,7 +17,7 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 from . import utils, io
 from .config import config
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
-                    string_types)
+                    string_types, has_ffmpeg, ffmpeg)
 
 
 import logging
@@ -1623,13 +1624,20 @@ class Brain(object):
                 data["smoothing_steps"] = smoothing_steps
         self._toggle_render(True, views)
 
-    def set_time(self, time):
-        """Set the data time index to the time point closest to time
+    def index_for_time(self, time, rounding='closest'):
+        """Find the data time index closest to a specific time point
 
         Parameters
         ----------
         time : scalar
             Time.
+        rounding : 'closest' | 'up' | 'down
+            How to round if the exact time point is not an index.
+
+        Returns
+        -------
+        index : int
+            Data time index closest to time.
         """
         if self.n_times is None:
             raise RuntimeError("Brain has no time axis")
@@ -1644,7 +1652,27 @@ class Brain(object):
                    "[%s, %s]" % (time, tmin, tmax))
             raise ValueError(err)
 
-        idx = np.argmin(np.abs(times - time))
+        if rounding == 'closest':
+            idx = np.argmin(np.abs(times - time))
+        elif rounding == 'up':
+            idx = np.nonzero(times >= time)[0][0]
+        elif rounding == 'down':
+            idx = np.nonzero(times <= time)[0][-1]
+        else:
+            err = "Invalid rounding parameter: %s" % repr(rounding)
+            raise ValueError(err)
+
+        return idx
+
+    def set_time(self, time):
+        """Set the data time index to the time point closest to time
+
+        Parameters
+        ----------
+        time : scalar
+            Time.
+        """
+        idx = self.index_for_time(time)
         self.set_data_time_index(idx)
 
     def _get_colorbars(self, row, col):
@@ -1845,7 +1873,7 @@ class Brain(object):
         brain = self.brain_matrix[row, col]
         return mlab.screenshot(brain._f, mode, antialiased)
 
-    def save_imageset(self, prefix, views,  filetype='png', colorbar='auto',
+    def save_imageset(self, prefix, views, filetype='png', colorbar='auto',
                       row=-1, col=-1):
         """Convenience wrapper for save_image
 
@@ -2033,6 +2061,96 @@ class Brain(object):
             if cb is not None:
                 cb.visible = colorbars_visibility[cb]
         return out
+
+    def save_movie(self, dst, tstart=None, tstop=None, step=None,
+                   time_idx=None, montage='current', orientation='h',
+                   border_size=15, colorbar='auto', framerate=10,
+                   codec='mpeg4', row=-1, col=-1, movie_tool='ffmpeg'):
+        """Save a movie (for data with a time axis)
+
+        Parameters
+        ----------
+        dst : str
+            Path at which to sae the movie.
+        tstart : None | float
+            First time point to include (default: all data).
+        tstop : None | float
+            Time point at which to stop the movie (exclusive; default: all
+            data).
+        step : None | int
+            Number of data frames to step forward between movie frames
+            (default 1).
+        time_idx : None | array
+            Index that selects time points form the time axis from which to
+            make the movie. If time_idx is specified, neither of tstart, tstop
+            or tstep should be specified.
+        montage: 'current' | 'single' | list
+            Views to include in the images: 'current' (default) uses the
+            currently displayed image; 'single' uses a single view, specified
+            by the ``row`` and ``col`` parameters; a list can be used to
+            specify a complete montage (see :meth:`save_montage`).
+        orientation: {'h' | 'v'}
+            montage image orientation (horizontal of vertical alignment; only
+            applies if ``montage`` is a flat list)
+        border_size: int
+            Size of image border (more or less space between images)
+        colorbar: None | 'auto' | [int], optional
+            if None no colorbar is visible. If 'auto' is given the colorbar
+            is only shown in the middle view. Otherwise on the listed
+            views when a list of int is passed.
+        framerate : int
+            Framerate of the movie (frames per second).
+        codec : str
+            Codec to use (default 'mpeg4').
+        row : int
+            row index of the brain to use
+        col : int
+            column index of the brain to use
+        movie_tool : 'ffmpeg'
+            Tool to use to convert image sequence into a movie (default:
+            'ffmpeg').
+        """
+        if movie_tool.lower() == 'ffmpeg':
+            if not has_ffmpeg():
+                err = ("FFmpeg is not in the path and is needed for saving "
+                       "movies. Install FFmpeg and try again. It can be "
+                       "downlaoded from http://ffmpeg.org/download.html.")
+                raise RuntimeError(err)
+        else:
+            err = "Currently the only possible movie tool is FFmpeg"
+            raise ValueError(err)
+
+        if tstart is not None:
+            start = self.index_for_time(tstart, rounding='up')
+        else:
+            start = 0
+
+        if tstop is not None:
+            stop = self.index_for_time(tstop, rounding='up')
+        else:
+            stop = self.n_times
+
+        if all(x is None for x in (tstart, tstop, step)):
+            if time_idx is None:
+                time_idx = np.arange(self.n_times)
+        elif time_idx is None:
+            time_idx = np.arange(start, stop, step)
+        else:
+            err = ("Both slice parameters (tstart, tstop, step) and "
+                   "time_idx can not be specified at the same time.")
+            raise TypeError(err)
+
+        n_times = len(time_idx)
+        if n_times == 0:
+            raise ValueError("No time points selected")
+
+        tempdir = mkdtemp()
+        frame_pattern = 'frame%%0%id.png' % (np.floor(np.log10(n_times)) + 1)
+        fname_pattern = os.path.join(tempdir, frame_pattern)
+        self.save_image_sequence(time_idx, fname_pattern, False, row,
+                                 col, montage, orientation, border_size,
+                                 colorbar)
+        ffmpeg(dst, fname_pattern, framerate, codec)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False,
                 row=-1, col=-1):
