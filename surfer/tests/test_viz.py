@@ -2,12 +2,13 @@ import numpy as np
 import os
 import os.path as op
 from os.path import join as pjoin
+import shutil
 from numpy.testing import assert_raises, assert_array_equal
-from tempfile import mktemp
+from tempfile import mkdtemp, mktemp
 import nibabel as nib
 
 from surfer import Brain, io, utils
-from surfer.utils import requires_fsaverage
+from surfer.utils import requires_ffmpeg, requires_fsaverage
 from mayavi import mlab
 
 subj_dir = utils._get_subjects_dir()
@@ -203,6 +204,41 @@ def test_morphometry():
     brain.add_morphometry("curv")
     brain.add_morphometry("sulc", grayscale=True)
     brain.add_morphometry("thickness")
+    brain.close()
+
+
+@requires_ffmpeg
+@requires_fsaverage
+def test_movie():
+    """Test saving a movie of an MEG inverse solution
+    """
+    # create and setup the Brain instance
+    mlab.options.backend = 'auto'
+    brain = Brain(*std_args)
+    stc_fname = os.path.join(data_dir, 'meg_source_estimate-lh.stc')
+    stc = io.read_stc(stc_fname)
+    data = stc['data']
+    vertices = stc['vertices']
+    time = 1e3 * np.linspace(stc['tmin'],
+                             stc['tmin'] + data.shape[1] * stc['tstep'],
+                             data.shape[1])
+    colormap = 'hot'
+    time_label = 'time=%0.2f ms'
+    brain.add_data(data, colormap=colormap, vertices=vertices,
+                   smoothing_steps=10, time=time, time_label=time_label)
+    brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
+
+    # save movies with different options
+    tempdir = mkdtemp()
+    dst = os.path.join(tempdir, 'test')
+    brain.save_movie(dst, montage='current')
+    brain.save_movie(dst, montage='current', tstart=time[1], tstop=time[-1])
+    brain.save_movie(dst, montage='single')
+#     brain.save_movie(dst, montage=['lat', 'med'], orientation='v')
+#     brain.save_movie(dst, montage=[['lat'], ['med']])
+
+    # clean up
+    shutil.rmtree(tempdir)
     brain.close()
 
 

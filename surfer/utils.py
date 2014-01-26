@@ -634,6 +634,7 @@ def has_fsaverage(subjects_dir=None):
 requires_fsaverage = np.testing.dec.skipif(not has_fsaverage(),
                                            'Requires fsaverage subject data')
 
+
 def has_ffmpeg():
     """Test whether the FFmpeg is available in a subprocess
 
@@ -646,6 +647,8 @@ def has_ffmpeg():
                             stderr=subprocess.PIPE)
     ffmpeg_exists = rcode == 0
     return ffmpeg_exists
+
+requires_ffmpeg = np.testing.dec.skipif(not has_ffmpeg(), 'Requires FFmpeg')
 
 
 def ffmpeg(dst, frame_path, framerate=10, codec='mpeg4', opt="", inopt="",
@@ -724,5 +727,6 @@ def ffmpeg(dst, frame_path, framerate=10, codec='mpeg4', opt="", inopt="",
 
     # check that movie file is created
     if not os.path.exists(dst):
-        err = ("FFmpeg failed, no file created; see log for more more information")
+        err = ("FFmpeg failed, no file created; see log for more more "
+               "information.")
         raise RuntimeError(err)
