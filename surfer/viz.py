@@ -991,8 +991,8 @@ class Brain(object):
         self.annot_list = al
         self._toggle_render(True, views)
 
-    def add_label(self, label, color="crimson", alpha=1,
-                  scalar_thresh=None, borders=False, hemi=None):
+    def add_label(self, label, color="crimson", alpha=1, scalar_thresh=None,
+                  borders=False, hemi=None, subdir=None):
         """Add an ROI label to the image.
 
         Parameters
@@ -1015,6 +1015,12 @@ class Brain(object):
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
             be thrown.
+        subdir : None | str
+            If a label is specified as name, subdir can be used to indicate
+            that the label file is in a sub-directory of the subject's
+            label directory rather than in the label directory itself (e.g.
+            for ``$SUBJECTS_DIR/$SUBJECT/label/aparc/lh.cuneus.label``
+            ``brain.add_label('cuneus', subdir='aparc')``).
 
         Notes
         -----
@@ -1027,10 +1033,13 @@ class Brain(object):
                 label_name = os.path.basename(filepath).split('.')[1]
             else:
                 label_name = label
-                filepath = pjoin(self.subjects_dir,
-                                 self.subject_id,
-                                 'label',
-                                 ".".join([hemi, label_name, 'label']))
+                label_fname = ".".join([hemi, label_name, 'label'])
+                if subdir is None:
+                    filepath = pjoin(self.subjects_dir, self.subject_id,
+                                     'label', label_fname)
+                else:
+                    filepath = pjoin(self.subjects_dir, self.subject_id,
+                                     'label', subdir, label_fname)
                 if not os.path.exists(filepath):
                     raise ValueError('Label file %s does not exist'
                                      % filepath)
