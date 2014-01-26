@@ -1016,8 +1016,11 @@ class Brain(object):
             shown. If two hemispheres are being shown, an error will
             be thrown.
         subdir : None | str
-            If a label is specified as name, subdir specifies the path of the
-            directory containing the label relative to the label directory.
+            If a label is specified as name, subdir can be used to indicate
+            that the label file is in a sub-directory of the subject's
+            label directory rather than in the label directory itself (e.g.
+            for ``$SUBJECTS_DIR/$SUBJECT/label/aparc/lh.cuneus.label``
+            ``brain.add_label('cuneus', subdir='aparc')``).
 
         Notes
         -----
@@ -1030,11 +1033,13 @@ class Brain(object):
                 label_name = os.path.basename(filepath).split('.')[1]
             else:
                 label_name = label
-                filepath = pjoin(self.subjects_dir,
-                                 self.subject_id,
-                                 'label',
-                                 subdir,
-                                 ".".join([hemi, label_name, 'label']))
+                label_fname = ".".join([hemi, label_name, 'label'])
+                if subdir is None:
+                    filepath = pjoin(self.subjects_dir, self.subject_id,
+                                     'label', label_fname)
+                else:
+                    filepath = pjoin(self.subjects_dir, self.subject_id,
+                                     'label', subdir, label_fname)
                 if not os.path.exists(filepath):
                     raise ValueError('Label file %s does not exist'
                                      % filepath)
