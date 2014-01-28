@@ -768,7 +768,7 @@ class Brain(object):
                  colormap="RdBu_r", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d", colorbar=True,
-                 hemi=None, remove_existing=True):
+                 hemi=None, remove_existing=False):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to add_overlay, but it displays
@@ -818,7 +818,8 @@ class Brain(object):
             shown. If two hemispheres are being shown, an error will
             be thrown.
         remove_existing : bool
-            Remove surface added by previous "add_data" call.
+            Remove surface added by previous "add_data" call. Useful for
+            conserving memory when displaying different data in a loop.
         """
         hemi = self._check_hemi(hemi)
 
