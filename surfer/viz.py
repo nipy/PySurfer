@@ -1026,8 +1026,8 @@ class Brain(object):
         -----
         To remove previously added labels, run Brain.remove_labels().
         """
-        hemi = self._check_hemi(hemi)
         if isinstance(label, basestring):
+            hemi = self._check_hemi(hemi)
             if os.path.isfile(label):
                 filepath = label
                 label_name = os.path.basename(filepath).split('.')[1]
@@ -1052,7 +1052,7 @@ class Brain(object):
         else:
             # try to extract parameters from label instance
             try:
-                lhemi = label.hemi
+                hemi = label.hemi
                 ids = label.vertices
                 if label.name is None:
                     label_name = 'unnamed'
@@ -1066,9 +1066,8 @@ class Brain(object):
                                  'must have attributes "hemi", "vertices", '
                                  '"name", and (if scalar_thresh is not None)'
                                  '"values"')
-            if not lhemi == hemi:
-                raise ValueError('label hemisphere (%s) and brain hemisphere '
-                                 '(%s) must match' % (lhemi, hemi))
+            hemi = self._check_hemi(hemi)
+
             if scalar_thresh is not None:
                 ids = ids[scalars >= scalar_thresh]
 
