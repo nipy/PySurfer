@@ -1001,7 +1001,7 @@ class Brain(object):
             label filepath or name. Can also be an instance of
             an object with attributes "hemi", "vertices", "name", and
             optionally "color" and "values" (if scalar_thresh is not None).
-        color : matplotlib-style color
+        color : matplotlib-style color | None
             anything matplotlib accepts: string, RGB, hex, etc. (default
             "crimson")
         alpha : float in [0, 1]
