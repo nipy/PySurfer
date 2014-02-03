@@ -991,7 +991,7 @@ class Brain(object):
         self.annot_list = al
         self._toggle_render(True, views)
 
-    def add_label(self, label, color="crimson", alpha=1, scalar_thresh=None,
+    def add_label(self, label, color=None, alpha=1, scalar_thresh=None,
                   borders=False, hemi=None, subdir=None):
         """Add an ROI label to the image.
 
@@ -999,10 +999,11 @@ class Brain(object):
         ----------
         label : str | instance of Label
             label filepath or name. Can also be an instance of
-            an object with attributes "hemi", "vertices", "name",
-            and (if scalar_thresh is not None) "values".
-        color : matplotlib-style color
-            anything matplotlib accepts: string, RGB, hex, etc.
+            an object with attributes "hemi", "vertices", "name", and
+            optionally "color" and "values" (if scalar_thresh is not None).
+        color : matplotlib-style color | None
+            anything matplotlib accepts: string, RGB, hex, etc. (default
+            "crimson")
         alpha : float in [0, 1]
             alpha level to control opacity
         scalar_thresh : None or number
@@ -1026,8 +1027,11 @@ class Brain(object):
         -----
         To remove previously added labels, run Brain.remove_labels().
         """
-        hemi = self._check_hemi(hemi)
         if isinstance(label, basestring):
+            hemi = self._check_hemi(hemi)
+            if color is None:
+                color = "crimson"
+
             if os.path.isfile(label):
                 filepath = label
                 label_name = os.path.basename(filepath).split('.')[1]
@@ -1052,12 +1056,19 @@ class Brain(object):
         else:
             # try to extract parameters from label instance
             try:
-                lhemi = label.hemi
+                hemi = label.hemi
                 ids = label.vertices
                 if label.name is None:
                     label_name = 'unnamed'
                 else:
                     label_name = str(label.name)
+
+                if color is None:
+                    if hasattr(label, 'color') and label.color is not None:
+                        color = label.color
+                    else:
+                        color = "crimson"
+
                 if scalar_thresh is not None:
                     scalars = label.values
             except Exception:
@@ -1066,9 +1077,8 @@ class Brain(object):
                                  'must have attributes "hemi", "vertices", '
                                  '"name", and (if scalar_thresh is not None)'
                                  '"values"')
-            if not lhemi == hemi:
-                raise ValueError('label hemisphere (%s) and brain hemisphere '
-                                 '(%s) must match' % (lhemi, hemi))
+            hemi = self._check_hemi(hemi)
+
             if scalar_thresh is not None:
                 ids = ids[scalars >= scalar_thresh]
 
