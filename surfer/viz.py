@@ -1621,8 +1621,9 @@ class Brain(object):
         if len(self.overlays_dict) > 0:
             for name, obj in self.overlays_dict.items():
                 for bar in ["pos_bar", "neg_bar"]:
-                    try:
-                        colorbars.append(getattr(obj[ind], bar))
+                    try:  # deal with positive overlays
+                        this_ind = min(len(obj) - 1, ind)
+                        colorbars.append(getattr(obj[this_ind], bar))
                     except AttributeError:
                         pass
         return colorbars
