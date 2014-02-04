@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import os.path as op
 from os.path import join as pjoin
 from numpy.testing import assert_raises, assert_array_equal
 from tempfile import mktemp
@@ -12,10 +13,10 @@ from mayavi import mlab
 subj_dir = utils._get_subjects_dir()
 subject_id = 'fsaverage'
 std_args = [subject_id, 'lh', 'inflated']
-data_dir = pjoin(os.path.split(__file__)[0], '..', '..',
-                 'examples', 'example_data')
+data_dir = pjoin(op.dirname(__file__), '..', '..', 'examples', 'example_data')
 small_brain = dict(size=100)
 
+overlay_fname = pjoin(data_dir, 'lh.sig.nii.gz')
 
 def has_freesurfer():
     if 'FREESURFER_HOME' not in os.environ:
@@ -42,11 +43,16 @@ def test_offscreen():
 def test_image():
     """Test image saving
     """
-    mlab.options.backend = 'auto'
-    brain = Brain(*std_args, config_opts=small_brain)
     tmp_name = mktemp() + '.png'
-    brain.save_image(tmp_name)
+
+    mlab.options.backend = 'auto'
+    subject_id, _, surf = std_args
+    brain = Brain(subject_id, 'both', surf=surf, config_opts=small_brain)
+    brain.add_overlay(overlay_fname, hemi='lh', min=5, max=20, sign="pos")
     brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
+
+    brain = Brain(*std_args, config_opts=small_brain)
+    brain.save_image(tmp_name)
     brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
     brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
     brain.save_montage(tmp_name, [['l', 'v'], ['m', 'f']])
