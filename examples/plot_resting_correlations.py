@@ -47,11 +47,13 @@ We want to use an appropriate color map for these data: a divergent map that
 is centered on 0, which is a meaningful transition-point as it marks the change
 from negative correlations to positive correlations.
 
-We'll also plot the map with some transparency so that we can see through to the
-underlying anatomy.
+We'll also plot the map with some transparency so that we can see through to
+the underlying anatomy.
 """
-brain.add_data(surf_data_lh, -.7, .7, colormap="coolwarm", alpha=.75, hemi='lh')
-brain.add_data(surf_data_rh, -.7, .7, colormap="coolwarm", alpha=.75, hemi='rh')
+brain.add_data(surf_data_lh, -.7, .7, colormap="coolwarm", alpha=.75,
+               hemi='lh')
+brain.add_data(surf_data_rh, -.7, .7, colormap="coolwarm", alpha=.75,
+               hemi='rh')
 
 """
 This overlay represents resting-state correlations with a

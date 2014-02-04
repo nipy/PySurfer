@@ -77,7 +77,7 @@ class Surface(object):
 
     def load_geometry(self):
         surf_path = op.join(self.data_path, "surf",
-                          "%s.%s" % (self.hemi, self.surf))
+                            "%s.%s" % (self.hemi, self.surf))
         self.coords, self.faces = nib.freesurfer.read_geometry(surf_path)
         if self.offset is not None:
             if self.hemi == 'lh':
@@ -88,7 +88,7 @@ class Surface(object):
 
     def save_geometry(self):
         surf_path = op.join(self.data_path, "surf",
-                          "%s.%s" % (self.hemi, self.surf))
+                            "%s.%s" % (self.hemi, self.surf))
         nib.freesurfer.write_geometry(surf_path, self.coords, self.faces)
 
     @property
@@ -130,7 +130,7 @@ class Surface(object):
     def apply_xfm(self, mtx):
         """Apply an affine transformation matrix to the x,y,z vectors."""
         self.coords = np.dot(np.c_[self.coords, np.ones(len(self.coords))],
-                                     mtx.T)[:, :3]
+                             mtx.T)[:, :3]
 
 
 def _fast_cross_3d(x, y):
@@ -521,8 +521,8 @@ def smoothing_matrix(vertices, adj_mat, smoothing_steps=20, verbose=None):
     # and is in COO format
     smooth_mat = smooth_mat.tocoo()
     smooth_mat = sparse.coo_matrix((smooth_mat.data,
-                                   (idx_use[smooth_mat.row],
-                                   smooth_mat.col)),
+                                    (idx_use[smooth_mat.row],
+                                     smooth_mat.col)),
                                    shape=(n_vertices,
                                           len(vertices)))
 

@@ -52,8 +52,8 @@ Alternatively, if your data are already in register with the Freesurfer
 anatomy, you can provide project_volume_data with the subject ID, avoiding the
 need to specify a registration file.
 
-By default, 3mm of smoothing is applied on the surface to clean up the overlay a
-bit, although the extent of smoothing can be controlled.
+By default, 3mm of smoothing is applied on the surface to clean up the overlay
+a bit, although the extent of smoothing can be controlled.
 """
 zstat = project_volume_data(volume_file, "lh",
                             subject_id="fsaverage", smooth_fwhm=0.5)
@@ -68,8 +68,8 @@ brain.add_overlay(zstat, min=2, max=12)
 It can also be a good idea to plot the inverse of the mask that was used in the
 analysis, so you can be clear about areas that were not included.
 
-It's good to change some parameters of the sampling to account for the fact that
-you are projecting binary (0, 1) data.
+It's good to change some parameters of the sampling to account for the fact
+that you are projecting binary (0, 1) data.
 """
 mask_file = "example_data/mask.nii.gz"
 mask = project_volume_data(mask_file, "lh", subject_id="fsaverage",

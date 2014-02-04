@@ -1,0 +1,6 @@
+[run]
+branch = True
+source = surfer
+include = */surfer/*
+omit =
+    */setup.py

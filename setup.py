@@ -7,6 +7,7 @@
 descr = """PySurfer: Python / FreeSurfer / Mayavi2 for brain imaging"""
 
 import os
+from os import path as op
 # deal with MPL sandbox violations during easy_install
 os.environ['MPLCONFIGDIR'] = '.'
 
@@ -37,28 +38,28 @@ if __name__ == "__main__":
         os.remove('MANIFEST')
 
     setup(name=DISTNAME,
-        maintainer=MAINTAINER,
-        include_package_data=True,
-        maintainer_email=MAINTAINER_EMAIL,
-        description=DESCRIPTION,
-        license=LICENSE,
-        url=URL,
-        version=VERSION,
-        download_url=DOWNLOAD_URL,
-        long_description=LONG_DESCRIPTION,
-        zip_safe=False,  # the package can run out of an .egg file
-        classifiers=['Intended Audience :: Science/Research',
-                     'Intended Audience :: Developers',
-                     'License :: OSI Approved',
-                     'Programming Language :: Python',
-                     'Topic :: Software Development',
-                     'Topic :: Scientific/Engineering',
-                     'Operating System :: Microsoft :: Windows',
-                     'Operating System :: POSIX',
-                     'Operating System :: Unix',
-                     'Operating System :: MacOS'
-                     ],
-         platforms='any',
-         packages=['surfer', 'surfer.tests'],
-         scripts=['bin/pysurfer'],
-    )
+          maintainer=MAINTAINER,
+          include_package_data=True,
+          maintainer_email=MAINTAINER_EMAIL,
+          description=DESCRIPTION,
+          license=LICENSE,
+          url=URL,
+          version=VERSION,
+          download_url=DOWNLOAD_URL,
+          long_description=LONG_DESCRIPTION,
+          zip_safe=False,  # the package can run out of an .egg file
+          classifiers=['Intended Audience :: Science/Research',
+                       'Intended Audience :: Developers',
+                       'License :: OSI Approved',
+                       'Programming Language :: Python',
+                       'Topic :: Software Development',
+                       'Topic :: Scientific/Engineering',
+                       'Operating System :: Microsoft :: Windows',
+                       'Operating System :: POSIX',
+                       'Operating System :: Unix',
+                       'Operating System :: MacOS'
+                       ],
+          platforms='any',
+          packages=['surfer', 'surfer.tests'],
+          scripts=['bin/pysurfer'],
+          )
