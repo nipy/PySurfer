@@ -57,7 +57,7 @@ surface by finding the vertex on the "white" mesh that is closest to the
 coordinate of the point we want to display.
 """
 brain.add_foci([coord], map_surface="white", coords_as_verts=True,
-                color="mediumblue")
+               color="mediumblue")
 
 """
 Set the camera position to show the extent of the labels.

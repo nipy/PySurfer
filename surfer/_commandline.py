@@ -7,7 +7,7 @@ There should be no reason to import this module in an
 interpreter session.
 
 """
-import argparse
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 help_text = """
 PySurfer is a package for visualization and interaction with cortical
@@ -26,10 +26,11 @@ about how to interact with the Brain object.
 
 """
 
-parser = argparse.ArgumentParser(prog='pysurfer',
-                  usage='%(prog)s subject_id hemisphere surface [options]',
-                  formatter_class=argparse.RawDescriptionHelpFormatter,
-                  description=help_text)
+parser = ArgumentParser(prog='pysurfer',
+                        usage='%(prog)s subject_id hemisphere surface '
+                              '[options]',
+                        formatter_class=RawDescriptionHelpFormatter,
+                        description=help_text)
 parser.add_argument("subject_id",
                     help="subject id as in subjects dir")
 parser.add_argument("hemi", metavar="hemi", choices=["lh", "rh",

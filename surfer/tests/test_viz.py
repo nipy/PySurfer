@@ -5,8 +5,7 @@ from numpy.testing import assert_raises, assert_array_equal
 from tempfile import mktemp
 import nibabel as nib
 
-from surfer import Brain
-from surfer import io, utils
+from surfer import Brain, io, utils
 from surfer.utils import requires_fsaverage
 from mayavi import mlab
 
@@ -36,6 +35,7 @@ def test_offscreen():
     brain = Brain(*std_args, offscreen=True)
     shot = brain.screenshot()
     assert_array_equal(shot.shape, (800, 800, 3))
+    brain.close()
 
 
 @requires_fsaverage
@@ -61,7 +61,7 @@ def test_brains():
     # testing backend breaks when passing in a figure, so we use 'auto' here
     # (shouldn't affect usability, but it makes testing more annoying)
     mlab.options.backend = 'auto'
-    surfs = ['inflated', 'sphere']
+    surfs = ['inflated', 'white']
     hemis = ['lh', 'rh']
     curvs = [True, False]
     titles = [None, 'Hello']
@@ -126,8 +126,8 @@ def test_foci():
     mlab.options.backend = 'test'
     brain = Brain(*std_args)
     coords = [[-36, 18, -3],
-          [-43, 25, 24],
-          [-48, 26, -2]]
+              [-43, 25, 24],
+              [-48, 26, -2]]
     brain.add_foci(coords, map_surface="white", color="gold")
 
     annot_path = pjoin(subj_dir, subject_id, 'label', 'lh.aparc.a2009s.annot')
@@ -147,7 +147,7 @@ def test_label():
     mlab.options.backend = 'test'
     subject_id = "fsaverage"
     hemi = "lh"
-    surf = "smoothwm"
+    surf = "inflated"
     brain = Brain(subject_id, hemi, surf)
     brain.add_label("BA1")
     brain.add_label("BA1", color="blue", scalar_thresh=.5)

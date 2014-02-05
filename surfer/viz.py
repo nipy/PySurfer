@@ -19,7 +19,6 @@ from .utils import Surface, verbose, create_color_lut, _get_subjects_dir
 
 
 import logging
-logging.basicConfig()  # suppress "No handlers found for logger" error
 logger = logging.getLogger('surfer')
 
 from traits.api import (HasTraits, Range, Int, Float,
@@ -1674,7 +1673,6 @@ class Brain(object):
         if hasattr(self, '_v') and self._v is not None:
             self._v.dispose()
             self._v = None
-
 
     ###########################################################################
     # SAVING OUTPUT

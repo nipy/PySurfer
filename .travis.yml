@@ -1,0 +1,65 @@
+language: python
+
+env:
+    # Enable python 2 and python 3 builds
+    # DEPS=full: build optional dependencies: pandas, nitime, statsmodels,
+    #            scikit-learn, patsy, nibabel; in the case of Python 2, also
+    #            nitime
+    # DEPS=minimal: don't build optional dependencies; tests that require those
+    #               dependencies are supposed to be skipped
+    - PYTHON=2.7 DEPS=full
+    # PYTHON=3.3 DEPS=full  # Mayavi doesn't support Py3 :(
+    - PYTHON=2.7 DEPS=minimal  # mencoder is an optional dependency
+
+# Setup anaconda
+before_install:
+    - wget http://repo.continuum.io/miniconda/Miniconda-2.2.2-Linux-x86_64.sh -O miniconda.sh
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b
+    - export PATH=/home/travis/anaconda/bin:$PATH
+    - conda update --yes conda
+
+install:
+    - conda create -n testenv --yes pip python=$PYTHON
+    - source activate testenv
+    # Pillow (or PIL/imaging) is necessary for scipy.misc.imsave to exist
+    - conda install --yes --quiet ipython==1.1.0 numpy scipy mayavi matplotlib nose imaging
+    - if [ "${DEPS}" == "full" ]; then
+        travis_retry sudo apt-get install mencoder;
+      fi;
+    - pip install -q coverage coveralls nose-timer nibabel flake8
+    - python setup.py build
+    - python setup.py install
+    - SRC_DIR=$(pwd)
+
+before_script:
+    # Let's create a (fake) display on Travis, and let's use a funny resolution
+    - export DISPLAY=:99.0
+    - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+    - cd ~
+    - wget --quiet http://faculty.washington.edu/larsoner/fsaverage_min.tar.gz
+    - mkdir subjects
+    - tar --directory subjects -xzf fsaverage_min.tar.gz
+    - export SUBJECTS_DIR="${PWD}/subjects"
+    - SURFER_DIR=$(python -c 'import surfer;print(surfer.__path__[0])')
+    # Link coverage to src dir, coveralls should be run from there (needs git calls)
+    - ln -s ${SURFER_DIR}/../.coverage ${SRC_DIR}/.coverage
+    - cd ${SURFER_DIR}/../
+    - ln -s ${SRC_DIR}/.coveragerc .coveragerc
+    - ln -s ${SRC_DIR}/Makefile Makefile
+    - ln -s ${SRC_DIR}/setup.cfg setup.cfg
+    - ln -s ${SRC_DIR}/examples examples
+
+script:
+    - # Nose-timer has bugs on 3+ as of Jan 2014
+    - if [ "{PYTHON}" == "2.7" ]; then
+        nosetests --with-timer --timer-top-n 20;
+      else
+        nosetests;
+      fi
+    - cd ${SRC_DIR}
+    - make flake
+
+after_success:
+    # Need to run from source dir to exectue "git" commands
+    - coveralls
