@@ -1,10 +1,15 @@
+from copy import deepcopy
 import os
 from os.path import join as pjoin
+import shutil
+import subprocess
+import tempfile
 from warnings import warn
 
 import numpy as np
 from scipy import stats, ndimage, misc
 from matplotlib.colors import colorConverter
+from matplotlib.image import imread, imsave
 
 import nibabel as nib
 
@@ -1972,6 +1977,81 @@ class Brain(object):
                 cb.visible = colorbars_visibility[cb]
         return out
 
+    def save_movie(self, dst, step=1, tmin=None, tmax=None, views=None,
+                   opt="-f image2 -r 10", outopt="-c mpeg4"):
+        """Save a movie (requires data with time axis)
+
+        Parameters
+        ----------
+        dst : str
+            Destination for the movie.
+        step : int
+            How many steps to move on the time axis between two frames
+            (default 1).
+        tmin, tmax : float
+            Minimum and maximum time to include.
+        views : None | list
+            If None, the movie is created with the current view. If a list of
+            view names, the views are tiled horizontally. If a nested list,
+            each sublist specifies one row of views. All view names should be
+            valid arguments for :meth:`.show_view` or None to include an empty
+            tile.
+        opt : str
+            FFmpeg options and infile options (default "-f image2 -r 10", see
+            ffmpg help).
+        outopt : str
+            FFmpeg outfile options (default "-c mpeg4", see ffmpg help).
+
+        Notes
+        -----
+        Requires FFmpeg to be in the path. FFmpeg can be downlaoded from
+        `here <http://ffmpeg.org/download.html>`_.
+        """
+        if self.n_times is None:
+            raise RuntimeError("Brain has no time axis")
+
+        if tmin is None:
+            start = None
+        else:
+            start = np.sum(self._times < tmin)
+
+        if tmax is None:
+            stop = None
+        else:
+            stop = np.sum(self._times <= tmax)
+
+        times = self._times[start:stop:step]
+
+        if views is None:
+            n_cols = n_rows = 1
+        else:
+            views = deepcopy(views)
+            if all(isinstance(x, (str, dict)) for x in views):
+                views = [views]
+            n_rows = len(views)
+            n_cols = max(map(len, views))
+            for row in views:
+                while len(row) < n_cols:
+                    row.append(None)
+
+        it = ImageTiler(n_rows, n_cols, len(times))
+        for i, t in enumerate(times):
+            self.set_time(t)
+
+            if views is None:
+                frame_fname = it.get_frame_fname(i)
+                self.save_image(frame_fname)
+            else:
+                for r, row in enumerate(views):
+                    for c, view in enumerate(row):
+                        if view is None:
+                            continue
+                        self.show_view(view)
+                        tile_fname = it.get_tile_fname(c, r, i)
+                        self.save_image(tile_fname)
+
+        it.save_movie(dst, opt, outopt)
+
     def animate(self, views, n_steps=180., fname=None, use_cache=False,
                 row=-1, col=-1):
         """Animate a rotation.
@@ -2605,3 +2685,297 @@ class TimeViewer(HasTraits):
         for brain in self.brains:
             brain.scale_data_colormap(self.fmin, self.fmid, self.fmax,
                                       self.transparent)
+
+
+class ImageTiler(object):
+    """Create tiled images and animations from individual image files
+
+    Parameters
+    ----------
+    ext : str
+        Extension to use for image files.
+    n_rows : int
+        Number of rows of tiles in a frame.
+    n_cols : int
+        Number of columns of tiles in a frame.
+    n_times : int
+        Number of time points in the animation.
+    dst : str(directory)
+        Directory in which to place files. If None, a temporary directory
+        is created and removed upon deletion of the ImageTiler instance.
+    res : None | tuple of int, len 3
+        Resolution in (height, width, n_chan). n_chan is 3 for RGB or 4 for
+        RGBA. If None (default), it is determined based on the first frame that
+        is rendered.
+    """
+    def __init__(self, n_rows=1, n_cols=1, n_times=1, res=None, ext='.png',
+                 dst=None):
+        # test the res parameter
+        if res is not None:
+            try:
+                res = tuple(map(int, res))
+            except:
+                raise TypeError("res must be tuple containing two int")
+            if len(res) != 3:
+                raise ValueError("res must be tuple containing two int")
+            if res[2] not in (3, 4):
+                raise ValueError("The third element of res must be 3 or 4")
+
+        # find the cache directory
+        if dst is None:
+            self._dir = tempfile.mkdtemp()
+        else:
+            if not os.path.exists(dst):
+                os.makedirs(dst)
+            self._dir = dst
+
+        # find number of digits necessary to name images
+        row_fmt = '%%0%id' % (np.floor(np.log10(n_rows)) + 1)
+        col_fmt = '%%0%id' % (np.floor(np.log10(n_cols)) + 1)
+        t_fmt = '%%0%id' % (np.floor(np.log10(n_times)) + 1)
+        self._tile_fmt = 'tile_%s_%s_%s%s' % (row_fmt, col_fmt, t_fmt, ext)
+        self._frame_fmt = 'frame_%s%s' % (t_fmt, ext)
+
+        self.dst = dst
+        self.n_cols = n_cols
+        self.n_rows = n_rows
+        self.n_times = n_times
+        self.res = res
+        self._rpos = None
+        self._cpos = None
+        self._shape = None
+
+    def __del__(self):
+        if self.dst is None:
+            shutil.rmtree(self._dir)
+
+    def __repr__(self):
+        args = []
+        if self.ext != '.png':
+            args.append(('ext', repr(self.ext)))
+        if self.n_rows != 1:
+            args.append(('n_rows', repr(self.n_rows)))
+        if self.n_cols != 1:
+            args.append(('n_cols', repr(self.n_cols)))
+        if self.n_times != 1:
+            args.append(('n_times', repr(self.n_times)))
+        if self.dst is not None:
+            args.append(('dst', repr(self.dst)))
+        if self.res is not None:
+            args.append(('res', repr(self.res)))
+        out = "ImageTiler(%s)" % ', '.join("%s=%s" % item for item in args)
+        return out
+
+    def get_tile_fname(self, col=0, row=0, t=0):
+        """Retrieve the path to a specific tile
+
+        Parameters
+        ----------
+        col : int
+            Column index.
+        row : int
+            Row index.
+        t : int
+            Time index.
+
+        Returns
+        -------
+        fname : str
+            Path to the image file for the requested tile.
+        """
+        if col >= self.n_cols:
+            err = ("col (%i) is bigger than ImageTiler's n_cols "
+                   "(%i)" % (col, self.n_cols))
+            raise ValueError(err)
+        if row >= self.n_rows:
+            err = ("row (%i) is bigger than ImageTiler's n_rows "
+                   "(%i)" % (row, self.n_rows))
+            raise ValueError(err)
+        if t >= self.n_times:
+            err = ("t (%i) is bigger than ImageTiler's n_times "
+                   "(%i)" % (t, self.n_times))
+            raise ValueError(err)
+
+        if self.n_cols == 1 and self.n_rows == 1:
+            return self.get_frame_fname(t)
+        else:
+            fname = self._tile_fmt % (col, row, t)
+            return os.path.join(self._dir, fname)
+
+    def get_frame_fname(self, t=0):
+        """Retrieve the path to a specific frame
+
+        Parameters
+        ----------
+        t : int
+            Time index.
+
+        Returns
+        -------
+        fname : str
+            Path to the image file for the requested frame.
+        """
+        if t >= self.n_times:
+            err = ("t (%i) is bigger than ImageTiler's n_times "
+                   "(%i)" % (t, self.n_times))
+            raise ValueError(err)
+
+        fname = self._frame_fmt % (t,)
+        return os.path.join(self._dir, fname)
+
+    def _make_grid(self, images):
+        """Determine the grid for tiling images
+
+        Parameters
+        ----------
+        images : nested list of image arrays
+        """
+        row_height = [0] * self.n_rows
+        col_width = [0] * self.n_cols
+        image_list = []
+        for r, row in enumerate(images):
+            for c, im in enumerate(row):
+                if im is None:
+                    continue
+                image_list.append(im)
+                row_height[r] = max(row_height[r], im.shape[0])
+                col_width[c] = max(col_width[c], im.shape[1])
+
+        self._rpos = rpos = np.cumsum([0] + row_height)
+        self._cpos = cpos = np.cumsum([0] + col_width)
+        if self.res is None:
+            n_chan = max(im.shape[2] for im in image_list)
+            self.res = (rpos[-1], cpos[-1], n_chan)
+
+    def _make_frame(self, t=0, redo=False):
+        """Produce a given frame from its tiles
+
+        Parameters
+        ----------
+        t : int
+            Time index (default 0).
+        redo : bool
+            If the file already exists, delete and recreate it (default False).
+        """
+        dst = self.get_frame_fname(t)
+
+        if self.n_rows == 1 and self.n_cols == 1:
+            return
+
+        if os.path.exists(dst):
+            if redo:
+                os.remove(dst)
+            else:
+                return
+
+        # collect tiles
+        images = []
+        for r in xrange(self.n_rows):
+            row = []
+            for c in xrange(self.n_cols):
+                fname = self.get_tile_fname(c, r, t)
+                if os.path.exists(fname):
+                    im = imread(fname)
+                else:
+                    im = None
+                row.append(im)
+            images.append(row)
+
+        if self._cpos is None:
+            self._make_grid(images)
+
+        out = np.zeros(self.res, np.float32)
+        for r, row in enumerate(images):
+            for c, im in enumerate(row):
+                if im is None:
+                    pass
+                else:
+                    r0 = self._rpos[r]
+                    r1 = r0 + im.shape[0]
+                    c0 = self._cpos[c]
+                    c1 = c0 + im.shape[1]
+                    out[r0:r1, c0:c1] = im
+
+        imsave(dst, out, origin='upper')
+
+    def _make_frames(self, redo=False):
+        """Make all frames
+
+        Parameters
+        ----------
+        redo : bool
+            If the file already exists, delete and recreate it (default False).
+        """
+        for t in xrange(self.n_times):
+            self._make_frame(t, redo)
+
+    def save_frame(self, dst, t=0):
+        """Save a single frame
+
+        Parameters
+        ----------
+        dst : str
+            Path for saving the image file.
+        t : int
+            Frame to save (default 0).
+        """
+        self._make_frame(t=t)
+        src = self.get_frame_fname(t)
+        shutil.copyfile(src, dst)
+
+    def save_movie(self, dst, opt="-f image2 -r 10", outopt="-c mpeg4"):
+        """Save a movie using FFmpeg
+
+        Parameters
+        ----------
+        dst : str
+            Destination path.
+        opt : str
+            FFmpeg options and infile options (default "-f image2 -r 10", see
+            ffmpg help).
+        outopt : str
+            FFmpeg outfile options (default "-c mpeg4", see ffmpg help).
+
+        Notes
+        -----
+        Requires FFmpeg to be in the path. FFmpeg can be downlaoded from
+        `here <http://ffmpeg.org/download.html>`_.
+        """
+        # make sure FFmpeg is available
+        rcode = subprocess.call(["type", "ffmpeg"], stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        ffmpeg_exists = rcode == 0
+        if not ffmpeg_exists:
+            err = ("FFmpeg is not in the path and is needed for saving "
+                   "movies. Install FFmpeg and try again. It can be "
+                   "downlaoded from http://ffmpeg.org/download.html.")
+            raise RuntimeError(err)
+
+        # find target path
+        dst = os.path.expanduser(dst)
+        dst = os.path.abspath(dst)
+        root, ext = os.path.splitext(dst)
+        dirname = os.path.dirname(dst)
+        if ext not in ['.mov', '.avi']:
+            dst = dst + '.mov'
+
+        if os.path.exists(dst):
+            os.remove(dst)
+        elif not os.path.exists(dirname):
+            os.mkdir(dirname)
+
+        # make the movie
+        self._make_frames()
+
+        cmd = ['ffmpeg']
+        cmd.extend(opt.split())
+        cmd.extend(['-i', self._frame_fmt])
+        cmd.extend(outopt.split())
+        cmd.append(dst)
+
+        sp = subprocess.Popen(cmd, cwd=self._dir, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        stdout, stderr = sp.communicate()
+        print stdout, stderr
+        if not os.path.exists(dst):
+            raise RuntimeError("ffmpeg failed:\n" + stderr)
