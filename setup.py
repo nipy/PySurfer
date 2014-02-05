@@ -7,7 +7,6 @@
 descr = """PySurfer: Python / FreeSurfer / Mayavi2 for brain imaging"""
 
 import os
-from os import path as op
 # deal with MPL sandbox violations during easy_install
 os.environ['MPLCONFIGDIR'] = '.'
 
