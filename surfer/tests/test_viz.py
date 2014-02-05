@@ -18,6 +18,7 @@ small_brain = dict(size=100)
 
 overlay_fname = pjoin(data_dir, 'lh.sig.nii.gz')
 
+
 def has_freesurfer():
     if 'FREESURFER_HOME' not in os.environ:
         return False
