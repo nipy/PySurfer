@@ -726,7 +726,7 @@ class Brain(object):
     ###########################################################################
     # ADDING DATA PLOTS
     def add_overlay(self, source, min=None, max=None, sign="abs", name=None,
-                    hemi=None):
+                    hemi=None, colormap="YlOrRd"):
         """Add an overlay to the overlay dict from a file or array.
 
         Parameters
@@ -745,6 +745,9 @@ class Brain(object):
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
             be thrown.
+        colormap : str
+            The name of a mayavi colormap to be applied to the data in the
+            overlay. Default: "YlOrRd"
         """
         hemi = self._check_hemi(hemi)
         # load data here
@@ -757,7 +760,7 @@ class Brain(object):
         views = self._toggle_render(False)
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                ol.append(brain['brain'].add_overlay(old))
+                ol.append(brain['brain'].add_overlay(old, colormap=colormap))
         if name in self.overlays_dict:
             name = "%s%d" % (name, len(self.overlays_dict) + 1)
         self.overlays_dict[name] = ol
@@ -2175,9 +2178,9 @@ class _Hemisphere(object):
             dr = np.array(end_d['r']) - np.array(beg_d['r'])
         return (np.array(dv), dr)
 
-    def add_overlay(self, old):
+    def add_overlay(self, old, colormap="YlOrRd"):
         """Add an overlay to the overlay dict from a file or array"""
-        surf = OverlayDisplay(old, figure=self._f)
+        surf = OverlayDisplay(old, figure=self._f, colormap=colormap)
         for bar in ["pos_bar", "neg_bar"]:
             try:
                 self._format_cbar_text(getattr(surf, bar))
@@ -2290,7 +2293,7 @@ class _Hemisphere(object):
         self._format_cbar_text(bar)
         bar.scalar_bar_representation.position2 = .8, 0.09
 
-        # Fil in the morphometry dict
+        # Fill in the morphometry dict
         return dict(surface=surf, colorbar=bar, measure=measure)
 
     def add_foci(self, foci_coords, scale_factor, color, alpha, name):
@@ -2436,7 +2439,7 @@ class OverlayData(object):
 class OverlayDisplay():
     """Encapsulation of overlay viz plotting"""
 
-    def __init__(self, ol, figure):
+    def __init__(self, ol, figure, colormap="YlOrRd"):
         args = [ol.geo.x, ol.geo.y, ol.geo.z, ol.geo.faces]
         kwargs = dict(scalars=ol.mlab_data, figure=figure)
         if ol.pos_lims is not None:
@@ -2444,7 +2447,7 @@ class OverlayDisplay():
             pos_mesh.data.point_data.normals = ol.geo.nn
             pos_mesh.data.cell_data.normals = None
             pos_thresh = mlab.pipeline.threshold(pos_mesh, low=ol.pos_lims[0])
-            self.pos = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
+            self.pos = mlab.pipeline.surface(pos_thresh, colormap=colormap,
                                              vmin=ol.pos_lims[1],
                                              vmax=ol.pos_lims[2],
                                              figure=figure)
