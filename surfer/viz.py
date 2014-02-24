@@ -86,6 +86,8 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
         # sum the RGB dimension so we do not miss G or B-only pieces
         gray = np.sum(np.array(im), axis=-1)
         gray[gray == gray[0, 0]] = 0  # hack for find_objects that wants 0
+        if np.all(gray == 0):
+            raise ValueError("Empty image (all pixels have the same color).")
         labels, n_labels = ndimage.label(gray.astype(np.float))
         slices = ndimage.find_objects(labels, n_labels)  # slice roi
         if colorbar is not None and ix in colorbar:
