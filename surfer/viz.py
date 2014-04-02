@@ -587,7 +587,7 @@ class Brain(object):
     def _geo(self):
         """Wrap to _geo"""
         self._get_one_brain([[]], '_geo')
-        if self.geo['lh'] is not None:
+        if ('lh' in self.geo) and ['lh'] is not None:
             return self.geo['lh']
         else:
             return self.geo['rh']
