@@ -6,7 +6,7 @@ Load a statistical overlay as a "topographic" contour map.
 
 """
 
-print __doc__
+print(__doc__)
 
 import os.path as op
 from surfer import Brain

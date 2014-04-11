@@ -8,7 +8,7 @@ each region of some parcellation and display those values on the surface to
 quickly summarize the analysis.
 
 """
-print __doc__
+print(__doc__)
 
 import os
 import numpy as np

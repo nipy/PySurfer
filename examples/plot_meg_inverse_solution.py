@@ -5,7 +5,7 @@ Plot MEG inverse solution
 Data were computed using mne-python (http://martinos.org/mne)
 
 """
-print __doc__
+print(__doc__)
 
 import os
 import numpy as np
@@ -68,5 +68,5 @@ brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
 """
 uncomment these lines to use the interactive TimeViewer GUI
 """
-#from surfer import TimeViewer
-#viewer = TimeViewer(brain)
+# from surfer import TimeViewer
+# viewer = TimeViewer(brain)

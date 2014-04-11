@@ -13,7 +13,7 @@ be imported from ``surfer.io``.
 
 """
 
-print __doc__
+print(__doc__)
 
 import os
 from surfer import Brain, project_volume_data
