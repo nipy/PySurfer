@@ -11,7 +11,7 @@ with PySurfer.
 
 """
 
-print __doc__
+print(__doc__)
 
 import os.path as op
 import numpy as np

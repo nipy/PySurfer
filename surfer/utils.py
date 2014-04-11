@@ -18,6 +18,13 @@ from .config import config
 logger = logging.getLogger('surfer')
 
 
+# Py3k compat
+if sys.version[0] == '2':
+    string_types = basestring  # noqa
+else:
+    string_types = str
+
+
 class Surface(object):
     """Container for surface object
 
@@ -226,12 +233,12 @@ def set_log_level(verbose=None, return_old_level=False):
             verbose = 'INFO'
         else:
             verbose = 'WARNING'
-    if isinstance(verbose, basestring):
+    if isinstance(verbose, string_types):
         verbose = verbose.upper()
         logging_types = dict(DEBUG=logging.DEBUG, INFO=logging.INFO,
                              WARNING=logging.WARNING, ERROR=logging.ERROR,
                              CRITICAL=logging.CRITICAL)
-        if not verbose in logging_types:
+        if verbose not in logging_types:
             raise ValueError('verbose must be of a valid type')
         verbose = logging_types[verbose]
     logger = logging.getLogger('surfer')
@@ -565,7 +572,7 @@ def coord_to_label(subject_id, coord, label, hemi='lh', n_steps=30,
     data = np.zeros(n_vertices)
     data[foci_vtxs] = 1.
     smooth_mat = smoothing_matrix(np.arange(n_vertices), adj_mat, 1)
-    for _ in xrange(n_steps):
+    for _ in range(n_steps):
         data = smooth_mat * data
     idx = np.where(data.ravel() > 0)[0]
     # Write label

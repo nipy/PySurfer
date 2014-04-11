@@ -15,7 +15,8 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 
 from . import utils, io
 from .config import config
-from .utils import Surface, verbose, create_color_lut, _get_subjects_dir
+from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
+                    string_types)
 
 
 import logging
@@ -73,8 +74,8 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
     # This line is only necessary to overcome a PIL bug, see:
     #     http://stackoverflow.com/questions/10854903/what-is-causing-
     #          dimension-dependent-attributeerror-in-pil-fromarray-function
-    fnames = [f if isinstance(f, basestring) else f.copy() for f in fnames]
-    if isinstance(fnames[0], basestring):
+    fnames = [f if isinstance(f, string_types) else f.copy() for f in fnames]
+    if isinstance(fnames[0], string_types):
         images = map(Image.open, fnames)
     else:
         images = map(Image.fromarray, fnames)
@@ -197,7 +198,7 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
             orig_val = mlab.options.offscreen
             mlab.options.offscreen = True
             figures = [[mlab.figure(size=(h / n_row, w / n_col))
-                        for _ in xrange(n_col)] for __ in xrange(n_row)]
+                        for _ in range(n_col)] for __ in range(n_row)]
             mlab.options.offscreen = orig_val
             _v = None
         else:
@@ -235,7 +236,7 @@ class _MlabGenerator(HasTraits):
         self.n_col = n_col
         self.width = width
         self.height = height
-        for fi in xrange(n_row * n_col):
+        for fi in range(n_row * n_col):
             name = 'mlab_view%03g' % fi
             self.mlab_names.append(name)
             self.add_trait(name, Instance(MlabSceneModel, ()))
@@ -259,9 +260,9 @@ class _MlabGenerator(HasTraits):
         from traitsui.api import (View, Item, VGroup, HGroup)
         ind = 0
         va = []
-        for ri in xrange(self.n_row):
+        for ri in range(self.n_row):
             ha = []
-            for ci in xrange(self.n_col):
+            for ci in range(self.n_col):
                 ha += [Item(name=self.mlab_names[ind], style='custom',
                             resizable=True, show_label=False,
                             editor=SceneEditor(scene_class=MayaviScene))]
@@ -319,7 +320,7 @@ class Brain(object):
                  views=['lat'], show_toolbar=False, offscreen=False):
         col_dict = dict(lh=1, rh=1, both=1, split=2)
         n_col = col_dict[hemi]
-        if not hemi in col_dict.keys():
+        if hemi not in col_dict.keys():
             raise ValueError('hemi must be one of [%s], not %s'
                              % (', '.join(col_dict.keys()), hemi))
         # Get the subjects directory from parameter or env. var
@@ -654,7 +655,7 @@ class Brain(object):
             as a source
         """
         # If source is a string, try to load a file
-        if isinstance(source, basestring):
+        if isinstance(source, string_types):
             if name is None:
                 basename = os.path.basename(source)
                 if basename.endswith(".gz"):
@@ -750,7 +751,7 @@ class Brain(object):
         # load data here
         scalar_data, name = self._read_scalar_data(source, hemi, name=name)
         min, max = self._get_display_range(scalar_data, min, max, sign)
-        if not sign in ["abs", "pos", "neg"]:
+        if sign not in ["abs", "pos", "neg"]:
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
         old = OverlayData(scalar_data, self.geo[hemi], min, max, sign)
         ol = []
@@ -1026,7 +1027,7 @@ class Brain(object):
         -----
         To remove previously added labels, run Brain.remove_labels().
         """
-        if isinstance(label, basestring):
+        if isinstance(label, string_types):
             hemi = self._check_hemi(hemi)
             if color is None:
                 color = "crimson"
@@ -1664,7 +1665,7 @@ class Brain(object):
                     mlab.close(f)
                     self._figures[ri][ci] = None
 
-        #should we tear down other variables?
+        # should we tear down other variables?
         if self._v is not None:
             self._v.dispose()
             self._v = None
@@ -1702,7 +1703,7 @@ class Brain(object):
         ftype = filename[filename.rfind('.') + 1:]
         good_ftypes = ['png', 'jpg', 'bmp', 'tiff', 'ps',
                        'eps', 'pdf', 'rib', 'oogl', 'iv', 'vrml', 'obj']
-        if not ftype in good_ftypes:
+        if ftype not in good_ftypes:
             raise ValueError("Supported image types are %s"
                              % " ".join(good_ftypes))
         mlab.draw(brain._f)
@@ -1831,7 +1832,7 @@ class Brain(object):
         images_written: list
             all filenames written
         """
-        if isinstance(views, basestring):
+        if isinstance(views, string_types):
             raise ValueError("Views must be a non-string sequence"
                              "Use show_view & save_image for a single view")
         if colorbar == 'auto':
@@ -2043,7 +2044,7 @@ class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
     def __init__(self, subject_id, hemi, surf, figure, geo, curv, title,
                  config_opts, subjects_dir, bg_color, offset, backend):
-        if not hemi in ['lh', 'rh']:
+        if hemi not in ['lh', 'rh']:
             raise ValueError('hemi must be either "lh" or "rh"')
         # Set the identifying info
         self.subject_id = subject_id
@@ -2083,7 +2084,7 @@ class _Hemisphere(object):
 
     def show_view(self, view=None, roll=None, distance=None):
         """Orient camera to display view"""
-        if isinstance(view, basestring):
+        if isinstance(view, string_types):
             try:
                 vd = self._xfm_view(view, 'd')
                 view = dict(azimuth=vd['v'][0], elevation=vd['v'][1])
@@ -2098,7 +2099,7 @@ class _Hemisphere(object):
             view['figure'] = self._f
             view['distance'] = distance
             # DO NOT set focal point, can screw up non-centered brains
-            #view['focalpoint'] = (0.0, 0.0, 0.0)
+            # view['focalpoint'] = (0.0, 0.0, 0.0)
             mlab.view(**view)
         if roll is not None:
             mlab.roll(roll=roll, figure=self._f)
@@ -2125,7 +2126,7 @@ class _Hemisphere(object):
             's' to return string, 'd' to return dict
 
         """
-        if not view in self.viewdict:
+        if view not in self.viewdict:
             good_view = [k for k in self.viewdict if view == k[:len(view)]]
             if len(good_view) == 0:
                 raise ValueError('No views exist with this substring')
@@ -2495,7 +2496,7 @@ class TimeViewer(HasTraits):
     brain : Brain (or list of Brain)
         brain(s) to control
     """
-     # Nested import of traisui for setup.py without X server
+    # Nested import of traisui for setup.py without X server
     from traitsui.api import (View, Item, VSplit, HSplit, Group)
     min_time = Int(0)
     max_time = Int(1E9)

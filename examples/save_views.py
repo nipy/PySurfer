@@ -6,7 +6,7 @@ Save a set of views
 Save some views in png files.
 
 """
-print __doc__
+print(__doc__)
 
 from surfer import Brain
 

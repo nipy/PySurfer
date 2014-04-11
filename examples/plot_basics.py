@@ -5,7 +5,7 @@ Basic Visualization
 Initialize a basic visualization session.
 
 """
-print __doc__
+print(__doc__)
 
 from surfer import Brain
 

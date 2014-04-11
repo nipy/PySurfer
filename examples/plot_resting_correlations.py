@@ -9,7 +9,7 @@ in a single window and manipulate the colormap to best represent the nature of
 the data.
 
 """
-print __doc__
+print(__doc__)
 
 import os
 from surfer import Brain, io

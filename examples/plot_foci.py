@@ -7,7 +7,7 @@ Plot spheroids at positions on the surface manifold
 according to coordinates or vertex ids.
 
 """
-print __doc__
+print(__doc__)
 
 import os
 import os.path as op

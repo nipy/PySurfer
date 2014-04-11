@@ -9,7 +9,7 @@ file format that Nibabel can understand.
 
 """
 
-print __doc__
+print(__doc__)
 
 from surfer import Brain
 

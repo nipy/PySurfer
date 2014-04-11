@@ -5,7 +5,7 @@ Using Annotation Files
 Display a Freesurfer cortical parcellation from an annotation file.
 
 """
-print __doc__
+print(__doc__)
 
 import os
 from os.path import join as pjoin

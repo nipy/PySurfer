@@ -7,7 +7,7 @@ the cortical reconstruction process.
 
 """
 
-print __doc__
+print(__doc__)
 
 from surfer import Brain
 
