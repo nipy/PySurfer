@@ -179,7 +179,7 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         Average over projection samples, take max, or take point sample
     projarg : single float or sequence of three floats
         Single float for point sample, sequence for avg/max specifying
-        start, step, and stop
+        start, stop, and step
     surf : string
         Target surface
     smooth_fwhm : float
