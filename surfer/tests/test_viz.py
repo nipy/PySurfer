@@ -89,11 +89,12 @@ def test_annot():
     """
     mlab.options.backend = 'test'
     annots = ['aparc', 'aparc.a2005s']
-    borders = [True, False]
+    borders = [True, False, 2]
     alphas = [1, 0.5]
     brain = Brain(*std_args)
     for a, b, p in zip(annots, borders, alphas):
         brain.add_annotation(a, b, p)
+    assert_raises(ValueError, brain.add_annotation, 'aparc', borders=-1)
     brain.close()
 
 

@@ -905,8 +905,10 @@ class Brain(object):
         ----------
         annot : str
             Either path to annotation file or annotation name
-        borders : bool
-            Show only borders of regions
+        borders : bool | int
+            Show only label borders. If int, specify the number of steps
+            (away from the true border) along the cortical mesh to include
+            as part of the border definition.
         alpha : float in [0, 1]
             Alpha level to control opacity
         hemi : str | None
@@ -960,13 +962,7 @@ class Brain(object):
                                                         orig_ids=True)
 
             # Maybe zero-out the non-border vertices
-            if borders:
-                n_vertices = labels.size
-                edges = utils.mesh_edges(self.geo[hemi].faces)
-                border_edges = labels[edges.row] != labels[edges.col]
-                show = np.zeros(n_vertices, dtype=np.int)
-                show[np.unique(edges.row[border_edges])] = 1
-                labels *= show
+            self._to_borders(labels, hemi, borders)
 
             # Handle null labels properly
             # (tksurfer doesn't use the alpha channel, so sometimes this
@@ -1012,8 +1008,8 @@ class Brain(object):
             scalar >= thresh)
         borders : bool | int
             Show only label borders. If int, specify the number of steps
-            along the cortical mesh to include in the border definition
-            (higher numbers create thicker borders).
+            (away from the true border) along the cortical mesh to include
+            as part of the border definition.
         hemi : str | None
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
@@ -1095,23 +1091,7 @@ class Brain(object):
                 i += 1
             label_name = name % i
 
-        if not isinstance(borders, (bool, int)) or borders < 0:
-            raise TypeError('borders must be a bool or positive integer')
-        if borders:
-            n_vertices = label.size
-            edges = utils.mesh_edges(self.geo[hemi].faces)
-            border_edges = label[edges.row] != label[edges.col]
-            show = np.zeros(n_vertices, dtype=np.int)
-            keep_idx = np.unique(edges.row[border_edges])
-            if isinstance(borders, int):
-                for _ in range(borders):
-                    keep_idx = np.in1d(self.geo[hemi].faces.ravel(), keep_idx)
-                    keep_idx.shape = self.geo[hemi].faces.shape
-                    keep_idx = self.geo[hemi].faces[np.any(keep_idx,
-                                                           axis=1)].ravel()
-                keep_idx = keep_idx[np.in1d(keep_idx, ids)]
-            show[keep_idx] = 1
-            label *= show
+        self._to_borders(label, hemi, borders, restrict_idx=ids)
 
         # make a list of all the plotted labels
         ll = []
@@ -1122,6 +1102,27 @@ class Brain(object):
                           color, alpha))
         self.labels_dict[label_name] = ll
         self._toggle_render(True, views)
+
+    def _to_borders(self, label, hemi, borders, restrict_idx=None):
+        """Helper to potentially convert a label/parc to borders"""
+        if not isinstance(borders, (bool, int)) or borders < 0:
+            raise ValueError('borders must be a bool or positive integer')
+        if borders:
+            n_vertices = label.size
+            edges = utils.mesh_edges(self.geo[hemi].faces)
+            border_edges = label[edges.row] != label[edges.col]
+            show = np.zeros(n_vertices, dtype=np.int)
+            keep_idx = np.unique(edges.row[border_edges])
+            if isinstance(borders, int):
+                for _ in range(borders):
+                    keep_idx = np.in1d(self.geo[hemi].faces.ravel(), keep_idx)
+                    keep_idx.shape = self.geo[hemi].faces.shape
+                    keep_idx = self.geo[hemi].faces[np.any(keep_idx, axis=1)]
+                    keep_idx = np.unique(keep_idx)
+                if restrict_idx is not None:
+                    keep_idx = keep_idx[np.in1d(keep_idx, restrict_idx)]
+            show[keep_idx] = 1
+            label *= show
 
     def remove_labels(self, labels=None, hemi=None):
         """Remove one or more previously added labels from the image.
