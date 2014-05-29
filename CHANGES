@@ -4,10 +4,12 @@ PySurfer Changes
 Version 0.5
 -----------
 
+- Added control over the width of outlines when plotting the borders of
+  annotations or labels.
 - The visual display of the surfaces was improved by using surface normals
 - Made colormap specification in Brain.add_data and Brain.add_contour_overlay
   more flexible, with better defaults
-- Brain.save_montage() can now produce 2d grids of views in addition to 
+- Brain.save_montage() can now produce 2d grids of views in addition to
   horizontal and vertical arrangements. 
 
 Version 0.4
