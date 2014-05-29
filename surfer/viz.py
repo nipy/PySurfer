@@ -1010,8 +1010,10 @@ class Brain(object):
             threshold the label ids using this value in the label
             file's scalar field (i.e. label only vertices with
             scalar >= thresh)
-        borders : bool
-            show only label borders
+        borders : bool | int
+            Show only label borders. If int, specify the number of steps
+            along the cortical mesh to include in the border definition
+            (higher numbers create thicker borders).
         hemi : str | None
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
@@ -1093,12 +1095,22 @@ class Brain(object):
                 i += 1
             label_name = name % i
 
+        if not isinstance(borders, (bool, int)) or borders < 0:
+            raise TypeError('borders must be a bool or int')
         if borders:
             n_vertices = label.size
             edges = utils.mesh_edges(self.geo[hemi].faces)
             border_edges = label[edges.row] != label[edges.col]
             show = np.zeros(n_vertices, dtype=np.int)
-            show[np.unique(edges.row[border_edges])] = 1
+            keep_idx = np.unique(edges.row[border_edges])
+            if isinstance(borders, int):
+                for _ in range(borders):
+                    keep_idx = np.in1d(self.geo[hemi].faces.ravel(), keep_idx)
+                    keep_idx.shape = self.geo[hemi].faces.shape
+                    keep_idx = self.geo[hemi].faces[np.any(keep_idx,
+                                                           axis=1)].ravel()
+            keep_idx = keep_idx[np.in1d(keep_idx, ids)]
+            show[keep_idx] = 1
             label *= show
 
         # make a list of all the plotted labels
