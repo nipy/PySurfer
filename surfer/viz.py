@@ -1109,7 +1109,7 @@ class Brain(object):
                     keep_idx.shape = self.geo[hemi].faces.shape
                     keep_idx = self.geo[hemi].faces[np.any(keep_idx,
                                                            axis=1)].ravel()
-            keep_idx = keep_idx[np.in1d(keep_idx, ids)]
+                keep_idx = keep_idx[np.in1d(keep_idx, ids)]
             show[keep_idx] = 1
             label *= show
 
