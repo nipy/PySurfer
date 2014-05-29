@@ -1096,7 +1096,7 @@ class Brain(object):
             label_name = name % i
 
         if not isinstance(borders, (bool, int)) or borders < 0:
-            raise TypeError('borders must be a bool or int')
+            raise TypeError('borders must be a bool or positive integer')
         if borders:
             n_vertices = label.size
             edges = utils.mesh_edges(self.geo[hemi].faces)
