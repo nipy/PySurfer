@@ -4,7 +4,7 @@
 #                    Michael Waskom <mwaskom@mit.edu>
 #                    Scott Burns <sburns@nmr.mgh.harvard.edu>
 
-descr = """PySurfer: Python / FreeSurfer / Mayavi2 for brain imaging"""
+descr = """PySurfer: cortical surface visualization using Python."""
 
 import os
 # deal with MPL sandbox violations during easy_install
@@ -30,11 +30,39 @@ LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/nipy/PySurfer'
 VERSION = version
 
+def check_dependencies():
+
+    needed_deps = ["IPython",
+                   "numpy", "scipy", "matplotlib",
+                   "nibabel",
+                   "mayavi",
+                   ]
+    missing_deps = []
+    for dep in needed_deps:
+        try:
+            __import__(dep)
+        except ImportError:
+            missing_deps.append(dep)
+
+    if missing_deps:
+        missing = ", ".join(missing_deps)
+        raise ImportError("Missing dependencies: %s" % missing)
+
+
 from setuptools import setup
 
 if __name__ == "__main__":
     if os.path.exists('MANIFEST'):
         os.remove('MANIFEST')
+
+    import sys
+    if not (len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or
+            sys.argv[1] in ('--help-commands',
+                            '--version',
+                            'egg_info',
+                            'clean'))):
+        check_dependencies()
+
 
     setup(name=DISTNAME,
           maintainer=MAINTAINER,
