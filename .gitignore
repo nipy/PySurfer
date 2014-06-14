@@ -22,3 +22,5 @@ doc/samples
 pysurfer.egg-info
 *.avi
 .tmp/*.png
+examples/example_data/coord-lh.label
+.ipynb_checkpoints/
