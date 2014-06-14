@@ -25,6 +25,7 @@ install:
     # Pillow (or PIL/imaging) is necessary for scipy.misc.imsave to exist
     - conda install --yes --quiet ipython==1.1.0 numpy scipy mayavi matplotlib nose imaging
     - if [ "${DEPS}" == "full" ]; then
+        travis_retry sudo apt-get update -qq;
         travis_retry sudo apt-get install mencoder;
       fi;
     - pip install -q coverage coveralls nose-timer nibabel flake8
