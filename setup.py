@@ -77,6 +77,7 @@ if __name__ == "__main__":
           zip_safe=False,  # the package can run out of an .egg file
           classifiers=['Intended Audience :: Science/Research',
                        'Intended Audience :: Developers',
+                       'Programming Language :: Python :: 2.7',
                        'License :: OSI Approved',
                        'Programming Language :: Python',
                        'Topic :: Software Development',
