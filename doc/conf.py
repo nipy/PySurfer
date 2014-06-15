@@ -45,7 +45,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'PySurfer'
-copyright = (u'2011-2013, Michael Waskom, Alexandre Gramfort, Scott Burns, '
+copyright = (u'2011-2014, Michael Waskom, Alexandre Gramfort, Scott Burns, '
              'Martin Luessi, Eric Larson')
 
 # Generate the plots for the gallery

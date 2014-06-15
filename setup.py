@@ -1,8 +1,10 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 Alexandre Gramfort <gramfort@nmr.mgh.harvard.edu>
-#                    Michael Waskom <mwaskom@mit.edu>
-#                    Scott Burns <sburns@nmr.mgh.harvard.edu>
+# Copyright (C) 2011-2014 Alexandre Gramfort
+#                         Michael Waskom
+#                         Scott Burns
+#                         Martin Luessi
+#                         Eric Larson
 
 descr = """PySurfer: cortical surface visualization using Python."""
 
