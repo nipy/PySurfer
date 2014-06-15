@@ -33,7 +33,7 @@ It's also possible to plot just the label boundary, in case you wanted to
 overlay the label on an activation plot to asses whether it falls within that
 region.
 """
-brain.add_label("BA45", color="#F0F8FF", borders=True, scalar_thresh=.5)
+brain.add_label("BA45", color="#F0F8FF", borders=3, scalar_thresh=.5)
 brain.add_label("BA45", color="#F0F8FF", alpha=.3, scalar_thresh=.5)
 
 """
@@ -46,10 +46,3 @@ prob_field = np.zeros_like(brain._geo.x)
 ids, probs = io.read_label(label_file, read_scalars=True)
 prob_field[ids] = probs
 brain.add_data(prob_field, thresh=1e-5, colormap="RdPu")
-
-"""
-Adjust the colorbar to represent the coarseness of the probability estimates
-more closely.
-"""
-brain.data["colorbar"].number_of_colors = 10
-brain.data["colorbar"].number_of_labels = 11

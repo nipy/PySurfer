@@ -75,6 +75,8 @@
 .. _EPD: http://www.enthought.com/products/epd.php
 .. _Traits: http://code.enthought.com/projects/traits/
 .. _PIL: http://www.pythonware.com/products/pil/
+.. _Anaconda: https://store.continuum.io/cshop/anaconda/
+.. _Canopy: https://www.enthought.com/products/canopy/
 
 .. Python imaging projects
 .. _PyMVPA: http://www.pymvpa.org
