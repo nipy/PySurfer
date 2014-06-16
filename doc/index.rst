@@ -14,6 +14,7 @@ More Information
 .. toctree::
     :maxdepth: 1
 
+    intro
     install
     examples/index.rst
     documentation/index.rst
