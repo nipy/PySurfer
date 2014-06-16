@@ -63,6 +63,11 @@ distribution with the additional step of setting the environment variable
 
     export QT_API=pyqt
 
+If you're using Canopy, you need to do something similar with the
+``ETS_TOOLKIT`` variable::
+
+    export ETS_TOOLKIT=qt4
+
 If you want to use PySurfer interactively, you should do so in ipython_. After
 starting ipython (either in the terminal, qtconsole, or notebook), you have to
 activate the correct GUI backend, which is probably qt::
