@@ -6,8 +6,8 @@ What is PySurfer?
 PySurfer is a Python library and application for visualizing brain imaging
 data. It is specifically useful for plotting data on a three-dimensional mesh
 representing the cortical surface of the brain. If you have functional MRI,
-magnetoencephalography, or anatomical measurements from cortex, PySurfer can
-help you turn them into beautiful and reproducible graphics.
+magnetoencephalography (MEG), or anatomical measurements from cortex, PySurfer
+can help you turn them into beautiful and reproducible graphics.
 
 PySurfer uses an explicit model of cortical geometry to generate
 highly-accurate images of neuroimaging data. This is preferable to other
@@ -23,15 +23,17 @@ PySurfer and its dependencies are written in Python and released with a liberal
 open source license. PySurfer can be combined with other tools from the nipy_
 ecosystem to manipulate and plot data in the same script or interactive
 session. The visualization is primarily controlled with a high-level API that
-allow you to draw a complex scene with just a few lines of code. This means
+allows you to draw a complex scene with just a few lines of code. This means
 that PySurfer is naturally scriptable. Once you have developed a basic
 visualization, it's easy to add a for-loop and generate the same image for
 every subject in your experiment. It also aids the reproducibility of graphics
 you create for conferences or papers, as each figure can be associated with a
 short script that shows exactly how the visualization was produced.
 
-To see a set of examples demonstrating some of PySurfer's capabilities, you can
-check out the :ref:`example gallery <examples>`.
+If you want to find out how to get started using PySurfer, check out our
+:ref:`installation guide<install>`. To see a set of examples demonstrating some
+of PySurfer's capabilities, you can browse the :ref:`example gallery
+<examples>`.
 
 .. include:: links_names.txt
 
