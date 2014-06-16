@@ -11,6 +11,11 @@ Version 0.5
   more flexible, with better defaults
 - Brain.save_montage() can now produce 2d grids of views in addition to
   horizontal and vertical arrangements. 
+- Fixed some installation issues and added explicit checks for dependencies
+  on install.
+- Updated the installation docs with information about getting PySurfer
+  running on OSX, and changed the official environment recommendation to
+  Anaconda.
 
 Version 0.4
 -----------
