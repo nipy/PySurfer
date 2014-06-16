@@ -1,3 +1,5 @@
+.. _examples:
+
 PySurfer Example Gallery
 ========================
 
