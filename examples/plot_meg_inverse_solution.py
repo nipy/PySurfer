@@ -62,8 +62,8 @@ for hemi in ['lh', 'rh']:
 """
 scale colormap and set time (index) to display
 """
-brain.set_data_time_index(2)
 brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
+brain.set_data_time_index(2)
 
 """
 uncomment these lines to use the interactive TimeViewer GUI
