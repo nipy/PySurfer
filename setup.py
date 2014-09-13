@@ -36,7 +36,6 @@ def check_dependencies():
 
     needed_deps = ["IPython",
                    "numpy", "scipy", "matplotlib",
-                   "nibabel",
                    "mayavi",
                    ]
     missing_deps = []
@@ -92,4 +91,5 @@ if __name__ == "__main__":
           platforms='any',
           packages=['surfer', 'surfer.tests'],
           scripts=['bin/pysurfer'],
+          install_requires=['nibabel >= 1.2'],
           )
