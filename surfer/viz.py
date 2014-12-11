@@ -1890,10 +1890,10 @@ class Brain(object):
             desired views for images
         filetype: string
             image type
-        colorbar: None | 'auto' | [int], optional
-            if None no colorbar is visible. If 'auto' is given the colorbar
-            is only shown in the middle view. Otherwise on the listed
-            views when a list of int is passed.
+        colorbar: 'auto' | int | list of int | None
+            For 'auto', the colorbar is shown in the middle view (default).
+            For int or list of int, the colorbar is shown in the specified
+            views. For ``None``, no colorbar is shown.
         row : int
             row index of the brain to use
         col : int
@@ -1909,6 +1909,8 @@ class Brain(object):
                              "Use show_view & save_image for a single view")
         if colorbar == 'auto':
             colorbar = [len(views) // 2]
+        elif isinstance(colorbar, int):
+            colorbar = [colorbar]
         images_written = []
         for iview, view in enumerate(views):
             try:
@@ -1960,10 +1962,10 @@ class Brain(object):
             applies if ``montage`` is a flat list).
         border_size: int
             Size of image border (more or less space between images).
-        colorbar: None | 'auto' | [int], optional
-            If None no colorbar is visible. If 'auto' is given the colorbar
-            is only shown in the middle view. Otherwise on the listed
-            views when a list of int is passed.
+        colorbar: 'auto' | int | list of int | None
+            For 'auto', the colorbar is shown in the middle view (default).
+            For int or list of int, the colorbar is shown in the specified
+            views. For ``None``, no colorbar is shown.
 
         Returns
         -------
@@ -2009,10 +2011,10 @@ class Brain(object):
             applies if ``order`` is a flat list)
         border_size: int
             Size of image border (more or less space between images)
-        colorbar: None | 'auto' | [int], optional
-            if None no colorbar is visible. If 'auto' is given the colorbar
-            is only shown in the middle view. Otherwise on the listed
-            views when a list of int is passed.
+        colorbar: 'auto' | int | list of int | None
+            For 'auto', the colorbar is shown in the middle view (default).
+            For int or list of int, the colorbar is shown in the specified
+            views. For ``None``, no colorbar is shown.
         row : int
             row index of the brain to use
         col : int
@@ -2042,6 +2044,8 @@ class Brain(object):
 
         if colorbar == 'auto':
             colorbar = [len(views) // 2]
+        elif isinstance(colorbar, int):
+            colorbar = [colorbar]
         brain = self.brain_matrix[row, col]
 
         # store current view + colorbar visibility
@@ -2096,10 +2100,10 @@ class Brain(object):
             applies if ``montage`` is a flat list)
         border_size: int
             Size of image border (more or less space between images)
-        colorbar: None | 'auto' | [int], optional
-            if None no colorbar is visible. If 'auto' is given the colorbar
-            is only shown in the middle view. Otherwise on the listed
-            views when a list of int is passed.
+        colorbar: 'auto' | int | list of int | None
+            For 'auto', the colorbar is shown in the middle view (default).
+            For int or list of int, the colorbar is shown in the specified
+            views. For ``None``, no colorbar is shown.
         framerate : float
             Framerate of the movie (frames per second).
         codec : str
