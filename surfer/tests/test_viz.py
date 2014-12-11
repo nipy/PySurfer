@@ -230,15 +230,16 @@ def test_movie():
 
     # save movies with different options
     tempdir = mkdtemp()
-    dst = os.path.join(tempdir, 'test')
-    brain.save_movie(dst, montage='current')
-    brain.save_movie(dst, montage='current', tstart=time[1], tstop=time[-1])
-    brain.save_movie(dst, montage='single')
-#     brain.save_movie(dst, montage=['lat', 'med'], orientation='v')
-#     brain.save_movie(dst, montage=[['lat'], ['med']])
-
-    # clean up
-    shutil.rmtree(tempdir)
+    try:
+        dst = os.path.join(tempdir, 'test')
+        brain.save_movie(dst, montage='current')
+        brain.save_movie(dst, montage='current', tstart=time[1], tstop=time[-1])
+        brain.save_movie(dst, montage='single')
+    #     brain.save_movie(dst, montage=['lat', 'med'], orientation='v')
+    #     brain.save_movie(dst, montage=[['lat'], ['med']])
+    finally:
+        # clean up
+        shutil.rmtree(tempdir)
     brain.close()
 
 
