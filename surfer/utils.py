@@ -662,7 +662,7 @@ def ffmpeg(dst, frame_path, framerate=10, codec='mpeg4', opt="", inopt="",
         added. If the file already exists it is overwritten.
     frame_path : str
         Path to the source frames (with a frame number field like '%04d').
-    framerate : int
+    framerate : float
         Framerate of the movie (frames per second).
     codec : str
         Codec to use (default 'mpeg4').

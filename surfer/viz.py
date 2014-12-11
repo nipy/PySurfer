@@ -2064,22 +2064,22 @@ class Brain(object):
                 cb.visible = colorbars_visibility[cb]
         return out
 
-    def save_movie(self, dst, tstart=None, tstop=None, step=None,
+    def save_movie(self, fname, tstart=None, tstop=None, step=1,
                    time_idx=None, montage='current', orientation='h',
                    border_size=15, colorbar='auto', framerate=10,
-                   codec='mpeg4', row=-1, col=-1, movie_tool='ffmpeg'):
+                   codec='mpeg4', row=-1, col=-1):
         """Save a movie (for data with a time axis)
 
         Parameters
         ----------
-        dst : str
-            Path at which to sae the movie.
+        fname : str
+            Path at which to save the movie.
         tstart : None | float
             First time point to include (default: all data).
         tstop : None | float
             Time point at which to stop the movie (exclusive; default: all
             data).
-        step : None | int
+        step : int
             Number of data frames to step forward between movie frames
             (default 1).
         time_idx : None | array
@@ -2100,7 +2100,7 @@ class Brain(object):
             if None no colorbar is visible. If 'auto' is given the colorbar
             is only shown in the middle view. Otherwise on the listed
             views when a list of int is passed.
-        framerate : int
+        framerate : float
             Framerate of the movie (frames per second).
         codec : str
             Codec to use (default 'mpeg4').
@@ -2108,19 +2108,12 @@ class Brain(object):
             row index of the brain to use
         col : int
             column index of the brain to use
-        movie_tool : 'ffmpeg'
-            Tool to use to convert image sequence into a movie (default:
-            'ffmpeg').
         """
-        if movie_tool.lower() == 'ffmpeg':
-            if not has_ffmpeg():
-                err = ("FFmpeg is not in the path and is needed for saving "
-                       "movies. Install FFmpeg and try again. It can be "
-                       "downlaoded from http://ffmpeg.org/download.html.")
-                raise RuntimeError(err)
-        else:
-            err = "Currently the only possible movie tool is FFmpeg"
-            raise ValueError(err)
+        if not has_ffmpeg():
+            err = ("FFmpeg is needed for saving movies and was not found in "
+                   "the path. Install FFmpeg and try again. It can be "
+                   "downlaoded from http://ffmpeg.org/download.html.")
+            raise RuntimeError(err)
 
         if tstart is not None:
             start = self.index_for_time(tstart, rounding='up')
@@ -2152,7 +2145,7 @@ class Brain(object):
         self.save_image_sequence(time_idx, fname_pattern, False, row,
                                  col, montage, orientation, border_size,
                                  colorbar)
-        ffmpeg(dst, fname_pattern, framerate, codec)
+        ffmpeg(fname, fname_pattern, framerate, codec)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False,
                 row=-1, col=-1):
