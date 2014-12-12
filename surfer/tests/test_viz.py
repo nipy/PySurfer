@@ -218,14 +218,9 @@ def test_movie():
     stc_fname = os.path.join(data_dir, 'meg_source_estimate-lh.stc')
     stc = io.read_stc(stc_fname)
     data = stc['data']
-    vertices = stc['vertices']
-    time = 1e3 * np.linspace(stc['tmin'],
-                             stc['tmin'] + data.shape[1] * stc['tstep'],
-                             data.shape[1])
-    colormap = 'hot'
-    time_label = 'time=%0.2f ms'
-    brain.add_data(data, colormap=colormap, vertices=vertices,
-                   smoothing_steps=10, time=time, time_label=time_label)
+    time = np.arange(data.shape[1]) * stc['tstep'] + stc['tmin']
+    brain.add_data(data, colormap='hot', vertices=stc['vertices'],
+                   smoothing_steps=10, time=time, time_label='time=%0.2f ms')
     brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
 
     # save movies with different options
@@ -233,7 +228,7 @@ def test_movie():
     try:
         dst = os.path.join(tempdir, 'test')
         brain.save_movie(dst, montage='current')
-        brain.save_movie(dst, montage='current', tstart=time[1], tstop=time[-1])
+        brain.save_movie(dst, montage='current', tmin=0.081, tmax=0.102)
         brain.save_movie(dst, montage='single')
     #     brain.save_movie(dst, montage=['lat', 'med'], orientation='v')
     #     brain.save_movie(dst, montage=[['lat'], ['med']])

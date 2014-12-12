@@ -5,6 +5,7 @@ from warnings import warn
 
 import numpy as np
 from scipy import stats, ndimage, misc
+from scipy.interpolate import interp1d
 from matplotlib.colors import colorConverter
 
 import nibabel as nib
@@ -1542,13 +1543,16 @@ class Brain(object):
                 data["transparent"] = transparent
         self._toggle_render(True, views)
 
-    def set_data_time_index(self, time_idx):
+    def set_data_time_index(self, time_idx, interpolation='linear'):
         """Set the data time index to show
 
         Parameters
         ----------
-        time_idx : int
-            time index
+        time_idx : int | float
+            Time index. Floats will cause samples to be interpolated.
+        interpolation : str
+            Interpolation method (``scipy.interpolate.interp1d`` parameter,
+            default 'linear').
         """
         if self.n_times is None:
             raise RuntimeError('cannot set time index with no time data')
@@ -1559,7 +1563,14 @@ class Brain(object):
         for hemi in ['lh', 'rh']:
             data = self.data_dict[hemi]
             if data is not None:
-                plot_data = data["array"][:, time_idx]
+                # interpolation
+                if isinstance(time_idx, float):
+                    times = np.arange(self.n_times)
+                    ifunc = interp1d(times, data['array'], interpolation, 1)
+                    plot_data = ifunc(time_idx)
+                else:
+                    plot_data = data["array"][:, time_idx]
+
                 if data["smooth_mat"] is not None:
                     plot_data = data["smooth_mat"] * plot_data
                 for surf in data["surfaces"]:
@@ -1568,7 +1579,11 @@ class Brain(object):
 
                 # Update time label
                 if data["time_label"]:
-                    time = data["time"][time_idx]
+                    if isinstance(time_idx, float):
+                        ifunc = interp1d(times, data['time'])
+                        time = ifunc(time_idx)
+                    else:
+                        time = data["time"][time_idx]
                     self.update_text(data["time_label"] % time, "time_label")
         self._toggle_render(True, views)
 
@@ -1932,7 +1947,8 @@ class Brain(object):
 
     def save_image_sequence(self, time_idx, fname_pattern, use_abs_idx=True,
                             row=-1, col=-1, montage='single', orientation='h',
-                            border_size=15, colorbar='auto'):
+                            border_size=15, colorbar='auto',
+                            interpolation='linear'):
         """Save a temporal image sequence
 
         The files saved are named "fname_pattern % (pos)" where "pos" is a
@@ -1966,6 +1982,9 @@ class Brain(object):
             For 'auto', the colorbar is shown in the middle view (default).
             For int or list of int, the colorbar is shown in the specified
             views. For ``None``, no colorbar is shown.
+       interpolation : str
+            Interpolation method (``scipy.interpolate.interp1d`` parameter,
+            default 'linear').
 
         Returns
         -------
@@ -1976,7 +1995,7 @@ class Brain(object):
         images_written = list()
         rel_pos = 0
         for idx in time_idx:
-            self.set_data_time_index(idx)
+            self.set_data_time_index(idx, interpolation)
             fname = fname_pattern % (idx if use_abs_idx else rel_pos)
             if montage == 'single':
                 self.save_single_image(fname, row, col)
@@ -2068,9 +2087,9 @@ class Brain(object):
                 cb.visible = colorbars_visibility[cb]
         return out
 
-    def save_movie(self, fname, tstart=None, tstop=None, step=1,
-                   time_idx=None, montage='current', orientation='h',
-                   border_size=15, colorbar='auto', framerate=10,
+    def save_movie(self, fname, time_dilation=4., tmin=None, tmax=None,
+                   interpolation='linear', montage='current', orientation='h',
+                   border_size=15, colorbar='auto', framerate=25,
                    codec='mpeg4', row=-1, col=-1):
         """Save a movie (for data with a time axis)
 
@@ -2078,18 +2097,17 @@ class Brain(object):
         ----------
         fname : str
             Path at which to save the movie.
-        tstart : None | float
+        time_dilation : float
+            Factor by which to stretch time (default 4). For example, an epoch
+            from -100 to 600 ms lasts 700 ms. With ``time_dilation=4`` this
+            would result in a 2.8 s long movie.
+        tmin : float
             First time point to include (default: all data).
-        tstop : None | float
-            Time point at which to stop the movie (exclusive; default: all
-            data).
-        step : int
-            Number of data frames to step forward between movie frames
-            (default 1).
-        time_idx : None | array
-            Index that selects time points form the time axis from which to
-            make the movie. If time_idx is specified, neither of tstart, tstop
-            or tstep should be specified.
+        tmax : float
+            Last time point to include (default: all data).
+        interpolation : str
+            Interpolation method (``scipy.interpolate.interp1d`` parameter,
+            default 'linear').
         montage: 'current' | 'single' | list
             Views to include in the images: 'current' (default) uses the
             currently displayed image; 'single' uses a single view, specified
@@ -2105,7 +2123,7 @@ class Brain(object):
             For int or list of int, the colorbar is shown in the specified
             views. For ``None``, no colorbar is shown.
         framerate : float
-            Framerate of the movie (frames per second).
+            Framerate of the movie (frames per second, default 25).
         codec : str
             Codec to use (default 'mpeg4').
         row : int
@@ -2119,36 +2137,40 @@ class Brain(object):
                    "downlaoded from http://ffmpeg.org/download.html.")
             raise RuntimeError(err)
 
-        if tstart is not None:
-            start = self.index_for_time(tstart, rounding='up')
-        else:
-            start = 0
+        if tmin is None:
+            tmin = self._times[0]
+        elif tmin < self._times[0]:
+            raise ValueError("tmin=%r is smaller than the first time point "
+                             "(%r)" % (tmin, self._times[0]))
 
-        if tstop is not None:
-            stop = self.index_for_time(tstop, rounding='up')
-        else:
-            stop = self.n_times
+        if tmax is None:
+            tmax = self._times[-1]
+        elif tmax >= self._times[-1]:
+            raise ValueError("tmax=%r is greater than the latest time point "
+                             "(%r)" % (tmax, self._times[-1]))
 
-        if all(x is None for x in (tstart, tstop, step)):
-            if time_idx is None:
-                time_idx = np.arange(self.n_times)
-        elif time_idx is None:
-            time_idx = np.arange(start, stop, step)
+        # find indexes at which to create frames
+        tstep = 1. / (framerate * time_dilation)
+        if (tmax - tmin) % tstep == 0:
+            tstop = tmax + tstep / 2.
         else:
-            err = ("Both slice parameters (tstart, tstop, step) and "
-                   "time_idx can not be specified at the same time.")
-            raise TypeError(err)
+            tstop = tmax
+        times = np.arange(tmin, tstop, tstep)
+        interp_func = interp1d(self._times, np.arange(self.n_times))
+        time_idx = interp_func(times)
 
         n_times = len(time_idx)
         if n_times == 0:
             raise ValueError("No time points selected")
 
+        logger.debug("Save movie for time points/samples\n%s\n%s"
+                     % (times, time_idx))
         tempdir = mkdtemp()
         frame_pattern = 'frame%%0%id.png' % (np.floor(np.log10(n_times)) + 1)
         fname_pattern = os.path.join(tempdir, frame_pattern)
         self.save_image_sequence(time_idx, fname_pattern, False, row,
                                  col, montage, orientation, border_size,
-                                 colorbar)
+                                 colorbar, interpolation)
         ffmpeg(fname, fname_pattern, framerate, codec)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False,

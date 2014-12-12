@@ -29,14 +29,12 @@ for hemi in ['lh', 'rh']:
     data = stc['data']
 
     """
-    time points in milliseconds
+    Calculate sample time points
     """
-    time = 1e3 * np.linspace(stc['tmin'],
-                             stc['tmin'] + data.shape[1] * stc['tstep'],
-                             data.shape[1])
+    times = np.arange(data.shape[1]) * stc['tstep'] + stc['tmin']
 
     brain.add_data(data, colormap='hot', vertices=stc['vertices'],
-                   smoothing_steps=10, time=time, time_label='time=%0.2f ms',
+                   smoothing_steps=10, time=times, time_label='%0.3f s',
                    hemi=hemi)
 
 """
@@ -45,11 +43,13 @@ scale colormap
 brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
 
 """
-Save movies with different combinations of views
+Save movies with different combinations of views. Use a large value for
+time_dilation because the sample stc only covers 30 ms
 """
-brain.save_movie('example_current.mov')
-brain.save_movie('example_single.mov', montage='single')
-brain.save_movie('example_h.mov', montage=['lat', 'med'], orientation='h')
-brain.save_movie('example_v.mov', montage=[['lat'], ['med']])
+brain.save_movie('example_current.mov', time_dilation=30)
+brain.save_movie('example_single.mov', time_dilation=30, montage='single')
+brain.save_movie('example_h.mov', time_dilation=30, montage=['lat', 'med'],
+                 orientation='h')
+brain.save_movie('example_v.mov', time_dilation=30, montage=[['lat'], ['med']])
 
 brain.close()
