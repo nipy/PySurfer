@@ -1543,7 +1543,7 @@ class Brain(object):
                 data["transparent"] = transparent
         self._toggle_render(True, views)
 
-    def set_data_time_index(self, time_idx, interpolation='linear'):
+    def set_data_time_index(self, time_idx, interpolation='quadratic'):
         """Set the data time index to show
 
         Parameters
@@ -1552,7 +1552,7 @@ class Brain(object):
             Time index. Floats will cause samples to be interpolated.
         interpolation : str
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
-            default 'linear').
+            default 'quadratic').
         """
         if self.n_times is None:
             raise RuntimeError('cannot set time index with no time data')
@@ -1946,9 +1946,8 @@ class Brain(object):
         return images_written
 
     def save_image_sequence(self, time_idx, fname_pattern, use_abs_idx=True,
-                            row=-1, col=-1, montage='single', orientation='h',
-                            border_size=15, colorbar='auto',
-                            interpolation='linear'):
+                            row=-1, col=-1, montage='single', border_size=15,
+                            colorbar='auto', interpolation='quadratic'):
         """Save a temporal image sequence
 
         The files saved are named "fname_pattern % (pos)" where "pos" is a
@@ -1971,11 +1970,10 @@ class Brain(object):
         montage: 'current' | 'single' | list
             Views to include in the images: 'current' uses the currently
             displayed image; 'single' (default) uses a single view, specified
-            by the ``row`` and ``col`` parameters; a list can be used to
-            specify a complete montage (see :meth:`save_montage`).
-        orientation: {'h' | 'v'}
-            Montage image orientation (horizontal of vertical alignment; only
-            applies if ``montage`` is a flat list).
+            by the ``row`` and ``col`` parameters; a 1 or 2 dimensional list
+            can be used to specify a complete montage. Examples:
+            ``['lat', 'med']`` lateral and ventral views ordered horizontally;
+            ``[['fro'], ['ven']]`` frontal and ventral views ordered vertically.
         border_size: int
             Size of image border (more or less space between images).
         colorbar: 'auto' | int | list of int | None
@@ -1984,7 +1982,7 @@ class Brain(object):
             views. For ``None``, no colorbar is shown.
        interpolation : str
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
-            default 'linear').
+            default 'quadratic').
 
         Returns
         -------
@@ -2002,8 +2000,8 @@ class Brain(object):
             elif montage == 'current':
                 self.save_image(fname)
             else:
-                self.save_montage(fname, montage, orientation, border_size,
-                                  colorbar, row, col)
+                self.save_montage(fname, montage, 'h', border_size, colorbar,
+                                  row, col)
             images_written.append(fname)
             rel_pos += 1
 
@@ -2088,10 +2086,15 @@ class Brain(object):
         return out
 
     def save_movie(self, fname, time_dilation=4., tmin=None, tmax=None,
-                   interpolation='linear', montage='current', orientation='h',
-                   border_size=15, colorbar='auto', framerate=25,
-                   codec='mpeg4', row=-1, col=-1):
+                   montage='current', colorbar='auto', border_size=15,
+                   framerate=25, interpolation='quadratic', codec='mpeg4',
+                   row=-1, col=-1):
         """Save a movie (for data with a time axis)
+
+        .. Warning::
+            This method assumes that time is specified in seconds when adding
+            data. If time is specified in milliseconds this will result in
+            movies 1000 times longer than expected.
 
         Parameters
         ----------
@@ -2105,31 +2108,30 @@ class Brain(object):
             First time point to include (default: all data).
         tmax : float
             Last time point to include (default: all data).
-        interpolation : str
-            Interpolation method (``scipy.interpolate.interp1d`` parameter,
-            default 'linear').
         montage: 'current' | 'single' | list
             Views to include in the images: 'current' (default) uses the
             currently displayed image; 'single' uses a single view, specified
-            by the ``row`` and ``col`` parameters; a list can be used to
-            specify a complete montage (see :meth:`save_montage`).
-        orientation: {'h' | 'v'}
-            montage image orientation (horizontal of vertical alignment; only
-            applies if ``montage`` is a flat list)
-        border_size: int
-            Size of image border (more or less space between images)
+            by the ``row`` and ``col`` parameters; a 1 or 2 dimensional list
+            can be used to specify a complete montage. Examples:
+            ``['lat', 'med']`` lateral and ventral views ordered horizontally;
+            ``[['fro'], ['ven']]`` frontal and ventral views ordered vertically.
         colorbar: 'auto' | int | list of int | None
             For 'auto', the colorbar is shown in the middle view (default).
             For int or list of int, the colorbar is shown in the specified
             views. For ``None``, no colorbar is shown.
+        border_size: int
+            Size of image border for montage (more or less space between images)
         framerate : float
             Framerate of the movie (frames per second, default 25).
+        interpolation : str
+            Interpolation method (``scipy.interpolate.interp1d`` parameter,
+            default 'quadratic').
         codec : str
             Codec to use (default 'mpeg4').
         row : int
-            row index of the brain to use
+            row index of the brain to use (default -1).
         col : int
-            column index of the brain to use
+            column index of the brain to use (default -1).
         """
         if not has_ffmpeg():
             err = ("FFmpeg is needed for saving movies and was not found in "
@@ -2168,9 +2170,8 @@ class Brain(object):
         tempdir = mkdtemp()
         frame_pattern = 'frame%%0%id.png' % (np.floor(np.log10(n_times)) + 1)
         fname_pattern = os.path.join(tempdir, frame_pattern)
-        self.save_image_sequence(time_idx, fname_pattern, False, row,
-                                 col, montage, orientation, border_size,
-                                 colorbar, interpolation)
+        self.save_image_sequence(time_idx, fname_pattern, False, row, col,
+                                 montage, border_size, colorbar, interpolation)
         ffmpeg(fname, fname_pattern, framerate, codec)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False,
