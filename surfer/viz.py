@@ -1549,10 +1549,13 @@ class Brain(object):
         Parameters
         ----------
         time_idx : int | float
-            Time index. Floats will cause samples to be interpolated.
+            Time index. Non-integer values will be displayed using interpolation
+            between samples.
         interpolation : str
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
-            default 'quadratic').
+            one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
+            'cubic', default 'quadratic'). Interpolation is only used for
+            non-integer indexes.
         """
         if self.n_times is None:
             raise RuntimeError('cannot set time index with no time data')
@@ -1956,7 +1959,8 @@ class Brain(object):
         Parameters
         ----------
         time_idx : array-like
-            Time indices to save.
+            Time indices to save. Non-integer values will be displayed using
+            interpolation between samples.
         fname_pattern : str
             Filename pattern, e.g. 'movie-frame_%0.4d.png'.
         use_abs_idx : boolean
@@ -1982,7 +1986,9 @@ class Brain(object):
             views. For ``None``, no colorbar is shown.
        interpolation : str
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
-            default 'quadratic').
+            one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
+            'cubic', default 'quadratic'). Interpolation is only used for
+            non-integer indexes.
 
         Returns
         -------
@@ -2112,7 +2118,8 @@ class Brain(object):
             Framerate of the movie (frames per second, default 25).
         interpolation : str
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
-            default 'quadratic').
+            one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
+            'cubic', default 'quadratic').
         codec : str
             Codec to use with ffmpeg (default 'mpeg4').
 
