@@ -2044,7 +2044,9 @@ class Brain(object):
         """
         # find flat list of views and nested list of view indexes
         assert orientation in ['h', 'v']
-        if all(isinstance(x, (str, dict)) for x in order):
+        if isinstance(order, (str, dict)):
+            views = [order]
+        elif all(isinstance(x, (str, dict)) for x in order):
             views = order
         else:
             views = []
