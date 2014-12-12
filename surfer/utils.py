@@ -648,11 +648,19 @@ def has_ffmpeg():
     ffmpeg_exists = rcode == 0
     return ffmpeg_exists
 
+
+def assert_ffmpeg_is_available():
+    "Raise a RuntimeError if FFmpeg is not in the PATH"
+    if not has_ffmpeg():
+        err = ("FFmpeg is not in the path and is needed for saving "
+               "movies. Install FFmpeg and try again. It can be "
+               "downlaoded from http://ffmpeg.org/download.html.")
+        raise RuntimeError(err)
+
 requires_ffmpeg = np.testing.dec.skipif(not has_ffmpeg(), 'Requires FFmpeg')
 
 
-def ffmpeg(dst, frame_path, framerate=10, codec='mpeg4', opt="", inopt="",
-           outopt=""):
+def ffmpeg(dst, frame_path, framerate=25, codec='mpeg4'):
     """Run FFmpeg in a subprocess to convert an image sequence into a movie
 
     Parameters
@@ -663,12 +671,9 @@ def ffmpeg(dst, frame_path, framerate=10, codec='mpeg4', opt="", inopt="",
     frame_path : str
         Path to the source frames (with a frame number field like '%04d').
     framerate : float
-        Framerate of the movie (frames per second).
+        Framerate of the movie (frames per second, default 25).
     codec : str
         Codec to use (default 'mpeg4').
-    opt, inopt, outopt : str
-        FFmpeg options, infile options and outfile options (e.g., "-o1 value
-        -o2 value", see FFmpeg help for possible options).
 
     Notes
     -----
@@ -676,12 +681,7 @@ def ffmpeg(dst, frame_path, framerate=10, codec='mpeg4', opt="", inopt="",
     <http://ffmpeg.org/download.html>`_. Stdout and stderr are written to the
     logger. If the movie file is not created, a RuntimeError is raised.
     """
-    # make sure FFmpeg is available
-    if not has_ffmpeg():
-        err = ("FFmpeg is not in the path and is needed for saving "
-               "movies. Install FFmpeg and try again. It can be "
-               "downlaoded from http://ffmpeg.org/download.html.")
-        raise RuntimeError(err)
+    assert_ffmpeg_is_available()
 
     # find target path
     dst = os.path.expanduser(dst)
@@ -699,20 +699,7 @@ def ffmpeg(dst, frame_path, framerate=10, codec='mpeg4', opt="", inopt="",
     frame_dir, frame_fmt = os.path.split(frame_path)
 
     # make the movie
-    cmd = ['ffmpeg']
-    if opt:
-        cmd.extend(opt.split())
-    if inopt:
-        cmd.extend(inopt.split())
-    cmd.extend(('-i', frame_fmt))
-    if outopt:
-        cmd.extend(outopt.split())
-    if '-r ' not in outopt:
-        cmd.extend(('-r', str(framerate)))
-    if not ('-c' in cmd or '-codec' in cmd):
-        cmd.extend(('-c', codec))
-    cmd.append(dst)
-
+    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate), '-c', codec, dst]
     logger.info("Running FFmpeg with command: %s", ' '.join(cmd))
     sp = subprocess.Popen(cmd, cwd=frame_dir, stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE)

@@ -18,7 +18,7 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 from . import utils, io
 from .config import config
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
-                    string_types, has_ffmpeg, ffmpeg)
+                    string_types, assert_ffmpeg_is_available, ffmpeg)
 
 
 import logging
@@ -2129,11 +2129,7 @@ class Brain(object):
         is free and can be obtained from `here
         <http://ffmpeg.org/download.html>`_.
         """
-        if not has_ffmpeg():
-            err = ("FFmpeg is needed for saving movies and was not found in "
-                   "the path. Install FFmpeg and try again. It can be "
-                   "downlaoded from http://ffmpeg.org/download.html.")
-            raise RuntimeError(err)
+        assert_ffmpeg_is_available()
 
         if tmin is None:
             tmin = self._times[0]
