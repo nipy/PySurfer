@@ -43,12 +43,9 @@ scale colormap
 brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
 
 """
-Save movies with different combinations of views. Use a large value for
-time_dilation because the sample stc only covers 30 ms
+Save a movie. Use a large value for time_dilation because the sample stc only
+covers 30 ms.
 """
 brain.save_movie('example_current.mov', time_dilation=30)
-brain.save_movie('example_lat.mov', time_dilation=30, montage='lat')
-brain.save_movie('example_h.mov', time_dilation=30, montage=['lat', 'med'])
-brain.save_movie('example_v.mov', time_dilation=30, montage=[['lat'], ['med']])
 
 brain.close()

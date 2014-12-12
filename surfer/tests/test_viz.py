@@ -227,11 +227,8 @@ def test_movie():
     tempdir = mkdtemp()
     try:
         dst = os.path.join(tempdir, 'test')
-        brain.save_movie(dst, montage='current')
-        brain.save_movie(dst, montage='current', tmin=0.081, tmax=0.102)
-        brain.save_movie(dst, montage='single')
-    #     brain.save_movie(dst, montage=['lat', 'med'], orientation='v')
-    #     brain.save_movie(dst, montage=[['lat'], ['med']])
+        brain.save_movie(dst)
+        brain.save_movie(dst, tmin=0.081, tmax=0.102)
     finally:
         # clean up
         shutil.rmtree(tempdir)
