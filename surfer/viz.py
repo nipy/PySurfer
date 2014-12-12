@@ -2087,8 +2087,7 @@ class Brain(object):
 
     def save_movie(self, fname, time_dilation=4., tmin=None, tmax=None,
                    montage='current', colorbar='auto', border_size=15,
-                   framerate=25, interpolation='quadratic', codec='mpeg4',
-                   row=-1, col=-1):
+                   framerate=25, interpolation='quadratic', codec='mpeg4'):
         """Save a movie (for data with a time axis)
 
         .. Warning::
@@ -2108,10 +2107,9 @@ class Brain(object):
             First time point to include (default: all data).
         tmax : float
             Last time point to include (default: all data).
-        montage: 'current' | 'single' | list
+        montage: 'current' | list
             Views to include in the images: 'current' (default) uses the
-            currently displayed image; 'single' uses a single view, specified
-            by the ``row`` and ``col`` parameters; a 1 or 2 dimensional list
+            currently displayed image; a 1 or 2 dimensional list
             can be used to specify a complete montage. Examples:
             ``['lat', 'med']`` lateral and ventral views ordered horizontally;
             ``[['fro'], ['ven']]`` frontal and ventral views ordered vertically.
@@ -2128,10 +2126,6 @@ class Brain(object):
             default 'quadratic').
         codec : str
             Codec to use (default 'mpeg4').
-        row : int
-            row index of the brain to use (default -1).
-        col : int
-            column index of the brain to use (default -1).
         """
         if not has_ffmpeg():
             err = ("FFmpeg is needed for saving movies and was not found in "
@@ -2170,7 +2164,7 @@ class Brain(object):
         tempdir = mkdtemp()
         frame_pattern = 'frame%%0%id.png' % (np.floor(np.log10(n_times)) + 1)
         fname_pattern = os.path.join(tempdir, frame_pattern)
-        self.save_image_sequence(time_idx, fname_pattern, False, row, col,
+        self.save_image_sequence(time_idx, fname_pattern, False, -1, -1,
                                  montage, border_size, colorbar, interpolation)
         ffmpeg(fname, fname_pattern, framerate, codec)
 
