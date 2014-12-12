@@ -643,10 +643,12 @@ def has_ffmpeg():
     ffmpeg_exists : bool
         True if FFmpeg can be successfully called, False otherwise.
     """
-    rcode = subprocess.call(["type", "ffmpeg"], stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    ffmpeg_exists = rcode == 0
-    return ffmpeg_exists
+    try:
+        subprocess.call(["ffmpeg"], stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE)
+        return True
+    except OSError:
+        return False
 
 
 def assert_ffmpeg_is_available():
