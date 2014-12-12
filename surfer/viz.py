@@ -2115,6 +2115,12 @@ class Brain(object):
             default 'quadratic').
         codec : str
             Codec to use with ffmpeg (default 'mpeg4').
+
+        Notes
+        -----
+        This method requires FFmpeg to be installed in the system PATH. FFmpeg
+        is free and can be obtained from `here
+        <http://ffmpeg.org/download.html>`_.
         """
         if not has_ffmpeg():
             err = ("FFmpeg is needed for saving movies and was not found in "
