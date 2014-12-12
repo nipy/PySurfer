@@ -1055,9 +1055,10 @@ class Brain(object):
                                      % filepath)
             # Load the label data and create binary overlay
             if scalar_thresh is None:
-                ids = io.read_label(filepath)
+                ids = nib.freesurfer.read_label(filepath)
             else:
-                ids, scalars = io.read_label(filepath, read_scalars=True)
+                ids, scalars = nib.freesurfer.read_label(filepath,
+                                                         read_scalars=True)
                 ids = ids[scalars >= scalar_thresh]
         else:
             # try to extract parameters from label instance
