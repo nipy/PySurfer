@@ -2094,7 +2094,7 @@ class Brain(object):
         return out
 
     def save_movie(self, fname, time_dilation=4., tmin=None, tmax=None,
-                   framerate=25, interpolation='quadratic', codec='mpeg4'):
+                   framerate=24, interpolation='quadratic', codec='mpeg4'):
         """Save a movie (for data with a time axis)
 
         .. Warning::
@@ -2115,7 +2115,7 @@ class Brain(object):
         tmax : float
             Last time point to include (default: all data).
         framerate : float
-            Framerate of the movie (frames per second, default 25).
+            Framerate of the movie (frames per second, default 24).
         interpolation : str
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
             one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |

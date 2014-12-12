@@ -660,7 +660,7 @@ def assert_ffmpeg_is_available():
 requires_ffmpeg = np.testing.dec.skipif(not has_ffmpeg(), 'Requires FFmpeg')
 
 
-def ffmpeg(dst, frame_path, framerate=25, codec='mpeg4'):
+def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4'):
     """Run FFmpeg in a subprocess to convert an image sequence into a movie
 
     Parameters
@@ -671,7 +671,7 @@ def ffmpeg(dst, frame_path, framerate=25, codec='mpeg4'):
     frame_path : str
         Path to the source frames (with a frame number field like '%04d').
     framerate : float
-        Framerate of the movie (frames per second, default 25).
+        Framerate of the movie (frames per second, default 24).
     codec : str
         Codec to use (default 'mpeg4').
 
