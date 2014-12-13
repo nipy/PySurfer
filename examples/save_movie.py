@@ -20,19 +20,13 @@ brain = Brain('fsaverage', 'split', 'inflated',
               config_opts=dict(width=800, height=400))
 
 """
-read MNE dSPM inverse solution
+read and display MNE dSPM inverse solution
 """
+stc_fname = os.path.join('example_data', 'meg_source_estimate-%s.stc')
 for hemi in ['lh', 'rh']:
-    stc_fname = os.path.join('example_data',
-                             'meg_source_estimate-' + hemi + '.stc')
-    stc = read_stc(stc_fname)
+    stc = read_stc(stc_fname % hemi)
     data = stc['data']
-
-    """
-    Calculate sample time points
-    """
     times = np.arange(data.shape[1]) * stc['tstep'] + stc['tmin']
-
     brain.add_data(data, colormap='hot', vertices=stc['vertices'],
                    smoothing_steps=10, time=times, time_label='%0.3f s',
                    hemi=hemi)
