@@ -1549,8 +1549,8 @@ class Brain(object):
         Parameters
         ----------
         time_idx : int | float
-            Time index. Non-integer values will be displayed using interpolation
-            between samples.
+            Time index. Non-integer values will be displayed using
+            interpolation between samples.
         interpolation : str
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
             one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
@@ -1977,7 +1977,8 @@ class Brain(object):
             by the ``row`` and ``col`` parameters; a 1 or 2 dimensional list
             can be used to specify a complete montage. Examples:
             ``['lat', 'med']`` lateral and ventral views ordered horizontally;
-            ``[['fro'], ['ven']]`` frontal and ventral views ordered vertically.
+            ``[['fro'], ['ven']]`` frontal and ventral views ordered
+            vertically.
         border_size: int
             Size of image border (more or less space between images).
         colorbar: 'auto' | int | list of int | None
