@@ -1590,7 +1590,8 @@ class Brain(object):
                     self.update_text(data["time_label"] % time, "time_label")
         self._toggle_render(True, views)
 
-    def get_data_time_index(self):
+    @property
+    def data_time_index(self):
         """Retrieve the currently displayed data time index
 
         Returns
@@ -1996,7 +1997,7 @@ class Brain(object):
         images_written: list
             all filenames written
         """
-        current_time_idx = self.get_data_time_index()
+        current_time_idx = self.data_time_index
         images_written = list()
         rel_pos = 0
         for idx in time_idx:
