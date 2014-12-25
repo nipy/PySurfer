@@ -42,23 +42,10 @@ before_script:
     - mkdir subjects
     - tar --directory subjects -xzf fsaverage_min.tar.gz
     - export SUBJECTS_DIR="${PWD}/subjects"
-    - SURFER_DIR=$(python -c 'import surfer;print(surfer.__path__[0])')
-    # Link coverage to src dir, coveralls should be run from there (needs git calls)
-    - ln -s ${SURFER_DIR}/../.coverage ${SRC_DIR}/.coverage
-    - cd ${SURFER_DIR}/../
-    - ln -s ${SRC_DIR}/.coveragerc .coveragerc
-    - ln -s ${SRC_DIR}/Makefile Makefile
-    - ln -s ${SRC_DIR}/setup.cfg setup.cfg
-    - ln -s ${SRC_DIR}/examples examples
 
 script:
-    - # Nose-timer has bugs on 3+ as of Jan 2014
-    - if [ "{PYTHON}" == "2.7" ]; then
-        nosetests --with-timer --timer-top-n 20;
-      else
-        nosetests;
-      fi
     - cd ${SRC_DIR}
+    - nosetests --with-timer --timer-top-n 10
     - make flake
 
 after_success:
