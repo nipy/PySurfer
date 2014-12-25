@@ -1,9 +1,11 @@
 import os
 from os.path import join as pjoin
+from tempfile import mkdtemp
 from warnings import warn
 
 import numpy as np
 from scipy import stats, ndimage, misc
+from scipy.interpolate import interp1d
 from matplotlib.colors import colorConverter
 
 import nibabel as nib
@@ -16,7 +18,7 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 from . import utils, io
 from .config import config
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
-                    string_types)
+                    string_types, assert_ffmpeg_is_available, ffmpeg)
 
 
 import logging
@@ -85,6 +87,8 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
         # sum the RGB dimension so we do not miss G or B-only pieces
         gray = np.sum(np.array(im), axis=-1)
         gray[gray == gray[0, 0]] = 0  # hack for find_objects that wants 0
+        if np.all(gray == 0):
+            raise ValueError("Empty image (all pixels have the same color).")
         labels, n_labels = ndimage.label(gray.astype(np.float))
         slices = ndimage.find_objects(labels, n_labels)  # slice roi
         if colorbar is not None and ix in colorbar:
@@ -1540,13 +1544,19 @@ class Brain(object):
                 data["transparent"] = transparent
         self._toggle_render(True, views)
 
-    def set_data_time_index(self, time_idx):
+    def set_data_time_index(self, time_idx, interpolation='quadratic'):
         """Set the data time index to show
 
         Parameters
         ----------
-        time_idx : int
-            time index
+        time_idx : int | float
+            Time index. Non-integer values will be displayed using
+            interpolation between samples.
+        interpolation : str
+            Interpolation method (``scipy.interpolate.interp1d`` parameter,
+            one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
+            'cubic', default 'quadratic'). Interpolation is only used for
+            non-integer indexes.
         """
         if self.n_times is None:
             raise RuntimeError('cannot set time index with no time data')
@@ -1557,7 +1567,14 @@ class Brain(object):
         for hemi in ['lh', 'rh']:
             data = self.data_dict[hemi]
             if data is not None:
-                plot_data = data["array"][:, time_idx]
+                # interpolation
+                if isinstance(time_idx, float):
+                    times = np.arange(self.n_times)
+                    ifunc = interp1d(times, data['array'], interpolation, 1)
+                    plot_data = ifunc(time_idx)
+                else:
+                    plot_data = data["array"][:, time_idx]
+
                 if data["smooth_mat"] is not None:
                     plot_data = data["smooth_mat"] * plot_data
                 for surf in data["surfaces"]:
@@ -1566,9 +1583,34 @@ class Brain(object):
 
                 # Update time label
                 if data["time_label"]:
-                    time = data["time"][time_idx]
+                    if isinstance(time_idx, float):
+                        ifunc = interp1d(times, data['time'])
+                        time = ifunc(time_idx)
+                    else:
+                        time = data["time"][time_idx]
                     self.update_text(data["time_label"] % time, "time_label")
         self._toggle_render(True, views)
+
+    @property
+    def data_time_index(self):
+        """Retrieve the currently displayed data time index
+
+        Returns
+        -------
+        time_idx : int
+            Current time index.
+
+        Notes
+        -----
+        Raises a RuntimeError if the Brain instance has not data overlay.
+        """
+        time_idx = None
+        for hemi in ['lh', 'rh']:
+            data = self.data_dict[hemi]
+            if data is not None:
+                time_idx = data["time_idx"]
+                return time_idx
+        raise RuntimeError("Brain instance has no data overlay")
 
     @verbose
     def set_data_smoothing_steps(self, smoothing_steps, verbose=None):
@@ -1604,13 +1646,20 @@ class Brain(object):
                 data["smoothing_steps"] = smoothing_steps
         self._toggle_render(True, views)
 
-    def set_time(self, time):
-        """Set the data time index to the time point closest to time
+    def index_for_time(self, time, rounding='closest'):
+        """Find the data time index closest to a specific time point
 
         Parameters
         ----------
         time : scalar
             Time.
+        rounding : 'closest' | 'up' | 'down
+            How to round if the exact time point is not an index.
+
+        Returns
+        -------
+        index : int
+            Data time index closest to time.
         """
         if self.n_times is None:
             raise RuntimeError("Brain has no time axis")
@@ -1625,7 +1674,27 @@ class Brain(object):
                    "[%s, %s]" % (time, tmin, tmax))
             raise ValueError(err)
 
-        idx = np.argmin(np.abs(times - time))
+        if rounding == 'closest':
+            idx = np.argmin(np.abs(times - time))
+        elif rounding == 'up':
+            idx = np.nonzero(times >= time)[0][0]
+        elif rounding == 'down':
+            idx = np.nonzero(times <= time)[0][-1]
+        else:
+            err = "Invalid rounding parameter: %s" % repr(rounding)
+            raise ValueError(err)
+
+        return idx
+
+    def set_time(self, time):
+        """Set the data time index to the time point closest to time
+
+        Parameters
+        ----------
+        time : scalar
+            Time.
+        """
+        idx = self.index_for_time(time)
         self.set_data_time_index(idx)
 
     def _get_colorbars(self, row, col):
@@ -1826,7 +1895,7 @@ class Brain(object):
         brain = self.brain_matrix[row, col]
         return mlab.screenshot(brain._f, mode, antialiased)
 
-    def save_imageset(self, prefix, views,  filetype='png', colorbar='auto',
+    def save_imageset(self, prefix, views, filetype='png', colorbar='auto',
                       row=-1, col=-1):
         """Convenience wrapper for save_image
 
@@ -1841,10 +1910,10 @@ class Brain(object):
             desired views for images
         filetype: string
             image type
-        colorbar: None | 'auto' | [int], optional
-            if None no colorbar is visible. If 'auto' is given the colorbar
-            is only shown in the middle view. Otherwise on the listed
-            views when a list of int is passed.
+        colorbar: 'auto' | int | list of int | None
+            For 'auto', the colorbar is shown in the middle view (default).
+            For int or list of int, the colorbar is shown in the specified
+            views. For ``None``, no colorbar is shown.
         row : int
             row index of the brain to use
         col : int
@@ -1860,6 +1929,8 @@ class Brain(object):
                              "Use show_view & save_image for a single view")
         if colorbar == 'auto':
             colorbar = [len(views) // 2]
+        elif isinstance(colorbar, int):
+            colorbar = [colorbar]
         images_written = []
         for iview, view in enumerate(views):
             try:
@@ -1880,7 +1951,8 @@ class Brain(object):
         return images_written
 
     def save_image_sequence(self, time_idx, fname_pattern, use_abs_idx=True,
-                            row=-1, col=-1):
+                            row=-1, col=-1, montage='single', border_size=15,
+                            colorbar='auto', interpolation='quadratic'):
         """Save a temporal image sequence
 
         The files saved are named "fname_pattern % (pos)" where "pos" is a
@@ -1889,30 +1961,56 @@ class Brain(object):
         Parameters
         ----------
         time_idx : array-like
-            time indices to save
+            Time indices to save. Non-integer values will be displayed using
+            interpolation between samples.
         fname_pattern : str
-            filename pattern, e.g. 'movie-frame_%0.4d.png'
+            Filename pattern, e.g. 'movie-frame_%0.4d.png'.
         use_abs_idx : boolean
-            if True the indices given by "time_idx" are used in the filename
+            If True the indices given by "time_idx" are used in the filename
             if False the index in the filename starts at zero and is
-            incremented by one for each image (Default: True)
+            incremented by one for each image (Default: True).
         row : int
-            row index of the brain to use
+            Row index of the brain to use.
         col : int
-            column index of the brain to use
+            Column index of the brain to use.
+        montage: 'current' | 'single' | list
+            Views to include in the images: 'current' uses the currently
+            displayed image; 'single' (default) uses a single view, specified
+            by the ``row`` and ``col`` parameters; a 1 or 2 dimensional list
+            can be used to specify a complete montage. Examples:
+            ``['lat', 'med']`` lateral and ventral views ordered horizontally;
+            ``[['fro'], ['ven']]`` frontal and ventral views ordered
+            vertically.
+        border_size: int
+            Size of image border (more or less space between images).
+        colorbar: 'auto' | int | list of int | None
+            For 'auto', the colorbar is shown in the middle view (default).
+            For int or list of int, the colorbar is shown in the specified
+            views. For ``None``, no colorbar is shown.
+       interpolation : str
+            Interpolation method (``scipy.interpolate.interp1d`` parameter,
+            one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
+            'cubic', default 'quadratic'). Interpolation is only used for
+            non-integer indexes.
 
         Returns
         -------
         images_written: list
             all filenames written
         """
-        current_time_idx = self.data["time_idx"]
+        current_time_idx = self.data_time_index
         images_written = list()
         rel_pos = 0
         for idx in time_idx:
-            self.set_data_time_index(idx)
+            self.set_data_time_index(idx, interpolation)
             fname = fname_pattern % (idx if use_abs_idx else rel_pos)
-            self.save_single_image(fname, row, col)
+            if montage == 'single':
+                self.save_single_image(fname, row, col)
+            elif montage == 'current':
+                self.save_image(fname)
+            else:
+                self.save_montage(fname, montage, 'h', border_size, colorbar,
+                                  row, col)
             images_written.append(fname)
             rel_pos += 1
 
@@ -1939,10 +2037,10 @@ class Brain(object):
             applies if ``order`` is a flat list)
         border_size: int
             Size of image border (more or less space between images)
-        colorbar: None | 'auto' | [int], optional
-            if None no colorbar is visible. If 'auto' is given the colorbar
-            is only shown in the middle view. Otherwise on the listed
-            views when a list of int is passed.
+        colorbar: 'auto' | int | list of int | None
+            For 'auto', the colorbar is shown in the middle view (default).
+            For int or list of int, the colorbar is shown in the specified
+            views. For ``None``, no colorbar is shown.
         row : int
             row index of the brain to use
         col : int
@@ -1955,7 +2053,9 @@ class Brain(object):
         """
         # find flat list of views and nested list of view indexes
         assert orientation in ['h', 'v']
-        if all(isinstance(x, (str, dict)) for x in order):
+        if isinstance(order, (str, dict)):
+            views = [order]
+        elif all(isinstance(x, (str, dict)) for x in order):
             views = order
         else:
             views = []
@@ -1972,6 +2072,8 @@ class Brain(object):
 
         if colorbar == 'auto':
             colorbar = [len(views) // 2]
+        elif isinstance(colorbar, int):
+            colorbar = [colorbar]
         brain = self.brain_matrix[row, col]
 
         # store current view + colorbar visibility
@@ -1993,6 +2095,79 @@ class Brain(object):
             if cb is not None:
                 cb.visible = colorbars_visibility[cb]
         return out
+
+    def save_movie(self, fname, time_dilation=4., tmin=None, tmax=None,
+                   framerate=24, interpolation='quadratic', codec='mpeg4'):
+        """Save a movie (for data with a time axis)
+
+        .. Warning::
+            This method assumes that time is specified in seconds when adding
+            data. If time is specified in milliseconds this will result in
+            movies 1000 times longer than expected.
+
+        Parameters
+        ----------
+        fname : str
+            Path at which to save the movie.
+        time_dilation : float
+            Factor by which to stretch time (default 4). For example, an epoch
+            from -100 to 600 ms lasts 700 ms. With ``time_dilation=4`` this
+            would result in a 2.8 s long movie.
+        tmin : float
+            First time point to include (default: all data).
+        tmax : float
+            Last time point to include (default: all data).
+        framerate : float
+            Framerate of the movie (frames per second, default 24).
+        interpolation : str
+            Interpolation method (``scipy.interpolate.interp1d`` parameter,
+            one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
+            'cubic', default 'quadratic').
+        codec : str
+            Codec to use with ffmpeg (default 'mpeg4').
+
+        Notes
+        -----
+        This method requires FFmpeg to be installed in the system PATH. FFmpeg
+        is free and can be obtained from `here
+        <http://ffmpeg.org/download.html>`_.
+        """
+        assert_ffmpeg_is_available()
+
+        if tmin is None:
+            tmin = self._times[0]
+        elif tmin < self._times[0]:
+            raise ValueError("tmin=%r is smaller than the first time point "
+                             "(%r)" % (tmin, self._times[0]))
+
+        if tmax is None:
+            tmax = self._times[-1]
+        elif tmax >= self._times[-1]:
+            raise ValueError("tmax=%r is greater than the latest time point "
+                             "(%r)" % (tmax, self._times[-1]))
+
+        # find indexes at which to create frames
+        tstep = 1. / (framerate * time_dilation)
+        if (tmax - tmin) % tstep == 0:
+            tstop = tmax + tstep / 2.
+        else:
+            tstop = tmax
+        times = np.arange(tmin, tstop, tstep)
+        interp_func = interp1d(self._times, np.arange(self.n_times))
+        time_idx = interp_func(times)
+
+        n_times = len(time_idx)
+        if n_times == 0:
+            raise ValueError("No time points selected")
+
+        logger.debug("Save movie for time points/samples\n%s\n%s"
+                     % (times, time_idx))
+        tempdir = mkdtemp()
+        frame_pattern = 'frame%%0%id.png' % (np.floor(np.log10(n_times)) + 1)
+        fname_pattern = os.path.join(tempdir, frame_pattern)
+        self.save_image_sequence(time_idx, fname_pattern, False, -1, -1,
+                                 'current', interpolation=interpolation)
+        ffmpeg(fname, fname_pattern, framerate, codec)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False,
                 row=-1, col=-1):
