@@ -41,7 +41,7 @@ before_script:
     - wget --quiet http://faculty.washington.edu/larsoner/fsaverage_min.zip
     - mkdir subjects
     - cd subjects
-    - unzip ../fsaverage_min.tar.gz
+    - unzip ../fsaverage_min.zip
     - cd ..
     - export SUBJECTS_DIR="${PWD}/subjects"
 
