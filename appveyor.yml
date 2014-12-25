@@ -1,0 +1,34 @@
+# CI on Windows via appveyor
+# This file was based on Olivier Grisel's python-appveyor-demo
+
+environment:
+
+  matrix:
+    - PYTHON: "C:\\Python27-conda64"
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "64"
+
+install:
+  # Install miniconda Python
+  - "powershell ./make/install_python.ps1"
+
+  # Prepend newly installed Python to the PATH of this build (this cannot be
+  # done from inside the powershell script as it would require to restart
+  # the parent CMD process).
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+
+  # Check that we have the expected version and architecture for Python
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+
+  # Install the dependencies of the project.
+  - "conda install --yes --quiet ipython==1.1.0 numpy scipy mayavi matplotlib nose imaging"
+  - "pip install -q nose-timer nibabel"
+  - "python setup.py develop"
+  - "SET SUBJECTS_DIR=%CD%\\subjects"
+
+build: false  # Not a C# project, build stuff at the test step instead.
+
+test_script:
+  # Run the project tests
+  - "nosetests --with-timer --timer-top-n=10"
