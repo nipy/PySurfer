@@ -13,7 +13,7 @@ env:
 
 # Setup anaconda
 before_install:
-    - wget http://repo.continuum.io/miniconda/Miniconda-2.2.2-Linux-x86_64.sh -O miniconda.sh
+    - wget http://repo.continuum.io/miniconda/Miniconda-3.7.0-Linux-x86_64.sh -O miniconda.sh
     - chmod +x miniconda.sh
     - ./miniconda.sh -b
     - export PATH=/home/travis/anaconda/bin:$PATH
@@ -38,9 +38,11 @@ before_script:
     - export DISPLAY=:99.0
     - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
     - cd ~
-    - wget --quiet http://faculty.washington.edu/larsoner/fsaverage_min.tar.gz
+    - wget --quiet http://faculty.washington.edu/larsoner/fsaverage_min.zip
     - mkdir subjects
-    - tar --directory subjects -xzf fsaverage_min.tar.gz
+    - cd subjects
+    - unzip ../fsaverage_min.tar.gz
+    - cd ..
     - export SUBJECTS_DIR="${PWD}/subjects"
 
 script:
