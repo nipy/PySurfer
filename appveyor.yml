@@ -25,6 +25,7 @@ install:
   - "conda install --yes --quiet ipython==1.1.0 numpy scipy mayavi matplotlib nose imaging"
   - "pip install -q nose-timer nibabel"
   - "python setup.py develop"
+  - "SET SUBJECTS_DIR=%CD%\\subjects"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
