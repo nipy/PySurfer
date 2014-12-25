@@ -2,7 +2,10 @@ import numpy as np
 import os
 import os.path as op
 from os.path import join as pjoin
+import re
 import shutil
+import subprocess
+from nose.tools import assert_equal
 from numpy.testing import assert_raises, assert_array_equal
 from tempfile import mkdtemp, mktemp
 import nibabel as nib
@@ -226,9 +229,19 @@ def test_movie():
     # save movies with different options
     tempdir = mkdtemp()
     try:
-        dst = os.path.join(tempdir, 'test')
+        dst = os.path.join(tempdir, 'test.mov')
         brain.save_movie(dst)
         brain.save_movie(dst, tmin=0.081, tmax=0.102)
+        # test the number of frames in the movie
+        sp = subprocess.Popen(('ffmpeg', '-i', 'test.mov', '-vcodec', 'copy',
+                               '-f', 'null', '/dev/null'), cwd=tempdir,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = sp.communicate()
+        m = re.search('frame=\s*(\d+)\s', stderr)
+        if not m:
+            raise RuntimeError(stderr)
+        n_frames = int(m.group(1))
+        assert_equal(n_frames, 3)
     finally:
         # clean up
         shutil.rmtree(tempdir)
