@@ -674,8 +674,10 @@ def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4'):
         Path to the source frames (with a frame number field like '%04d').
     framerate : float
         Framerate of the movie (frames per second, default 24).
-    codec : str
-        Codec to use (default 'mpeg4').
+    codec : str | None
+        Codec to use (default 'mpeg4'). If None, the codec argument is not
+        forwarded to ffmpeg, which preserves compatibility with very old
+        versions of ffmpeg
 
     Notes
     -----
@@ -701,7 +703,10 @@ def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4'):
     frame_dir, frame_fmt = os.path.split(frame_path)
 
     # make the movie
-    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate), '-c', codec, dst]
+    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate)]
+    if codec is None:
+        cmd += ['-c', codec]
+    cmd += [dst]
     logger.info("Running FFmpeg with command: %s", ' '.join(cmd))
     sp = subprocess.Popen(cmd, cwd=frame_dir, stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE)
