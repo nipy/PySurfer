@@ -703,10 +703,10 @@ def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4'):
     frame_dir, frame_fmt = os.path.split(frame_path)
 
     # make the movie
-    if codec is None:
-        cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate), dst]
-    else:
-        cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate), '-c', codec, dst]
+    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate)]
+    if codec is None: 
+        cmd += ['-c', codec]
+    cmd += [dst]
     logger.info("Running FFmpeg with command: %s", ' '.join(cmd))
     sp = subprocess.Popen(cmd, cwd=frame_dir, stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE)
