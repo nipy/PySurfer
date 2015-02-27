@@ -17,6 +17,8 @@ with the underlying data that you should investigate.
 import nibabel as nib
 from surfer import Brain
 
+print(__doc__)
+
 brain = Brain("fsaverage", "both", "inflated")
 
 for hemi in ["lh", "rh"]:

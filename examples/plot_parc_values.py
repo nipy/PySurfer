@@ -8,12 +8,12 @@ each region of some parcellation and display those values on the surface to
 quickly summarize the analysis.
 
 """
-print(__doc__)
-
 import os
 import numpy as np
 import nibabel as nib
 from surfer import Brain
+
+print(__doc__)
 
 subject_id = "fsaverage"
 hemi = "lh"

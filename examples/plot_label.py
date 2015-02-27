@@ -6,10 +6,10 @@ Using PySurfer you can plot Freesurfer cortical labels on the surface
 with a large amount of control over the visual representation.
 
 """
-print(__doc__)
-
 import os
 from surfer import Brain
+
+print(__doc__)
 
 subject_id = "fsaverage"
 hemi = "lh"

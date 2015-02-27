@@ -7,14 +7,14 @@ Plot spheroids at positions on the surface manifold
 according to coordinates or vertex ids.
 
 """
-print(__doc__)
-
 import os
 import os.path as op
 from numpy import arange
 from numpy.random import permutation
 import nibabel as nib
 from surfer import Brain
+
+print(__doc__)
 
 subject_id = "fsaverage"
 subjects_dir = os.environ["SUBJECTS_DIR"]

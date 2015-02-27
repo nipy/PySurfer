@@ -6,9 +6,9 @@ Show the different brain views
 Among the views available are lateral, rostral, caudal, frontal etc.
 
 """
-print(__doc__)
-
 from surfer import Brain
+
+print(__doc__)
 
 sub = 'fsaverage'
 hemi = 'both'

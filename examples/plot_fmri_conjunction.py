@@ -10,13 +10,12 @@ how it can be accomplished in just a few lines of code
 with PySurfer.
 
 """
-
-print(__doc__)
-
 import os.path as op
 import numpy as np
 from surfer import io
 from surfer import Brain
+
+print(__doc__)
 
 """
 Initialize the visualization.

@@ -8,10 +8,9 @@ a map of them defined on the Freesurfer surface. This map can be stored in any
 file format that Nibabel can understand.
 
 """
+from surfer import Brain
 
 print(__doc__)
-
-from surfer import Brain
 
 """
 Bring up the visualization window.
