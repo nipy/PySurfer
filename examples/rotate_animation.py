@@ -4,9 +4,9 @@ Animate brain and save movie
 ============================
 
 """
-print(__doc__)
-
 from surfer import Brain
+
+print(__doc__)
 
 sub = 'fsaverage'
 hemi = 'lh'

@@ -5,13 +5,13 @@ Plot MEG inverse solution
 Data were computed using mne-python (http://martinos.org/mne)
 
 """
-print(__doc__)
-
 import os
 import numpy as np
 
 from surfer import Brain
 from surfer.io import read_stc
+
+print(__doc__)
 
 """
 define subject, surface and hemisphere(s) to plot
@@ -29,8 +29,8 @@ brain = Brain(subject_id, hemi, surface,
 read MNE dSPM inverse solution
 """
 for hemi in ['lh', 'rh']:
-    stc_fname = os.path.join('example_data/meg_source_estimate-'
-                             + hemi + '.stc')
+    stc_fname = os.path.join('example_data/meg_source_estimate-' +
+                             hemi + '.stc')
     stc = read_stc(stc_fname)
 
     """

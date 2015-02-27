@@ -13,6 +13,8 @@ from os.path import join
 import numpy as np
 from surfer import Brain, io
 
+print(__doc__)
+
 brain = Brain("fsaverage", "lh", "inflated",
               config_opts=dict(cortex="low_contrast"))
 

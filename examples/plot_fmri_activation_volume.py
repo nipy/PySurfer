@@ -12,11 +12,10 @@ Note: In PySurfer versions 0.4 and lower, the project_volume_data function must
 be imported from ``surfer.io``.
 
 """
-
-print(__doc__)
-
 import os
 from surfer import Brain, project_volume_data
+
+print(__doc__)
 
 """
 Bring up the visualization window.

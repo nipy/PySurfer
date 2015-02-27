@@ -6,10 +6,9 @@ Display morphometry files generated during
 the cortical reconstruction process.
 
 """
+from surfer import Brain
 
 print(__doc__)
-
-from surfer import Brain
 
 brain = Brain("fsaverage", "both", "pial", views="frontal",
               config_opts=dict(background="dimgray"))

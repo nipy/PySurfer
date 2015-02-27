@@ -5,11 +5,10 @@ Display Activation Contours
 Load a statistical overlay as a "topographic" contour map.
 
 """
-
-print(__doc__)
-
 import os.path as op
 from surfer import Brain
+
+print(__doc__)
 
 """
 Bring up the visualization.

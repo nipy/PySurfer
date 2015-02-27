@@ -14,6 +14,8 @@ from mayavi import mlab
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
+from traits.api import (HasTraits, Range, Int, Float,
+                        Bool, Enum, on_trait_change, Instance)
 
 from . import utils, io
 from .config import config
@@ -24,8 +26,6 @@ from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
 import logging
 logger = logging.getLogger('surfer')
 
-from traits.api import (HasTraits, Range, Int, Float,
-                        Bool, Enum, on_trait_change, Instance)
 
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
                'medial': {'v': (0., 90.), 'r': -90.},
@@ -673,8 +673,8 @@ class Brain(object):
             scalar_data = source
 
         if cast:
-            if (scalar_data.dtype.char == 'f'
-                    and scalar_data.dtype.itemsize < 8):
+            if (scalar_data.dtype.char == 'f' and
+                    scalar_data.dtype.itemsize < 8):
                 scalar_data = scalar_data.astype(np.float)
 
         return scalar_data, name
@@ -1514,8 +1514,8 @@ class Brain(object):
         n_colors2 = int(n_colors / 2)
 
         # Index of fmid in new colorbar
-        fmid_idx = int(np.round(n_colors * ((fmid - fmin)
-                                            / (fmax - fmin))) - 1)
+        fmid_idx = int(np.round(n_colors * ((fmid - fmin) /
+                                            (fmax - fmin))) - 1)
 
         # Go through channels
         for i in range(4):

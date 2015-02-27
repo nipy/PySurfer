@@ -5,9 +5,9 @@ Basic Visualization
 Initialize a basic visualization session.
 
 """
-print(__doc__)
-
 from surfer import Brain
+
+print(__doc__)
 
 """
 Define the three important variables.

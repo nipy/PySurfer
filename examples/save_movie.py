@@ -5,13 +5,13 @@ Create movie from  MEG inverse solution
 Data were computed using mne-python (http://martinos.org/mne)
 
 """
-print __doc__
-
 import os
 import numpy as np
 
 from surfer import Brain
 from surfer.io import read_stc
+
+print(__doc__)
 
 """
 create Brain object for visualization

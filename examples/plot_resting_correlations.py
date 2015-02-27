@@ -9,10 +9,10 @@ in a single window and manipulate the colormap to best represent the nature of
 the data.
 
 """
-print(__doc__)
-
 import os
 from surfer import Brain, io
+
+print(__doc__)
 
 """Bring up the visualization"""
 brain = Brain("fsaverage", "split", "inflated", views=['lat', 'med'],

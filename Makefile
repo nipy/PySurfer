@@ -24,7 +24,7 @@ clean-ctags:
 clean: clean-build clean-pyc clean-so clean-ctags
 
 flake:
-	if command -v flake8 > /dev/null; then \
+	@if command -v flake8 > /dev/null; then \
 	    flake8 --count surfer examples; \
 	fi
 
