@@ -1163,8 +1163,8 @@ class Brain(object):
                 ll.remove()
 
     def add_morphometry(self, measure, grayscale=False, hemi=None,
-                        colormap=None, min=None, max=None, colorbar=True,
-                        remove_existing=True):
+                        remove_existing=True, colormap=None,
+                        min=None, max=None, colorbar=True):
         """Add a morphometry overlay to the image.
 
         Parameters
@@ -1177,10 +1177,16 @@ class Brain(object):
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, data must exist
             for both hemispheres.
-        colormap : str
-            Mayavi colormap name, or None to use a sensible default.
         remove_existing : bool
             If True (default), remove old annotations.
+        colormap : str
+            Mayavi colormap name, or None to use a sensible default.
+        min, max : floats
+            Endpoints for the colormap; if not provided the robust range
+            of the data is used.
+        colorbar : bool
+            If True, show a colorbar corresponding to the overlay data.
+
         """
         hemis = self._check_hemis(hemi)
         morph_files = []
