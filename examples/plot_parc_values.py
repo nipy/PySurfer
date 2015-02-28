@@ -22,8 +22,7 @@ surface = "inflated"
 """
 Bring up the visualization.
 """
-brain = Brain(subject_id, hemi, surface,
-              config_opts=dict(background="white"))
+brain = Brain(subject_id, hemi, surface, background="white")
 
 """
 Read in the Buckner resting state network annotation. (This requires a

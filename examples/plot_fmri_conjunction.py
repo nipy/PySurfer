@@ -20,8 +20,7 @@ print(__doc__)
 """
 Initialize the visualization.
 """
-brain = Brain("fsaverage", "lh", "inflated",
-              config_opts=dict(background="white"))
+brain = Brain("fsaverage", "lh", "inflated", background="white")
 
 """
 Read both of the activation maps in using
