@@ -12,13 +12,13 @@ import nibabel as nib
 
 from mayavi import mlab
 from mayavi.tools.mlab_scene_model import MlabSceneModel
+from mayavi.core import lut_manager
 from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
 from traits.api import (HasTraits, Range, Int, Float,
                         Bool, Enum, on_trait_change, Instance)
 
 from . import utils, io
-from .config import config
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
                     string_types, assert_ffmpeg_is_available, ffmpeg)
 
@@ -296,8 +296,18 @@ class Brain(object):
         (default: True)
     title : str
         title for the window
-    config_opts : dict
-        options to override visual options in config file
+    cortex : str or tuple
+        specifies how binarized curvature values are rendered.
+        either the name of a preset PySurfer cortex colorscheme (one of
+        'classic', 'bone', 'low_contrast', or 'high_contrast'), or the
+        name of mayavi colormap, or a tuple with values (colormap, min,
+        max, reverse) to fully specify the curvature colors.
+    width, height : floats
+        width and height (in pixels) of the display window
+    size : float
+        specify a square display window, overriding the width and height
+    background, foreground : matplotlib colors
+        color of the background and foreground of the display window
     figure : list of instances of mayavi.core.scene.Scene | None
         If None, a new window will be created with the appropriate
         views.
@@ -318,10 +328,28 @@ class Brain(object):
     ----------
     brains : list
         List of the underlying brain instances.
+
     """
     def __init__(self, subject_id, hemi, surf, curv=True, title=None,
-                 config_opts={}, figure=None, subjects_dir=None,
-                 views=['lat'], show_toolbar=False, offscreen=False):
+                 cortex="classic", width=800, height=800, size=None,
+                 background="black", foreground="white", figure=None,
+                 subjects_dir=None, views=['lat'],
+                 show_toolbar=False, offscreen=False, config_opts=None):
+
+        # Keep backwards compatability
+        if config_opts is not None:
+            msg = ("The `config_opts` dict has been deprecated and will "
+                   "be removed in future versions. You should update your "
+                   "code and pass these options directly to the `Brain` "
+                   "constructor.")
+            warn(msg)
+            cortex = config_opts.get("cortex", cortex)
+            width = config_opts.get("width", width)
+            height = config_opts.get("height", height)
+            size = config_opts.get("size", size)
+            background = config_opts.get("background", background)
+            foreground = config_opts.get("foreground", foreground)
+
         col_dict = dict(lh=1, rh=1, both=1, split=2)
         n_col = col_dict[hemi]
         if hemi not in col_dict.keys():
@@ -360,7 +388,8 @@ class Brain(object):
             self.geo[h] = geo
 
         # deal with making figures
-        self._set_window_properties(config_opts)
+        self._set_window_properties(width, height, size,
+                                    background, foreground)
         figures, _v = _make_viewer(figure, n_row, n_col, title,
                                    self._scene_size, offscreen)
         self._figures = figures
@@ -371,6 +400,7 @@ class Brain(object):
                 if f.scene is not None:
                     f.scene.background = self._bg_color
                     f.scene.foreground = self._fg_color
+
         # force rendering so scene.lights exists
         _force_render(self._figures, self._window_backend)
         self.toggle_toolbars(show_toolbar)
@@ -379,7 +409,7 @@ class Brain(object):
 
         # fill figures with brains
         kwargs = dict(surf=surf, curv=curv, title=None,
-                      config_opts=config_opts, subjects_dir=subjects_dir,
+                      cortex=cortex, subjects_dir=subjects_dir,
                       bg_color=self._bg_color, offset=offset)
         brains = []
         brain_matrix = []
@@ -441,39 +471,19 @@ class Brain(object):
             _force_render(self._figures, self._window_backend)
         return views
 
-    def _set_window_properties(self, config_opts):
-        """Set window properties using config_opts"""
+    def _set_window_properties(self, width, height, size,
+                               background, foreground):
+        """Set window properties that are used elsewhere."""
         # old option "size" sets both width and height
-        if "size" in config_opts:
-            width = config_opts["size"]
-            height = width
+        if size is not None:
+            width, height = size, size
+        self._scene_size = height, width
 
-        if "width" in config_opts:
-            width = config_opts["width"]
-        else:
-            width = config.getfloat("visual", "width")
-        if 'height' in config_opts:
-            height = config_opts['height']
-        else:
-            height = config.getfloat("visual", "height")
-        self._scene_size = (height, width)
+        bg_color_rgb = colorConverter.to_rgb(background)
+        self._bg_color = bg_color_rgb
 
-        try:
-            bg_color_name = config_opts['background']
-        except KeyError:
-            bg_color_name = config.get("visual", "background")
-        if bg_color_name is not None:
-            bg_color_code = colorConverter.to_rgb(bg_color_name)
-        else:
-            bg_color_code = None
-        self._bg_color = bg_color_code
-
-        try:
-            fg_color_name = config_opts['foreground']
-        except KeyError:
-            fg_color_name = config.get("visual", "foreground")
-        fg_color_code = colorConverter.to_rgb(fg_color_name)
-        self._fg_color = fg_color_code
+        fg_color_rgb = colorConverter.to_rgb(foreground)
+        self._fg_color = fg_color_rgb
 
     def get_data_properties(self):
         """ Get properties of the data shown
@@ -693,45 +703,24 @@ class Brain(object):
         else:
             range_data = np.abs(scalar_data)
 
-        # Get the min and max from among various places
-        if min is None:
-            try:
-                min = config.getfloat("overlay", "min_thresh")
-            except ValueError:
-                min_str = config.get("overlay", "min_thresh")
-                if min_str == "robust_min":
-                    min = stats.scoreatpercentile(range_data, 2)
-                elif min_str == "actual_min":
-                    min = range_data.min()
-                else:
-                    min = 2.0
-                    warn("The 'min_thresh' value in your config value must be "
-                         "a float, 'robust_min', or 'actual_min', but it is "
-                         "%s. I'm setting the overlay min to the config "
-                         "default of 2" % min)
+        # Get a numeric value for the scalar minimum
+        if min == "robust_min":
+            min = stats.scoreatpercentile(range_data, 2)
+        elif min == "actual_min":
+            min = range_data.min()
 
-        if max is None:
-            try:
-                max = config.getfloat("overlay", "max_thresh")
-            except ValueError:
-                max_str = config.get("overlay", "max_thresh")
-                if max_str == "robust_max":
-                    max = stats.scoreatpercentile(scalar_data, 98)
-                elif max_str == "actual_max":
-                    max = range_data.max()
-                else:
-                    max = stats.scoreatpercentile(range_data, 98)
-                    warn("The 'max_thresh' value in your config value must be "
-                         "a float, 'robust_min', or 'actual_min', but it is "
-                         "%s. I'm setting the overlay min to the config "
-                         "default of robust_max" % max)
+        # Get a numeric value for the scalar maximum
+        if max == "robust_max":
+            max = stats.scoreatpercentile(scalar_data, 98)
+        elif max == "actual_max":
+            max = range_data.max()
 
         return min, max
 
     ###########################################################################
     # ADDING DATA PLOTS
-    def add_overlay(self, source, min=None, max=None, sign="abs", name=None,
-                    hemi=None):
+    def add_overlay(self, source, min=2, max="robust_max", sign="abs",
+                    name=None, hemi=None):
         """Add an overlay to the overlay dict from a file or array.
 
         Parameters
@@ -2260,7 +2249,7 @@ class Brain(object):
 class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
     def __init__(self, subject_id, hemi, surf, figure, geo, curv, title,
-                 config_opts, subjects_dir, bg_color, offset, backend):
+                 cortex, subjects_dir, bg_color, offset, backend):
         if hemi not in ['lh', 'rh']:
             raise ValueError('hemi must be either "lh" or "rh"')
         # Set the identifying info
@@ -2278,7 +2267,7 @@ class _Hemisphere(object):
         if curv:
             curv_data = self._geo.bin_curv
             meshargs = dict(scalars=curv_data)
-            colormap, vmin, vmax, reverse = self._get_geo_colors(config_opts)
+            colormap, vmin, vmax, reverse = self._get_geo_colors(cortex)
             kwargs = dict(colormap=colormap, vmin=vmin, vmax=vmax)
         else:
             curv_data = None
@@ -2568,13 +2557,14 @@ class _Hemisphere(object):
                 for light in self._f.scene.light_manager.lights:
                     light.azimuth *= -1
 
-    def _get_geo_colors(self, config_opts):
+    def _get_geo_colors(self, cortex):
         """Return an mlab colormap name, vmin, and vmax for binary curvature.
 
         Parameters
         ----------
-        config_opts : dict
-            dictionary of config file "visual" options
+        cortex : {classic, high_contrast, low_contrast, bone, tuple}
+            The name of one of the preset cortex styles, or a tuple
+            with four entries as described in the return vales.
 
         Returns
         -------
@@ -2593,19 +2583,12 @@ class _Hemisphere(object):
                             low_contrast=("Greys", -5, 5, False),
                             bone=("bone", -.2, 2, True))
 
-        try:
-            cortex_color = config_opts['cortex']
-        except KeyError:
-            cortex_color = config.get("visual", "cortex")
-        try:
-            color_data = colormap_map[cortex_color]
-        except KeyError:
-            warn(""
-                 "The 'cortex' setting in your config file must be one of "
-                 "'classic', 'high_contrast', 'low_contrast', or 'bone', "
-                 "but your value is '%s'. I'm setting the cortex colormap "
-                 "to the 'classic' setting." % cortex_color)
-            color_data = colormap_map['classic']
+        if cortex in colormap_map:
+            color_data = colormap_map[cortex]
+        elif cortex in lut_manager.lut_mode_list():
+            color_data = cortex, -1, 2, False
+        else:
+            color_data = cortex
 
         return color_data
 
