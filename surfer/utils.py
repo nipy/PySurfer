@@ -14,8 +14,6 @@ from scipy.spatial.distance import cdist
 import matplotlib as mpl
 from matplotlib import cm
 
-from .config import config
-
 logger = logging.getLogger('surfer')
 
 
@@ -228,7 +226,7 @@ def set_log_level(verbose=None, return_old_level=False):
         If True, return the old verbosity level.
     """
     if verbose is None:
-        verbose = config.get('options', 'logging_level')
+        verbose = "INFO"
     elif isinstance(verbose, bool):
         if verbose is True:
             verbose = 'INFO'
@@ -601,19 +599,14 @@ def _get_subjects_dir(subjects_dir=None, raise_error=True):
     subjects_dir : str
         The subjects directory. If the subjects_dir input parameter is not
         None, its value will be returned, otherwise it will be obtained from
-        the SUBJECTS_DIR environment variable. If that does not exist,
-        it will be obtained from the configuration file.
+        the SUBJECTS_DIR environment variable.
     """
     if subjects_dir is None:
-        if 'SUBJECTS_DIR' in os.environ:
-            subjects_dir = os.environ['SUBJECTS_DIR']
-        else:
-            subjects_dir = config.get('options', 'subjects_dir')
-            if raise_error and subjects_dir == '':
-                raise ValueError('The subjects directory has to be specified '
-                                 'using the subjects_dir parameter, the '
-                                 'SUBJECTS_DIR environment variable, or the '
-                                 '"subjects_dir" entry in the config file')
+        subjects_dir = os.environ.get("SUBJECTS_DIR", "")
+        if not subjects_dir and raise_error:
+            raise ValueError('The subjects directory has to be specified '
+                             'using the subjects_dir parameter or the '
+                             'SUBJECTS_DIR environment variable.')
 
     if raise_error and not os.path.exists(subjects_dir):
         raise ValueError('The subjects directory %s does not exist.'
