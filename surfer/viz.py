@@ -1163,7 +1163,8 @@ class Brain(object):
                 ll.remove()
 
     def add_morphometry(self, measure, grayscale=False, hemi=None,
-                        remove_existing=True):
+                        remove_existing=True, colormap=None,
+                        min=None, max=None, colorbar=True):
         """Add a morphometry overlay to the image.
 
         Parameters
@@ -1178,6 +1179,14 @@ class Brain(object):
             for both hemispheres.
         remove_existing : bool
             If True (default), remove old annotations.
+        colormap : str
+            Mayavi colormap name, or None to use a sensible default.
+        min, max : floats
+            Endpoints for the colormap; if not provided the robust range
+            of the data is used.
+        colorbar : bool
+            If True, show a colorbar corresponding to the overlay data.
+
         """
         hemis = self._check_hemis(hemi)
         morph_files = []
@@ -1195,16 +1204,23 @@ class Brain(object):
             # Get rid of any old overlays
             for m in self.morphometry_list:
                 m['surface'].remove()
-                m['colorbar'].visible = False
+                if m["colorbar"] is not None:
+                    m['colorbar'].visible = False
             self.morphometry_list = []
         ml = self.morphometry_list
+
         for hemi, morph_file in zip(hemis, morph_files):
-            # Preset colormaps
-            cmap_dict = dict(area="pink",
-                             curv="RdBu",
-                             jacobian_white="pink",
-                             sulc="RdBu",
-                             thickness="pink")
+
+            if colormap is None:
+                # Preset colormaps
+                if grayscale:
+                    colormap = "gray"
+                else:
+                    colormap = dict(area="pink",
+                                    curv="RdBu",
+                                    jacobian_white="pink",
+                                    sulc="RdBu",
+                                    thickness="pink")[measure]
 
             # Read in the morphometric data
             morph_data = nib.freesurfer.read_morph_data(morph_file)
@@ -1214,24 +1230,27 @@ class Brain(object):
             ctx_idx = self.geo[hemi].labels["cortex"]
 
             # Get the display range
-            if measure == "thickness":
-                min, max = 1, 4
-            else:
-                min, max = stats.describe(morph_data[ctx_idx])[1]
+            min_default, max_default = np.percentile(morph_data[ctx_idx],
+                                                     [2, 98])
+            if min is None:
+                min = min_default
+            if max is None:
+                max = max_default
+
+            # Use appropriate values for bivariate measures
+            if measure in ["curv", "sulc"]:
+                lim = np.max([abs(min), abs(max)])
+                min, max = -lim, lim
 
             # Set up the Mayavi pipeline
             morph_data = _prepare_data(morph_data)
-
-            if grayscale:
-                colormap = "gray"
-            else:
-                colormap = cmap_dict[measure]
 
             for brain in self._brain_list:
                 if brain['hemi'] == hemi:
                     ml.append(brain['brain'].add_morphometry(morph_data,
                                                              colormap, measure,
-                                                             min, max))
+                                                             min, max,
+                                                             colorbar))
         self.morphometry_list = ml
         self._toggle_render(True, views)
 
@@ -2469,7 +2488,8 @@ class _Hemisphere(object):
         surf.module_manager.scalar_lut_manager.lut.table = cmap
         return surf
 
-    def add_morphometry(self, morph_data, colormap, measure, min, max):
+    def add_morphometry(self, morph_data, colormap, measure,
+                        min, max, colorbar):
         """Add a morphometry overlay to the image"""
         mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
                                                     self._geo.y,
@@ -2485,9 +2505,12 @@ class _Hemisphere(object):
                                      name=measure, figure=self._f)
 
         # Get the colorbar
-        bar = mlab.scalarbar(surf)
-        self._format_cbar_text(bar)
-        bar.scalar_bar_representation.position2 = .8, 0.09
+        if colorbar:
+            bar = mlab.scalarbar(surf)
+            self._format_cbar_text(bar)
+            bar.scalar_bar_representation.position2 = .8, 0.09
+        else:
+            bar = None
 
         # Fil in the morphometry dict
         return dict(surface=surf, colorbar=bar, measure=measure)
