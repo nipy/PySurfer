@@ -14,15 +14,15 @@ Changing the display background
 
 The display background can take any valid matplotlib color (i.e.,
 it can be a tuple of rgb values, an rgb hex string, or a named HTML
-color.
+color).
 
 Changing the display size
 -------------------------
 
-The default display window is 800px by 800px, but this is also
-customizable. You can set the size of a square window with the ``size``
-parameter or make a rectangular window with the ``width`` and ``height``
-parameters.
+The default display window is 800px by 800px, but this can be configured
+using the ``size`` keyword argument in the Brain constructor. ``size``
+should either be a single number to make a square window, or a pair of
+values, ``(width, height)``, to make a rectangular window.
 
 Changing the curvature color scheme
 ----------------------------------- 

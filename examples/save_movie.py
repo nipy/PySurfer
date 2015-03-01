@@ -16,7 +16,7 @@ print(__doc__)
 """
 create Brain object for visualization
 """
-brain = Brain('fsaverage', 'split', 'inflated', width=800, height=400)
+brain = Brain('fsaverage', 'split', 'inflated', size=(800, 400))
 
 """
 read and display MNE dSPM inverse solution

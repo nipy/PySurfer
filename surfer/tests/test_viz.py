@@ -76,19 +76,16 @@ def test_brains():
     curvs = [True, False]
     titles = [None, 'Hello']
     cortices = ["low_contrast", ("Reds", 0, 1, False)]
-    widths = [200, "w"]
-    heights = [400, "h"]
-    sizes = [None, 600]
+    sizes = [500, (400, 300)]
     backgrounds = ["white", "blue"]
     foregrounds = ["black", "white"]
     figs = [None, mlab.figure()]
     subj_dirs = [None, subj_dir]
-    for surf, hemi, curv, title, cort, w, h, s, bg, fg, fig, sd \
-            in zip(surfs, hemis, curvs, titles, cortices,
-                   widths, heights, sizes,
+    for surf, hemi, curv, title, cort, s, bg, fg, fig, sd \
+            in zip(surfs, hemis, curvs, titles, cortices, sizes,
                    backgrounds, foregrounds, figs, subj_dirs):
         brain = Brain(subject_id, hemi, surf, curv, title,
-                      cort, w, h, s, bg, fg, fig, sd)
+                      cort, s, bg, fg, fig, sd)
         brain.close()
     assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   subjects_dir='')

@@ -302,10 +302,9 @@ class Brain(object):
         'classic', 'bone', 'low_contrast', or 'high_contrast'), or the
         name of mayavi colormap, or a tuple with values (colormap, min,
         max, reverse) to fully specify the curvature colors.
-    width, height : floats
-        width and height (in pixels) of the display window
-    size : float
-        specify a square display window, overriding the width and height
+    size : float or pair of floats
+        the size of the window, in pixels. can be one number to specify
+        a square window, or the (width, height) of a rectangular window.
     background, foreground : matplotlib colors
         color of the background and foreground of the display window
     figure : list of instances of mayavi.core.scene.Scene | None
@@ -331,10 +330,10 @@ class Brain(object):
 
     """
     def __init__(self, subject_id, hemi, surf, curv=True, title=None,
-                 cortex="classic", width=800, height=800, size=None,
-                 background="black", foreground="white", figure=None,
-                 subjects_dir=None, views=['lat'],
-                 show_toolbar=False, offscreen=False, config_opts=None):
+                 cortex="classic", size=800, background="black",
+                 foreground="white", figure=None, subjects_dir=None,
+                 views=['lat'], show_toolbar=False, offscreen=False,
+                 config_opts=None):
 
         # Keep backwards compatability
         if config_opts is not None:
@@ -344,11 +343,13 @@ class Brain(object):
                    "constructor.")
             warn(msg)
             cortex = config_opts.get("cortex", cortex)
-            width = config_opts.get("width", width)
-            height = config_opts.get("height", height)
-            size = config_opts.get("size", size)
             background = config_opts.get("background", background)
             foreground = config_opts.get("foreground", foreground)
+
+            size = config_opts.get("size", size)
+            width = config_opts.get("width", size)
+            height = config_opts.get("height", size)
+            size = (width, height)
 
         col_dict = dict(lh=1, rh=1, both=1, split=2)
         n_col = col_dict[hemi]
@@ -388,8 +389,7 @@ class Brain(object):
             self.geo[h] = geo
 
         # deal with making figures
-        self._set_window_properties(width, height, size,
-                                    background, foreground)
+        self._set_window_properties(size, background, foreground)
         figures, _v = _make_viewer(figure, n_row, n_col, title,
                                    self._scene_size, offscreen)
         self._figures = figures
@@ -471,11 +471,12 @@ class Brain(object):
             _force_render(self._figures, self._window_backend)
         return views
 
-    def _set_window_properties(self, width, height, size,
-                               background, foreground):
+    def _set_window_properties(self, size, background, foreground):
         """Set window properties that are used elsewhere."""
         # old option "size" sets both width and height
-        if size is not None:
+        try:
+            width, height = size
+        except TypeError:
             width, height = size, size
         self._scene_size = height, width
 

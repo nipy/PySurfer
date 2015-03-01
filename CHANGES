@@ -15,6 +15,9 @@ Version 0.6
   reproducible. While existing code that was written expecting a config
   file will still run, the visualization will fall back to default values.
   These should be updated directly in your plotting scripts.
+- Figure size is now specified only through the ``size`` keyword argument
+  of :class:`Brain`. To make a rectangular window, pass a ``(width, height)``
+  tuple. Passing a single value to ``size`` will still make a square window.
 - The ``cortex`` keyword argument can now be a mayavi colormap name or
   a ``(colormap, min, max, reverse)`` tuple for full control.
 - Morphometry plotting was made more flexible with the ability to pass
