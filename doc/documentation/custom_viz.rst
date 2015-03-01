@@ -12,7 +12,17 @@ have to delve into the underlying engine to get a different look.
 Changing the display background
 -------------------------------
 
-The display background can take any valid matplotlib color.
+The display background can take any valid matplotlib color (i.e.,
+it can be a tuple of rgb values, an rgb hex string, or a named HTML
+color).
+
+Changing the display size
+-------------------------
+
+The default display window is 800px by 800px, but this can be configured
+using the ``size`` keyword argument in the Brain constructor. ``size``
+should either be a single number to make a square window, or a pair of
+values, ``(width, height)``, to make a rectangular window.
 
 Changing the curvature color scheme
 ----------------------------------- 
@@ -22,45 +32,33 @@ cortical curvature values, so you can see which patches of cortex
 are gyri and which are sulci (pass ``curv=False`` to the
 :class:`Brain` constructor, or use the ``-no-curv`` switch in the
 command-line interface to turn this off). There are four preset
-themes for the curvature color scheme: ``classic``, ``bone``,
-``high_contrast``, and ``low_contrast``:
+themes for the curvature color scheme, which you can pass to the
+``cortex`` parameter in the :class:`Brain` constructor: ``classic``,
+``bone``, ``high_contrast``, and ``low_contrast``:
 
 .. image:: ../_static/cortex_options.png
 
 Note that, in each theme, the darker color signifies sulci.
 
-Changing the display size
--------------------------
+It's also possible to customize this further by passing the name of
+a mayavi colormap or a colormap name along with the endpoints of the
+colormap and whether it should be reversed.
 
-The default display window is 800px by 800px, but this is also
-customizable. You may use any positive number for the size
-(subject, possibly, to Mayavi/hardware limitations we are not
-aware of). The viewing window is always square, so just give one
-number and it will be used for both width and height.
+Additionally, you can load a continuous curvature map with the
+:func:`add_morphometry` method.
 
 How to use these themes
 -----------------------
 
-These options can be set in three places. The first is in your
-config file. Set your preferred visualization theme there, and it
-will be used automatically whenever you start PySurfer. You may
-also override this theme for any individual visualization session.
-If using the Python ``surfer`` library, you may pass a
-``config_opts`` dictionary to the :class:`Brain` constructor,
-which will override any values you have set in your config file.
-If using the command-line interface, there are parameters for each
-of the above options. Regardless of method, the key names are
-``background``, ``cortex``, and ``size``.
-
-For example:
+These options can be selected either as keyword arguments to the
+:class:`Brain` constructor,
 
 .. sourcecode:: ipython
     
     In [1]: from surfer import Brain
-    In [2]: b = Brain('fsaverage', 'lh', 'inflated', config_opts={'cortex':'bone'})
+    In [2]: b = Brain('fsaverage', 'lh', 'inflated', cortex='bone')
 
-or::
+or as options in the command-line interface::
 
     pysurfer fsaverage lh inflated -background slategray -size 400
 
-in your shell terminal.

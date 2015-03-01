@@ -15,8 +15,7 @@ from surfer import Brain, io
 
 print(__doc__)
 
-brain = Brain("fsaverage", "lh", "inflated",
-              config_opts=dict(cortex="low_contrast"))
+brain = Brain("fsaverage", "lh", "inflated", cortex="low_contrast")
 
 """
 The easiest way to label any vertex that could be in the region is with

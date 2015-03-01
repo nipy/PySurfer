@@ -20,8 +20,7 @@ view = 'frontal'
 Bring up the visualization
 """
 brain = Brain(subject_id, hemi, surface, views=view,
-              config_opts={"cortex": "bone",
-                           "background": "ivory"})
+              cortex="bone", background="ivory")
 
 """
 Display the 'aparc' parcellation borders.

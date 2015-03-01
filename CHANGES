@@ -1,14 +1,38 @@
 PySurfer Changes
 ================
 
+Version 0.6
+-----------
+
+- Values that were previously selected using a ``config_opts``
+  dictionary in the ``Brain`` constructor are now keyword arguments.
+  This should make it easier to use tab-completion in IPython, and will
+  generally simplify your scripts. To ease transition, a ``config_opts``
+  argument will still be caught, and its entries will be used (overriding
+  the keyword arguments), but it will be removed in a future release.
+- The ability to set default values in a config file has been removed.
+  While convenient, this approach encourages code that is not fully
+  reproducible. While existing code that was written expecting a config
+  file will still run, the visualization will fall back to default values.
+  These should be updated directly in your plotting scripts.
+- Figure size is now specified only through the ``size`` keyword argument
+  of :class:`Brain`. To make a rectangular window, pass a ``(width, height)``
+  tuple. Passing a single value to ``size`` will still make a square window.
+- The ``cortex`` keyword argument can now be a mayavi colormap name or
+  a ``(colormap, min, max, reverse)`` tuple for full control.
+- Morphometry plotting was made more flexible with the ability to pass
+  a specific colormap and anchor points for that colormap. Additionally,
+  the default anchor points now use robust statistics to give better
+  values.
+
 Version 0.5
 -----------
 
 - Added control over the width of outlines when plotting the borders of
   annotations or labels.
-- The visual display of the surfaces was improved by using surface normals
+- The visual display of the surfaces was improved by using surface normals.
 - Made colormap specification in Brain.add_data and Brain.add_contour_overlay
-  more flexible, with better defaults
+  more flexible, with better defaults.
 - Brain.save_montage() can now produce 2d grids of views in addition to
   horizontal and vertical arrangements. 
 - Fixed some installation issues and added explicit checks for dependencies

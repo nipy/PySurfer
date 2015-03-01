@@ -22,8 +22,7 @@ hemi = 'split'
 """
 create Brain object for visualization
 """
-brain = Brain(subject_id, hemi, surface,
-              config_opts=dict(width=800, height=400))
+brain = Brain(subject_id, hemi, surface, size=(800, 400))
 
 """
 read MNE dSPM inverse solution

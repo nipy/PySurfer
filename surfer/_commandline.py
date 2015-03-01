@@ -60,11 +60,11 @@ parser.add_argument("-sign", default="abs", choices=["abs", "pos", "neg"],
                     help="overlay sign")
 parser.add_argument("-name",
                     help="name to use for the overlay")
-parser.add_argument("-size",
+parser.add_argument("-size", default=800,
                     help="size of the display window (in pixels)")
-parser.add_argument("-background", metavar="COLOR",
+parser.add_argument("-background", metavar="COLOR", default="black",
                     help="background color for display")
-parser.add_argument("-cortex", metavar="COLOR",
+parser.add_argument("-cortex", metavar="COLOR", default="classic",
                     help="colormap for binary cortex curvature")
 parser.add_argument("-title",
                     help="title to use for the figure")

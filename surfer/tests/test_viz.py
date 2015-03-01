@@ -18,7 +18,6 @@ subj_dir = utils._get_subjects_dir()
 subject_id = 'fsaverage'
 std_args = [subject_id, 'lh', 'inflated']
 data_dir = pjoin(op.dirname(__file__), '..', '..', 'examples', 'example_data')
-small_brain = dict(size=100)
 
 overlay_fname = pjoin(data_dir, 'lh.sig.nii.gz')
 
@@ -52,11 +51,11 @@ def test_image():
 
     mlab.options.backend = 'auto'
     subject_id, _, surf = std_args
-    brain = Brain(subject_id, 'both', surf=surf, config_opts=small_brain)
+    brain = Brain(subject_id, 'both', surf=surf, size=100)
     brain.add_overlay(overlay_fname, hemi='lh', min=5, max=20, sign="pos")
     brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
 
-    brain = Brain(*std_args, config_opts=small_brain)
+    brain = Brain(*std_args, size=100)
     brain.save_image(tmp_name)
     brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
     brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
@@ -76,12 +75,17 @@ def test_brains():
     hemis = ['lh', 'rh']
     curvs = [True, False]
     titles = [None, 'Hello']
-    config_opts = [{}, dict(size=(800, 800))]
+    cortices = ["low_contrast", ("Reds", 0, 1, False)]
+    sizes = [500, (400, 300)]
+    backgrounds = ["white", "blue"]
+    foregrounds = ["black", "white"]
     figs = [None, mlab.figure()]
     subj_dirs = [None, subj_dir]
-    for surf, hemi, curv, title, co, fig, sd \
-            in zip(surfs, hemis, curvs, titles, config_opts, figs, subj_dirs):
-        brain = Brain(subject_id, hemi, surf, curv, title, co, fig, sd)
+    for surf, hemi, curv, title, cort, s, bg, fg, fig, sd \
+            in zip(surfs, hemis, curvs, titles, cortices, sizes,
+                   backgrounds, foregrounds, figs, subj_dirs):
+        brain = Brain(subject_id, hemi, surf, curv, title,
+                      cort, s, bg, fg, fig, sd)
         brain.close()
     assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   subjects_dir='')
@@ -287,7 +291,7 @@ def test_probabilistic_labels():
     """
     mlab.options.backend = 'test'
     brain = Brain("fsaverage", "lh", "inflated",
-                  config_opts=dict(cortex="low_contrast"))
+                  cortex="low_contrast")
 
     brain.add_label("BA1", color="darkblue")
 
@@ -322,7 +326,7 @@ def test_animate():
     """Test animation
     """
     mlab.options.backend = 'auto'
-    brain = Brain(*std_args, config_opts=small_brain)
+    brain = Brain(*std_args, size=100)
     brain.add_morphometry('curv')
     tmp_name = mktemp() + '.avi'
     brain.animate(["m"] * 3, n_steps=2)

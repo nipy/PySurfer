@@ -72,16 +72,10 @@ if __name__ == '__main__':
 
         from surfer import Brain
 
-        # Get a dict of config override options
-        confkeys = ["size", "background", "cortex"]
-        argdict = args.__dict__
-        config_opts = dict([(k, v) for k, v in argdict.items()
-                            if k in confkeys and v])
-        views = args.views
-
         # Load  up the figure and underlying brain object
         b = Brain(args.subject_id, args.hemi, args.surf, args.curv,
-                  args.title, views=views, config_opts=config_opts)
+                  args.title, views=args.views, size=args.size,
+                  background=args.background, cortex=args.cortex)
 
         # Maybe load some morphometry
         if args.morphometry is not None:

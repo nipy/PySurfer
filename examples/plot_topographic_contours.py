@@ -17,8 +17,7 @@ colorscheme, so we will pass that as an option to the
 Brain constructor.
 """
 brain = Brain("fsaverage", "lh", "inflated",
-              config_opts={"cortex": "low_contrast",
-                           "background": "#151540"})
+              cortex="low_contrast", background="#151540")
 
 """
 Get a path to the overlay file
