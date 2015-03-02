@@ -691,6 +691,7 @@ class Brain(object):
         return scalar_data, name
 
     def _get_display_range(self, scalar_data, min, max, sign):
+
         if scalar_data.min() >= 0:
             sign = "pos"
         elif scalar_data.max() <= 0:
@@ -705,12 +706,16 @@ class Brain(object):
             range_data = np.abs(scalar_data)
 
         # Get a numeric value for the scalar minimum
+        if min is None:
+            min = "robust_min"
         if min == "robust_min":
             min = stats.scoreatpercentile(range_data, 2)
         elif min == "actual_min":
             min = range_data.min()
 
         # Get a numeric value for the scalar maximum
+        if max is None:
+            max = "robust_max"
         if max == "robust_max":
             max = stats.scoreatpercentile(scalar_data, 98)
         elif max == "actual_max":
