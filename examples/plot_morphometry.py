@@ -32,8 +32,7 @@ left hemisphere.
 brain.add_morphometry("sulc", hemi='lh', grayscale=True)
 
 """
-The Brain object can only hold one morphometry
-overlay at a time, so adding a new one removes
-any existing overlays.
+You can also use a custom colormap and tweak its range.
 """
-brain.add_morphometry("thickness")
+brain.add_morphometry("thickness",
+                      colormap="PuBuGn", min=1, max=4)

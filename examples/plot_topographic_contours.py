@@ -39,21 +39,6 @@ behind the scenes for us.  Here let's specify a different number of
 contours and use a different line width.
 """
 brain.add_contour_overlay(overlay_file,
-                          max=20,
-                          n_contours=9,
+                          min=2, max=20,
+                          n_contours=10,
                           line_width=2)
-
-"""
-At the moment, the Brain object itself does not expose an interface
-to manipulate what the contour overlay looks like after it has been
-loaded, but if you know a little bit about the underlying Mayavi
-engine, you can control aspects of the visualization through the
-contour dictionary attribute.
-"""
-brain.contour['surface'].actor.property.line_width = 1
-brain.contour['surface'].contour.number_of_contours = 10
-
-"""
-We can save several different views of this hemisphere to one file.
-"""
-brain.save_montage('examples/fmri_activation.png', colorbar='auto')
