@@ -24,6 +24,9 @@ Version 0.6
   a specific colormap and anchor points for that colormap. Additionally,
   the default anchor points now use robust statistics to give better
   values.
+- Contour overlay plotting was made more flexible by adding keyword arguments
+  to control whether a colorbar should be shown and whether existing contour
+  overlays should be removed before plotting.
 
 Version 0.5
 -----------
