@@ -2555,7 +2555,7 @@ class _Hemisphere(object):
         self._format_cbar_text(bar)
         bar.scalar_bar_representation.position2 = .8, 0.09
         if not colorbar:
-            bar.visible = False 
+            bar.visible = False
 
         # Set up a dict attribute with pointers at important things
         return dict(surface=surf, colorbar=bar)
