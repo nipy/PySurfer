@@ -2169,7 +2169,7 @@ class Brain(object):
 
         # find indexes at which to create frames
         tstep = 1. / (framerate * time_dilation)
-        if (tmax - tmin) % tstep == 0:
+        if np.allclose(((tmax - tmin) % tstep, 0)):
             tstop = tmax + tstep / 2.
         else:
             tstop = tmax
