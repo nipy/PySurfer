@@ -655,7 +655,7 @@ def assert_ffmpeg_is_available():
 requires_ffmpeg = np.testing.dec.skipif(not has_ffmpeg(), 'Requires FFmpeg')
 
 
-def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4'):
+def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4', bitrate='750k'):
     """Run FFmpeg in a subprocess to convert an image sequence into a movie
 
     Parameters
@@ -671,6 +671,9 @@ def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4'):
         Codec to use (default 'mpeg4'). If None, the codec argument is not
         forwarded to ffmpeg, which preserves compatibility with very old
         versions of ffmpeg
+    bitrate : str | float
+        Bitrate to use to encode movie. Can be specified as number (e.g.
+        64000) or string (e.g. '64k'). Default value is 750k
 
     Notes
     -----
@@ -696,7 +699,7 @@ def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4'):
     frame_dir, frame_fmt = os.path.split(frame_path)
 
     # make the movie
-    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate)]
+    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate), '-b', str(bitrate)]
     if codec is not None:
         cmd += ['-c', codec]
     cmd += [dst]
