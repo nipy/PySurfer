@@ -871,7 +871,8 @@ class Brain(object):
                 raise ValueError('time is not the same length as '
                                  'array.shape[1]')
             if isinstance(time_label, basestring):
-                time_label = lambda x: time_label % x
+                time_label_fmt = time_label
+                time_label = lambda x: time_label_fmt % x
             data["time_label"] = time_label
             data["time"] = time
             data["time_idx"] = 0
