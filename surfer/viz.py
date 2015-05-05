@@ -808,8 +808,9 @@ class Brain(object):
             Default : 20
         time : numpy array
             time points in the data array (if data is 2D)
-        time_label : str | None
-            format of the time label (or None for no label)
+        time_label : str | callable | None
+            format of the time label (a format string, a function that maps
+            floating point time values to strings, or None for no label)
         colorbar : bool
             whether to add a colorbar to the figure
         hemi : str | None
@@ -869,6 +870,9 @@ class Brain(object):
             if not self.n_times == len(time):
                 raise ValueError('time is not the same length as '
                                  'array.shape[1]')
+            if isinstance(time_label, basestring):
+                time_label_fmt = time_label
+                time_label = lambda x: time_label_fmt % x
             data["time_label"] = time_label
             data["time"] = time
             data["time_idx"] = 0
@@ -891,7 +895,7 @@ class Brain(object):
                 bars.append(bar)
                 row, col = np.unravel_index(bi, self.brain_matrix.shape)
                 if array.ndim == 2 and time_label is not None:
-                    self.add_text(0.05, y_txt, time_label % time[0],
+                    self.add_text(0.05, y_txt, time_label(time[0]),
                                   name="time_label", row=row, col=col)
         self._toggle_render(True, views)
         data['surfaces'] = surfs
@@ -1609,7 +1613,7 @@ class Brain(object):
                         time = ifunc(time_idx)
                     else:
                         time = data["time"][time_idx]
-                    self.update_text(data["time_label"] % time, "time_label")
+                    self.update_text(data["time_label"](time), "time_label")
         self._toggle_render(True, views)
 
     @property
