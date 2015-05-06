@@ -767,7 +767,7 @@ class Brain(object):
                  colormap="RdBu_r", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d", colorbar=True,
-                 hemi=None, remove_existing=False):
+                 hemi=None, remove_existing=False, time_label_size=14):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to add_overlay, but it displays
@@ -820,6 +820,8 @@ class Brain(object):
         remove_existing : bool
             Remove surface added by previous "add_data" call. Useful for
             conserving memory when displaying different data in a loop.
+        time_label_size : int
+            Font size of the time label (default 14)
         """
         hemi = self._check_hemi(hemi)
 
@@ -897,7 +899,8 @@ class Brain(object):
                 if array.ndim == 2 and time_label is not None:
                     self.add_text(0.95, y_txt, time_label(time[0]),
                                   name="time_label", row=row, col=col,
-                                  font_size=14, justification='right')
+                                  font_size=time_label_size,
+                                  justification='right')
         self._toggle_render(True, views)
         data['surfaces'] = surfs
         data['colorbars'] = bars
