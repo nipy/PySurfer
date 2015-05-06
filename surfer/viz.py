@@ -2123,7 +2123,7 @@ class Brain(object):
 
     def save_movie(self, fname, time_dilation=4., tmin=None, tmax=None,
                    framerate=24, interpolation='quadratic', codec='mpeg4',
-                   bitrate='750k'):
+                   bitrate='1M'):
         """Save a movie (for data with a time axis)
 
         .. Warning::
@@ -2153,7 +2153,7 @@ class Brain(object):
             Codec to use with ffmpeg (default 'mpeg4').
         bitrate : str | float
             Bitrate to use to encode movie. Can be specified as number (e.g.
-            64000) or string (e.g. '64k'). Default value is 750k
+            64000) or string (e.g. '64k'). Default value is 1M
 
         Notes
         -----

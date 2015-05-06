@@ -655,7 +655,7 @@ def assert_ffmpeg_is_available():
 requires_ffmpeg = np.testing.dec.skipif(not has_ffmpeg(), 'Requires FFmpeg')
 
 
-def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4', bitrate='750k'):
+def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4', bitrate='1M'):
     """Run FFmpeg in a subprocess to convert an image sequence into a movie
 
     Parameters
@@ -673,7 +673,7 @@ def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4', bitrate='750k'):
         versions of ffmpeg
     bitrate : str | float
         Bitrate to use to encode movie. Can be specified as number (e.g.
-        64000) or string (e.g. '64k'). Default value is 750k
+        64000) or string (e.g. '64k'). Default value is 1M
 
     Notes
     -----
