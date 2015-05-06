@@ -2122,7 +2122,8 @@ class Brain(object):
         return out
 
     def save_movie(self, fname, time_dilation=4., tmin=None, tmax=None,
-                   framerate=24, interpolation='quadratic', codec='mpeg4'):
+                   framerate=24, interpolation='quadratic', codec='mpeg4',
+                   bitrate='1M'):
         """Save a movie (for data with a time axis)
 
         .. Warning::
@@ -2150,6 +2151,9 @@ class Brain(object):
             'cubic', default 'quadratic').
         codec : str
             Codec to use with ffmpeg (default 'mpeg4').
+        bitrate : str | float
+            Bitrate to use to encode movie. Can be specified as number (e.g.
+            64000) or string (e.g. '64k'). Default value is 1M
 
         Notes
         -----
@@ -2192,7 +2196,7 @@ class Brain(object):
         fname_pattern = os.path.join(tempdir, frame_pattern)
         self.save_image_sequence(time_idx, fname_pattern, False, -1, -1,
                                  'current', interpolation=interpolation)
-        ffmpeg(fname, fname_pattern, framerate, codec)
+        ffmpeg(fname, fname_pattern, framerate, codec=codec, bitrate=bitrate)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False,
                 row=-1, col=-1):
