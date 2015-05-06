@@ -895,8 +895,9 @@ class Brain(object):
                 bars.append(bar)
                 row, col = np.unravel_index(bi, self.brain_matrix.shape)
                 if array.ndim == 2 and time_label is not None:
-                    self.add_text(0.05, y_txt, time_label(time[0]),
-                                  name="time_label", row=row, col=col)
+                    self.add_text(0.95, y_txt, time_label(time[0]),
+                                  name="time_label", row=row, col=col,
+                                  font_size=14, justification='right')
         self._toggle_render(True, views)
         data['surfaces'] = surfs
         data['colorbars'] = bars
@@ -1385,7 +1386,7 @@ class Brain(object):
         self._toggle_render(True, views)
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0,
-                 row=-1, col=-1):
+                 row=-1, col=-1, font_size=None, justification=None):
         """ Add a text to the visualization
 
         Parameters
@@ -1412,6 +1413,11 @@ class Brain(object):
         text = self.brain_matrix[row, col].add_text(x, y, text,
                                                     name, color, opacity)
         self.texts_dict[name] = dict(row=row, col=col, text=text)
+        if font_size is not None:
+            text.property.font_size = font_size
+            text.actor.text_scale_mode = 'viewport'
+        if justification is not None:
+            text.property.justification = justification
 
     def update_text(self, text, name, row=-1, col=-1):
         """Update text label
