@@ -27,8 +27,8 @@ for hemi in ['lh', 'rh']:
     data = stc['data']
     times = np.arange(data.shape[1]) * stc['tstep'] + stc['tmin']
     brain.add_data(data, colormap='hot', vertices=stc['vertices'],
-                   smoothing_steps=10, time=times, time_label='%0.3f s',
-                   hemi=hemi)
+                   smoothing_steps=10, time=times, hemi=hemi,
+                   time_label=lambda t: '%s ms' % int(round(t * 1e3)))
 
 """
 scale colormap
