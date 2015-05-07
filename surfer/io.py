@@ -1,7 +1,7 @@
 import os
 from tempfile import mktemp
 
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 import gzip
 import numpy as np
 import nibabel as nib
@@ -166,6 +166,18 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
     verbose : bool, str, int, or None
         If not None, override default verbose level (see surfer.verbose).
     """
+
+    env = os.environ
+    if 'FREESURFER_HOME' not in env:
+        raise RuntimeError('FreeSurfer environment not defined. Define the '
+                           'FREESURFER_HOME environment variable.')
+    # Run FreeSurferEnv.sh if not most recent script to set PATH
+    if not env['PATH'].startswith(os.path.join(env['FREESURFER_HOME'], 'bin')):
+        cmd = ['bash', '-c', 'source {} && env'.format(
+               os.path.join(env['FREESURFER_HOME'], 'FreeSurferEnv.sh'))]
+        envout = check_output(cmd)
+        env = dict(line.split('=', 1) for line in envout.split('\n') if line)
+
     # Set the basic commands
     cmd_list = ["mri_vol2surf",
                 "--mov", filepath,
@@ -203,7 +215,7 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
     out_file = mktemp(prefix="pysurfer-v2s", suffix='.mgz')
     cmd_list.extend(["--o", out_file])
     logger.info(" ".join(cmd_list))
-    p = Popen(cmd_list, stdout=PIPE, stderr=PIPE)
+    p = Popen(cmd_list, stdout=PIPE, stderr=PIPE, env=env)
     stdout, stderr = p.communicate()
     out = p.returncode
     if out:
