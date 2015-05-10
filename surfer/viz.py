@@ -2187,7 +2187,7 @@ class Brain(object):
             raise ValueError("tmax=%r is greater than the latest time point "
                              "(%r)" % (tmax, self._times[-1]))
         times = np.arange(tmin, tmax + sys.float_info.epsilon, tstep)
-        while times[-1] > tmax:
+        if times[-1] > tmax:
             times = times[:-1]
         interp_func = interp1d(self._times, np.arange(self.n_times))
         time_idx = interp_func(times)
