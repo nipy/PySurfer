@@ -1,6 +1,6 @@
+from math import floor
 import os
 from os.path import join as pjoin
-import sys
 from tempfile import mkdtemp
 from warnings import warn
 
@@ -2180,15 +2180,15 @@ class Brain(object):
                              "(%r)" % (tmin, self._times[0]))
 
         # find indexes at which to create frames
-        tstep = 1. / (framerate * time_dilation)
         if tmax is None:
             tmax = self._times[-1]
         elif tmax > self._times[-1]:
             raise ValueError("tmax=%r is greater than the latest time point "
                              "(%r)" % (tmax, self._times[-1]))
-        times = np.arange(tmin, tmax + sys.float_info.epsilon, tstep)
-        if times[-1] > tmax:
-            times = times[:-1]
+        n_frames = floor((tmax - tmin) * time_dilation * framerate)
+        times = np.arange(n_frames)
+        times /= framerate * time_dilation
+        times += tmin
         interp_func = interp1d(self._times, np.arange(self.n_times))
         time_idx = interp_func(times)
 
