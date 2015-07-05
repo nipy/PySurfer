@@ -22,7 +22,7 @@ Important Links
 - Online documentation (stable): http://pysurfer.github.com/
 - NITRC page: http://www.nitrc.org/projects/pysurfer
 - Freesurfer: http://surfer.nmr.mgh.harvard.edu/
-- Mailing list: http://mail.scipy.org/mailman/listinfo/nipy-devel
+- Mailing list: https://mail.python.org/mailman/listinfo/neuroimaging
 
 Install
 -------
