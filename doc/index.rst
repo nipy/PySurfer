@@ -40,10 +40,10 @@ If you have problems installing the software or questions about usage,
 documentation or something else related to PySurfer, you can post to the NiPy
 mailing list. Please preface the subject line with "[PySurfer]".
 
-:Mailing list:  nipy-devel@neuroimaging.scipy.org [subscription_, archive_]
+:Mailing list:  neuroimaging@python.org [subscription_, archive_]
 
-.. _subscription: http://mail.scipy.org/mailman/listinfo/nipy-devel
-.. _archive: http://mail.scipy.org/pipermail/nipy-devel
+.. _subscription: https://mail.python.org/mailman/listinfo/neuroimaging
+.. _archive: http://mail.python.org/pipermail/neuroimaging
 
 Contribute
 ----------
