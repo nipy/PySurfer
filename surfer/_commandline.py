@@ -60,7 +60,7 @@ parser.add_argument("-sign", default="abs", choices=["abs", "pos", "neg"],
                     help="overlay sign")
 parser.add_argument("-name",
                     help="name to use for the overlay")
-parser.add_argument("-size", default=800,
+parser.add_argument("-size", default=800, nargs="?",
                     help="size of the display window (in pixels)")
 parser.add_argument("-background", metavar="COLOR", default="black",
                     help="background color for display")
