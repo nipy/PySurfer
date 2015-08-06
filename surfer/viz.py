@@ -476,7 +476,7 @@ class Brain(object):
         # old option "size" sets both width and height
         try:
             width, height = size
-        except TypeError:
+        except (TypeError, ValueError):
             width, height = size, size
         self._scene_size = height, width
 
