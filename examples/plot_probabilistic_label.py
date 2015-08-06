@@ -16,7 +16,13 @@ from nibabel.freesurfer import read_label
 
 print(__doc__)
 
-brain = Brain("fsaverage", "lh", "inflated", cortex="low_contrast")
+brain = Brain("fsaverage", "lh", "inflated")
+
+"""
+Show the morphometry with a continuous grayscale colormap.
+"""
+brain.add_morphometry("curv", colormap="binary",
+                      min=-.8, max=.8, colorbar=False)
 
 """
 The easiest way to label any vertex that could be in the region is with

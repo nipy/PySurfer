@@ -16,7 +16,7 @@ subject_id = "fsaverage"
 """
 Bring up the visualization.
 """
-brain = Brain(subject_id, "lh", "inflated")
+brain = Brain(subject_id, "lh", "inflated", cortex=("gray", -2, 7, True))
 
 """
 First we'll identify a stereotaxic focus in the MNI coordinate system. This
