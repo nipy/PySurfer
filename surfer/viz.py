@@ -317,10 +317,9 @@ class Brain(object):
         variable.
     views : list | str
         views to use
-    disable_offset : bool
-        If True, disables alignment of origin with medial wall, instead
-        make no change to surface coordinates. Useful to overlay additional
-        visualizations (i.e. subcortical) onto same mayavi figure.
+    offset : bool
+        If True, aligs origin with medial wall. Useful for viewing inflated
+        surface where hemispheres typically overlap (Default: True)
     show_toolbar : bool
         If True, toolbars will be shown for each view.
     offscreen : bool
@@ -337,7 +336,7 @@ class Brain(object):
     def __init__(self, subject_id, hemi, surf, curv=True, title=None,
                  cortex="classic", size=800, background="black",
                  foreground="white", figure=None, subjects_dir=None,
-                 views=['lat'], disable_offset=False, show_toolbar=False,
+                 views=['lat'], offset=True, show_toolbar=False,
                  offscreen=False, config_opts=None):
 
         # Keep backwards compatability
@@ -374,7 +373,7 @@ class Brain(object):
         n_row = len(views)
 
         # load geometry for one or both hemispheres as necessary
-        offset = None if (disable_offset or hemi != 'both') else 0.0
+        offset = None if (not offset or hemi != 'both') else 0.0
         self.geo = dict()
         if hemi in ['split', 'both']:
             geo_hemis = ['lh', 'rh']
