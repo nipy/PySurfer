@@ -699,7 +699,8 @@ def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4', bitrate='1M'):
     frame_dir, frame_fmt = os.path.split(frame_path)
 
     # make the movie
-    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate), '-b', str(bitrate)]
+    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate),
+           '-b:v', str(bitrate)]
     if codec is not None:
         cmd += ['-c', codec]
     cmd += [dst]
