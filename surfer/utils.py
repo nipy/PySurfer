@@ -699,7 +699,8 @@ def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4', bitrate='1M'):
     frame_dir, frame_fmt = os.path.split(frame_path)
 
     # make the movie
-    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate), '-b', str(bitrate)]
+    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate),
+           '-b:v', str(bitrate)]
     if codec is not None:
         cmd += ['-c', codec]
     cmd += [dst]
@@ -713,7 +714,8 @@ def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4', bitrate='1M'):
     logger.info(std_info)
     if stderr.strip():
         err_info = os.linesep.join(("FFmpeg stderr", '=' * 27, stderr))
-        logger.error(err_info)
+        # FFmpeg prints to stderr in the absence of an error
+        logger.info(err_info)
 
     # check that movie file is created
     if not os.path.exists(dst):
