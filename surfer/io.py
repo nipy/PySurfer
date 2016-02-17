@@ -176,7 +176,8 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         cmd = ['bash', '-c', 'source {} && env'.format(
                os.path.join(env['FREESURFER_HOME'], 'FreeSurferEnv.sh'))]
         envout = check_output(cmd)
-        env = dict(line.split('=', 1) for line in envout.split('\n') if line)
+        env = dict(line.split('=', 1) for line in envout.split('\n')
+                   if '=' in line)
 
     # Set the basic commands
     cmd_list = ["mri_vol2surf",
