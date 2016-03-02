@@ -73,7 +73,7 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
     out : array
         The montage image data array.
     """
-    import Image
+    from PIL import Image
     # This line is only necessary to overcome a PIL bug, see:
     #     http://stackoverflow.com/questions/10854903/what-is-causing-
     #          dimension-dependent-attributeerror-in-pil-fromarray-function
