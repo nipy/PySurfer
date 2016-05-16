@@ -36,8 +36,7 @@ VERSION = version
 
 
 def check_dependencies():
-    needed_deps = ["IPython",
-                   "numpy", "scipy", "matplotlib",
+    needed_deps = ["numpy", "scipy", "matplotlib",
                    "mayavi",
                    ]
     missing_deps = []
