@@ -25,6 +25,14 @@ create Brain object for visualization
 brain = Brain(subject_id, hemi, surface, size=(800, 400))
 
 """
+label for time annotation in milliseconds
+"""
+
+
+def time_label(t):
+    return 'time=%0.2f ms' % (t * 1e3)
+
+"""
 read MNE dSPM inverse solution
 """
 for hemi in ['lh', 'rh']:
@@ -48,11 +56,6 @@ for hemi in ['lh', 'rh']:
     colormap to use
     """
     colormap = 'hot'
-
-    """
-    label for time annotation in milliseconds
-    """
-    time_label = lambda t: 'time=%0.2f ms' % (t * 1e3)
 
     brain.add_data(data, colormap=colormap, vertices=vertices,
                    smoothing_steps=10, time=time, time_label=time_label,
