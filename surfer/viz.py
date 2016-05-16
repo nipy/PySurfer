@@ -82,9 +82,9 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
     #          dimension-dependent-attributeerror-in-pil-fromarray-function
     fnames = [f if isinstance(f, string_types) else f.copy() for f in fnames]
     if isinstance(fnames[0], string_types):
-        images = map(Image.open, fnames)
+        images = list(map(Image.open, fnames))
     else:
-        images = map(Image.fromarray, fnames)
+        images = list(map(Image.fromarray, fnames))
     # get bounding box for cropping
     boxes = []
     for ix, im in enumerate(images):
@@ -566,7 +566,7 @@ class Brain(object):
                              'or brain.brains.' % name)
         if isinstance(d, dict):
             out = dict()
-            for key, value in d.iteritems():
+            for key, value in d.items():
                 out[key] = value[0]
         else:
             out = d[0]
@@ -595,7 +595,7 @@ class Brain(object):
     @property
     def annot(self):
         """Wrap to annot"""
-        return self._get_one_brain(self.annot_list, 'contour')
+        return self._get_one_brain(self.annot_list, 'annot')
 
     @property
     def texts(self):
@@ -879,9 +879,11 @@ class Brain(object):
             if not self.n_times == len(time):
                 raise ValueError('time is not the same length as '
                                  'array.shape[1]')
-            if isinstance(time_label, basestring):
+            if isinstance(time_label, string_types):
                 time_label_fmt = time_label
-                time_label = lambda x: time_label_fmt % x
+
+                def time_label(x):
+                    return time_label_fmt % x
             data["time_label"] = time_label
             data["time"] = time
             data["time_idx"] = 0
@@ -1374,7 +1376,7 @@ class Brain(object):
         scalar_data = _prepare_data(scalar_data)
 
         # Maybe get rid of an old overlay
-        if hasattr(self, "contour") and remove_existing:
+        if remove_existing:
             for c in self.contour_list:
                 c['surface'].remove()
                 if c['colorbar'] is not None:
@@ -2234,7 +2236,7 @@ class Brain(object):
             Column index of the brain to use
         """
         brain = self.brain_matrix[row, col]
-        gviews = map(brain._xfm_view, views)
+        gviews = list(map(brain._xfm_view, views))
         allowed = ('lateral', 'caudal', 'medial', 'rostral')
         if not len([v for v in gviews if v in allowed]) == len(gviews):
             raise ValueError('Animate through %s views.' % ' '.join(allowed))
