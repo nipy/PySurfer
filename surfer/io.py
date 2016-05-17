@@ -176,7 +176,8 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         cmd = ['bash', '-c', 'source {} && env'.format(
                os.path.join(env['FREESURFER_HOME'], 'FreeSurferEnv.sh'))]
         envout = check_output(cmd)
-        env = dict(line.split('=', 1) for line in envout.split('\n')
+        env = dict(line.split('=', 1)
+                   for line in envout.decode('utf-8').split('\n')
                    if '=' in line)
 
     # Set the basic commands
@@ -199,7 +200,7 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         proj_flag += "-"
         proj_flag += projsum
     if hasattr(projarg, "__iter__"):
-        proj_arg = map(str, projarg)
+        proj_arg = list(map(str, projarg))
     else:
         proj_arg = [str(projarg)]
     cmd_list.extend([proj_flag] + proj_arg)

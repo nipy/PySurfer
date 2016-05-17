@@ -6,9 +6,11 @@
 #                         Martin Luessi
 #                         Eric Larson
 
+import os
+from setuptools import setup
+
 descr = """PySurfer: cortical surface visualization using Python."""
 
-import os
 # deal with MPL sandbox violations during easy_install
 os.environ['MPLCONFIGDIR'] = '.'
 
@@ -32,10 +34,9 @@ LICENSE = 'BSD (3-clause)'
 DOWNLOAD_URL = 'https://github.com/nipy/PySurfer'
 VERSION = version
 
-def check_dependencies():
 
-    needed_deps = ["IPython",
-                   "numpy", "scipy", "matplotlib",
+def check_dependencies():
+    needed_deps = ["numpy", "scipy", "matplotlib",
                    "mayavi",
                    ]
     missing_deps = []
@@ -50,8 +51,6 @@ def check_dependencies():
         raise ImportError("Missing dependencies: %s" % missing)
 
 
-from setuptools import setup
-
 if __name__ == "__main__":
     if os.path.exists('MANIFEST'):
         os.remove('MANIFEST')
@@ -63,7 +62,6 @@ if __name__ == "__main__":
                             'egg_info',
                             'clean'))):
         check_dependencies()
-
 
     setup(name=DISTNAME,
           maintainer=MAINTAINER,
@@ -79,6 +77,9 @@ if __name__ == "__main__":
           classifiers=['Intended Audience :: Science/Research',
                        'Intended Audience :: Developers',
                        'Programming Language :: Python :: 2.7',
+                       'Programming Language :: Python :: 3.3',
+                       'Programming Language :: Python :: 3.4',
+                       'Programming Language :: Python :: 3.5',
                        'License :: OSI Approved',
                        'Programming Language :: Python',
                        'Topic :: Software Development',
