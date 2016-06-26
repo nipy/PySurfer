@@ -1,9 +1,9 @@
 from math import floor
 import os
 from os.path import join as pjoin
-from tempfile import mkdtemp
 from warnings import warn
 
+import imageio
 import numpy as np
 from scipy import stats, ndimage, misc
 from scipy.interpolate import interp1d
@@ -21,7 +21,7 @@ from traits.api import (HasTraits, Range, Int, Float,
 
 from . import utils, io
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
-                    string_types, assert_ffmpeg_is_available, ffmpeg)
+                    string_types)
 
 
 import logging
@@ -729,6 +729,35 @@ class Brain(object):
             max = range_data.max()
 
         return min, max
+
+    def _iter_time(self, time_idx, interpolation):
+        """Iterate through time points, then reset to current time
+
+        Parameters
+        ----------
+        time_idx : array_like
+            Time point indexes through which to iterate.
+        interpolation : str
+            Interpolation method (``scipy.interpolate.interp1d`` parameter,
+            one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
+            'cubic'). Interpolation is only used for non-integer indexes.
+
+        Yields
+        ------
+        idx : int | float
+            Current index.
+
+        Notes
+        -----
+        Used by movie and image sequence saving functions.
+        """
+        current_time_idx = self.data_time_index
+        for idx in time_idx:
+            self.set_data_time_index(idx, interpolation)
+            yield idx
+
+        # Restore original time index
+        self.set_data_time_index(current_time_idx)
 
     ###########################################################################
     # ADDING DATA PLOTS
@@ -2041,12 +2070,9 @@ class Brain(object):
         images_written: list
             all filenames written
         """
-        current_time_idx = self.data_time_index
         images_written = list()
-        rel_pos = 0
-        for idx in time_idx:
-            self.set_data_time_index(idx, interpolation)
-            fname = fname_pattern % (idx if use_abs_idx else rel_pos)
+        for i, idx in enumerate(self._iter_time(time_idx, interpolation)):
+            fname = fname_pattern % (idx if use_abs_idx else i)
             if montage == 'single':
                 self.save_single_image(fname, row, col)
             elif montage == 'current':
@@ -2055,10 +2081,6 @@ class Brain(object):
                 self.save_montage(fname, montage, 'h', border_size, colorbar,
                                   row, col)
             images_written.append(fname)
-            rel_pos += 1
-
-        # Restore original time index
-        self.set_data_time_index(current_time_idx)
 
         return images_written
 
@@ -2172,15 +2194,7 @@ class Brain(object):
         bitrate : str | float
             Bitrate to use to encode movie. Can be specified as number (e.g.
             64000) or string (e.g. '64k'). Default value is 1M
-
-        Notes
-        -----
-        This method requires FFmpeg to be installed in the system PATH. FFmpeg
-        is free and can be obtained from `here
-        <http://ffmpeg.org/download.html>`_.
         """
-        assert_ffmpeg_is_available()
-
         if tmin is None:
             tmin = self._times[0]
         elif tmin < self._times[0]:
@@ -2206,12 +2220,10 @@ class Brain(object):
 
         logger.debug("Save movie for time points/samples\n%s\n%s"
                      % (times, time_idx))
-        tempdir = mkdtemp()
-        frame_pattern = 'frame%%0%id.png' % (np.floor(np.log10(n_times)) + 1)
-        fname_pattern = os.path.join(tempdir, frame_pattern)
-        self.save_image_sequence(time_idx, fname_pattern, False, -1, -1,
-                                 'current', interpolation=interpolation)
-        ffmpeg(fname, fname_pattern, framerate, codec=codec, bitrate=bitrate)
+        images = (self.screenshot() for _ in
+                  self._iter_time(time_idx, interpolation))
+        imageio.mimwrite(fname, images, fps=framerate, codec=codec,
+                         bitrate=bitrate)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False,
                 row=-1, col=-1):
