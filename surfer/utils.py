@@ -5,7 +5,6 @@ import os
 from os import path as op
 import inspect
 from functools import wraps
-import subprocess
 
 import numpy as np
 import nibabel as nib
@@ -626,99 +625,3 @@ def has_fsaverage(subjects_dir=None):
 
 requires_fsaverage = np.testing.dec.skipif(not has_fsaverage(),
                                            'Requires fsaverage subject data')
-
-
-def has_ffmpeg():
-    """Test whether the FFmpeg is available in a subprocess
-
-    Returns
-    -------
-    ffmpeg_exists : bool
-        True if FFmpeg can be successfully called, False otherwise.
-    """
-    try:
-        subprocess.call(["ffmpeg"], stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE)
-        return True
-    except OSError:
-        return False
-
-
-def assert_ffmpeg_is_available():
-    "Raise a RuntimeError if FFmpeg is not in the PATH"
-    if not has_ffmpeg():
-        err = ("FFmpeg is not in the path and is needed for saving "
-               "movies. Install FFmpeg and try again. It can be "
-               "downlaoded from http://ffmpeg.org/download.html.")
-        raise RuntimeError(err)
-
-requires_ffmpeg = np.testing.dec.skipif(not has_ffmpeg(), 'Requires FFmpeg')
-
-
-def ffmpeg(dst, frame_path, framerate=24, codec='mpeg4', bitrate='1M'):
-    """Run FFmpeg in a subprocess to convert an image sequence into a movie
-
-    Parameters
-    ----------
-    dst : str
-        Destination path. If the extension is not ".mov" or ".avi", ".mov" is
-        added. If the file already exists it is overwritten.
-    frame_path : str
-        Path to the source frames (with a frame number field like '%04d').
-    framerate : float
-        Framerate of the movie (frames per second, default 24).
-    codec : str | None
-        Codec to use (default 'mpeg4'). If None, the codec argument is not
-        forwarded to ffmpeg, which preserves compatibility with very old
-        versions of ffmpeg
-    bitrate : str | float
-        Bitrate to use to encode movie. Can be specified as number (e.g.
-        64000) or string (e.g. '64k'). Default value is 1M
-
-    Notes
-    -----
-    Requires FFmpeg to be in the path. FFmpeg can be downlaoded from `here
-    <http://ffmpeg.org/download.html>`_. Stdout and stderr are written to the
-    logger. If the movie file is not created, a RuntimeError is raised.
-    """
-    assert_ffmpeg_is_available()
-
-    # find target path
-    dst = os.path.expanduser(dst)
-    dst = os.path.abspath(dst)
-    root, ext = os.path.splitext(dst)
-    dirname = os.path.dirname(dst)
-    if ext not in ['.mov', '.avi']:
-        dst += '.mov'
-
-    if os.path.exists(dst):
-        os.remove(dst)
-    elif not os.path.exists(dirname):
-        os.mkdir(dirname)
-
-    frame_dir, frame_fmt = os.path.split(frame_path)
-
-    # make the movie
-    cmd = ['ffmpeg', '-i', frame_fmt, '-r', str(framerate),
-           '-b:v', str(bitrate)]
-    if codec is not None:
-        cmd += ['-c', codec]
-    cmd += [dst]
-    logger.info("Running FFmpeg with command: %s", ' '.join(cmd))
-    sp = subprocess.Popen(cmd, cwd=frame_dir, stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE)
-
-    # log stdout and stderr
-    stdout, stderr = sp.communicate()
-    std_info = os.linesep.join(("FFmpeg stdout", '=' * 25, stdout))
-    logger.info(std_info)
-    if stderr.strip():
-        err_info = os.linesep.join(("FFmpeg stderr", '=' * 27, stderr))
-        # FFmpeg prints to stderr in the absence of an error
-        logger.info(err_info)
-
-    # check that movie file is created
-    if not os.path.exists(dst):
-        err = ("FFmpeg failed, no file created; see log for more more "
-               "information.")
-        raise RuntimeError(err)
