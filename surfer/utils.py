@@ -626,7 +626,7 @@ def has_fsaverage(subjects_dir=None):
 
 def has_imageio():
     try:
-        import imageio
+        import imageio  # NOQA
     except ImportError:
         return False
     else:
