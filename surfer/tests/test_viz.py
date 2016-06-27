@@ -1,18 +1,17 @@
-import numpy as np
 import os
 import os.path as op
 from os.path import join as pjoin
-import re
 import shutil
-import subprocess
-from nose.tools import assert_equal
-from numpy.testing import assert_raises, assert_array_equal
 from tempfile import mkdtemp, mktemp
+
+from nose.tools import assert_equal
+from mayavi import mlab
 import nibabel as nib
+import numpy as np
+from numpy.testing import assert_raises, assert_array_equal
 
 from surfer import Brain, io, utils
-from surfer.utils import requires_ffmpeg, requires_fsaverage
-from mayavi import mlab
+from surfer.utils import requires_fsaverage, requires_imageio
 
 subj_dir = utils._get_subjects_dir()
 subject_id = 'fsaverage'
@@ -214,11 +213,13 @@ def test_morphometry():
     brain.close()
 
 
-@requires_ffmpeg
+@requires_imageio
 @requires_fsaverage
 def test_movie():
     """Test saving a movie of an MEG inverse solution
     """
+    import imageio
+
     # create and setup the Brain instance
     mlab.options.backend = 'auto'
     brain = Brain(*std_args)
@@ -234,18 +235,16 @@ def test_movie():
     tempdir = mkdtemp()
     try:
         dst = os.path.join(tempdir, 'test.mov')
-        brain.save_movie(dst)
-        brain.save_movie(dst, tmin=0.081, tmax=0.102)
         # test the number of frames in the movie
-        sp = subprocess.Popen(('ffmpeg', '-i', 'test.mov', '-vcodec', 'copy',
-                               '-f', 'null', '/dev/null'), cwd=tempdir,
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = sp.communicate()
-        m = re.search('frame=\s*(\d+)\s', stderr)
-        if not m:
-            raise RuntimeError(stderr)
-        n_frames = int(m.group(1))
-        assert_equal(n_frames, 3)
+        brain.save_movie(dst)
+        frames = imageio.mimread(dst)
+        assert_equal(len(frames), 2)
+        brain.save_movie(dst, time_dilation=10)
+        frames = imageio.mimread(dst)
+        assert_equal(len(frames), 7)
+        brain.save_movie(dst, tmin=0.081, tmax=0.102)
+        frames = imageio.mimread(dst)
+        assert_equal(len(frames), 2)
     finally:
         # clean up
         shutil.rmtree(tempdir)

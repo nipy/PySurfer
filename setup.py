@@ -93,4 +93,5 @@ if __name__ == "__main__":
           packages=['surfer', 'surfer.tests'],
           scripts=['bin/pysurfer'],
           install_requires=['nibabel >= 1.2'],
+          extras_require={'save_movie': ['imageio >= 1.5']},
           )

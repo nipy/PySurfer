@@ -11,6 +11,11 @@ If you already have PySurfer installed, you can also use pip to update it::
 
     pip install -U pysurfer
 
+If you would like to save movies of time course data, also include the
+optional dependency `imageio` with::
+
+    pip install -U pysurfer[save_movie]
+
 If you'd like to install the development version, you have two options. You can
 use pip::
 
