@@ -4,7 +4,6 @@ from os.path import join as pjoin
 import shutil
 from tempfile import mkdtemp, mktemp
 
-import imageio
 from nose.tools import assert_equal
 from mayavi import mlab
 import nibabel as nib
@@ -12,7 +11,7 @@ import numpy as np
 from numpy.testing import assert_raises, assert_array_equal
 
 from surfer import Brain, io, utils
-from surfer.utils import requires_fsaverage
+from surfer.utils import requires_fsaverage, requires_imageio
 
 subj_dir = utils._get_subjects_dir()
 subject_id = 'fsaverage'
@@ -214,10 +213,13 @@ def test_morphometry():
     brain.close()
 
 
+@requires_imageio
 @requires_fsaverage
 def test_movie():
     """Test saving a movie of an MEG inverse solution
     """
+    import imageio
+
     # create and setup the Brain instance
     mlab.options.backend = 'auto'
     brain = Brain(*std_args)

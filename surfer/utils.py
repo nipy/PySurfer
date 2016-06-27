@@ -623,5 +623,18 @@ def has_fsaverage(subjects_dir=None):
         return False
     return True
 
+
+def has_imageio():
+    try:
+        import imageio
+    except ImportError:
+        return False
+    else:
+        return True
+
+
 requires_fsaverage = np.testing.dec.skipif(not has_fsaverage(),
                                            'Requires fsaverage subject data')
+
+requires_imageio = np.testing.dec.skipif(not has_imageio(),
+                                         "Requires imageio package")

@@ -3,7 +3,6 @@ import os
 from os.path import join as pjoin
 from warnings import warn
 
-import imageio
 import numpy as np
 from scipy import stats, ndimage, misc
 from scipy.interpolate import interp1d
@@ -2194,7 +2193,22 @@ class Brain(object):
         bitrate : str | float
             Bitrate to use to encode movie. Can be specified as number (e.g.
             64000) or string (e.g. '64k'). Default value is 1M
+
+        Notes
+        -----
+        Requires imageio package, which can be installed together with
+        PySurfer with::
+
+            $ pip install -U pysurfer[save_movie]
         """
+        try:
+            import imageio
+        except ImportError:
+            raise ImportError("Saving movies from PySurfer requires the "
+                              "imageio library. To install imageio with "
+                              "PySurfer, run\n\n    $ pip install -U "
+                              "pysurfer[save_movie]\n")
+
         if tmin is None:
             tmin = self._times[0]
         elif tmin < self._times[0]:

@@ -29,8 +29,7 @@ install:
         travis_retry sudo apt-get install mencoder;
       fi;
     - pip install -q coverage coveralls nose-timer nibabel flake8
-    - python setup.py build
-    - python setup.py install
+    - pip install .[save_movie]
     - SRC_DIR=$(pwd)
 
 before_script:
