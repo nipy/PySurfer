@@ -23,8 +23,8 @@ install:
 
   # Install the dependencies of the project.
   - "conda install --yes --quiet ipython==1.1.0 numpy scipy mayavi matplotlib nose imaging"
-  - "pip install -q nose-timer"
-  - "pip install -e .[save_movie]"
+  - "pip install -q nose-timer nibabel imageio"
+  - "python setup.py develop"
   - "SET SUBJECTS_DIR=%CD%\\subjects"
 
 build: false  # Not a C# project, build stuff at the test step instead.
