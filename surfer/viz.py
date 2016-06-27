@@ -2205,8 +2205,10 @@ class Brain(object):
             import imageio
         except ImportError:
             raise ImportError("Saving movies from PySurfer requires the "
-                              "imageio library. To install imageio with "
-                              "PySurfer, run\n\n    $ pip install -U "
+                              "imageio library. To install imageio with pip, "
+                              "run\n\n    $ pip install imageio\n\nTo "
+                              "install/update PySurfer and imageio together, "
+                              "run\n\n    $ pip install -U "
                               "pysurfer[save_movie]\n")
 
         if tmin is None:
