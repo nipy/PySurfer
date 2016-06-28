@@ -2165,6 +2165,12 @@ class Brain(object):
                    bitrate=None, **kwargs):
         """Save a movie (for data with a time axis)
 
+        The movie is created through the :mod:`imageio` module. The format is
+        determined by the extension, and additional options can be specified
+        through keyword arguments that depend on the format. For available
+        formats and corresponding parameters see the imageio documentation:
+        http://imageio.readthedocs.io/en/latest/formats.html#multiple-images
+
         .. Warning::
             This method assumes that time is specified in seconds when adding
             data. If time is specified in milliseconds this will result in
@@ -2173,7 +2179,9 @@ class Brain(object):
         Parameters
         ----------
         fname : str
-            Path at which to save the movie.
+            Path at which to save the movie. The extension determines the
+            format (e.g., `'*.mov'`, `'*.gif'`, ...; see the :mod:`imageio`
+            documenttion for available formats).
         time_dilation : float
             Factor by which to stretch time (default 4). For example, an epoch
             from -100 to 600 ms lasts 700 ms. With ``time_dilation=4`` this
@@ -2188,6 +2196,8 @@ class Brain(object):
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
             one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
             'cubic', default 'quadratic').
+        additional keywords :
+            Specify additional options for :mod:`imageio`.
 
         Notes
         -----
