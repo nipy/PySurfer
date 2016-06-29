@@ -2196,7 +2196,7 @@ class Brain(object):
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
             one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
             'cubic', default 'quadratic').
-        additional keywords :
+        **kwargs :
             Specify additional options for :mod:`imageio`.
 
         Notes
