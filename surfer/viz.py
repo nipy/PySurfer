@@ -2250,6 +2250,9 @@ class Brain(object):
 
         logger.debug("Save movie for time points/samples\n%s\n%s"
                      % (times, time_idx))
+        # Sometimes the first screenshot is rendered with a different
+        # resolution
+        _ = self.screenshot()
         images = (self.screenshot() for _ in
                   self._iter_time(time_idx, interpolation))
         imageio.mimwrite(fname, images, **kwargs)
