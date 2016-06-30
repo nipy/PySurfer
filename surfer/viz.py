@@ -2161,9 +2161,15 @@ class Brain(object):
         return out
 
     def save_movie(self, fname, time_dilation=4., tmin=None, tmax=None,
-                   framerate=24, interpolation='quadratic', codec='mpeg4',
-                   bitrate='1M'):
+                   framerate=24, interpolation='quadratic', codec=None,
+                   bitrate=None, **kwargs):
         """Save a movie (for data with a time axis)
+
+        The movie is created through the :mod:`imageio` module. The format is
+        determined by the extension, and additional options can be specified
+        through keyword arguments that depend on the format. For available
+        formats and corresponding parameters see the imageio documentation:
+        http://imageio.readthedocs.io/en/latest/formats.html#multiple-images
 
         .. Warning::
             This method assumes that time is specified in seconds when adding
@@ -2173,7 +2179,9 @@ class Brain(object):
         Parameters
         ----------
         fname : str
-            Path at which to save the movie.
+            Path at which to save the movie. The extension determines the
+            format (e.g., `'*.mov'`, `'*.gif'`, ...; see the :mod:`imageio`
+            documenttion for available formats).
         time_dilation : float
             Factor by which to stretch time (default 4). For example, an epoch
             from -100 to 600 ms lasts 700 ms. With ``time_dilation=4`` this
@@ -2188,11 +2196,8 @@ class Brain(object):
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
             one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
             'cubic', default 'quadratic').
-        codec : str
-            Codec to use with ffmpeg (default 'mpeg4').
-        bitrate : str | float
-            Bitrate to use to encode movie. Can be specified as number (e.g.
-            64000) or string (e.g. '64k'). Default value is 1M
+        **kwargs :
+            Specify additional options for :mod:`imageio`.
 
         Notes
         -----
@@ -2211,6 +2216,15 @@ class Brain(object):
                               "run\n\n    $ pip install -U "
                               "pysurfer[save_movie]\n")
 
+        # find imageio FFMPEG parameters
+        if 'fps' not in kwargs:
+            kwargs['fps'] = framerate
+        if codec is not None:
+            kwargs['codec'] = codec
+        if bitrate is not None:
+            kwargs['bitrate'] = bitrate
+
+        # find tmin
         if tmin is None:
             tmin = self._times[0]
         elif tmin < self._times[0]:
@@ -2238,8 +2252,7 @@ class Brain(object):
                      % (times, time_idx))
         images = (self.screenshot() for _ in
                   self._iter_time(time_idx, interpolation))
-        imageio.mimwrite(fname, images, fps=framerate, codec=codec,
-                         bitrate=bitrate)
+        imageio.mimwrite(fname, images, **kwargs)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False,
                 row=-1, col=-1):
