@@ -14,6 +14,7 @@ import nibabel as nib
 from mayavi import mlab
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core import lut_manager
+from mayavi.core.scene import Scene
 from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
 from traits.api import (HasTraits, Range, Int, Float,
@@ -196,6 +197,10 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
     is returned to the command line. With the multi-view, TraitsUI
     unfortunately has no such support, so we only use it if needed.
     """
+    if isinstance(figure, int):
+        # use figure with specified id
+        figure = mlab.figure(figure, size=scene_size)
+
     if figure is None:
         # spawn scenes
         h, w = scene_size
@@ -221,6 +226,8 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
     else:
         if not isinstance(figure, (list, tuple)):
             figure = [figure]
+        if not all(isinstance(f, Scene) for f in figure):
+            raise TypeError('figure must be a mayavi scene or list of scenes')
         if not len(figure) == n_row * n_col:
             raise ValueError('For the requested view, figure must be a '
                              'list or tuple with exactly %i elements, '
