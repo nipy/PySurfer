@@ -37,6 +37,7 @@ def test_offscreen():
     """
     mlab.options.backend = 'auto'
     brain = Brain(*std_args, offscreen=True)
+    _ = brain.screenshot()
     shot = brain.screenshot()
     assert_array_equal(shot.shape, (800, 800, 3))
     brain.close()
