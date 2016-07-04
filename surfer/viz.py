@@ -197,10 +197,6 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
     is returned to the command line. With the multi-view, TraitsUI
     unfortunately has no such support, so we only use it if needed.
     """
-    if isinstance(figure, int):
-        # use figure with specified id
-        figure = mlab.figure(figure, size=scene_size)
-
     if figure is None:
         # spawn scenes
         h, w = scene_size
@@ -224,6 +220,8 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
                 window = _MlabGenerator(n_row, n_col, w, h, title)
                 figures, _v = window._get_figs_view()
     else:
+        if isinstance(figure, int):  # use figure with specified id
+            figure = (mlab.figure(figure, size=scene_size),)
         if not isinstance(figure, (list, tuple)):
             figure = [figure]
         if not all(isinstance(f, Scene) for f in figure):
@@ -332,9 +330,10 @@ class Brain(object):
         a square window, or the (width, height) of a rectangular window.
     background, foreground : matplotlib colors
         color of the background and foreground of the display window
-    figure : list of instances of mayavi.core.scene.Scene | None
-        If None, a new window will be created with the appropriate
-        views.
+    figure : list of mayavi.core.scene.Scene | None | int
+        If None (default), a new window will be created with the appropriate
+        views. For single view plots, the figure can be specified as int to
+        retrieve the corresponding Mayavi window.
     subjects_dir : str | None
         If not None, this directory will be used as the subjects directory
         instead of the value set using the SUBJECTS_DIR environment
