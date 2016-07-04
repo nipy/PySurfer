@@ -37,6 +37,8 @@ def test_offscreen():
     """
     mlab.options.backend = 'auto'
     brain = Brain(*std_args, offscreen=True)
+    # Sometimes the first screenshot is rendered with a different
+    # resolution on OS X
     _ = brain.screenshot()
     shot = brain.screenshot()
     assert_array_equal(shot.shape, (800, 800, 3))
