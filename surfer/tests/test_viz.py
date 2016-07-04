@@ -39,7 +39,7 @@ def test_offscreen():
     brain = Brain(*std_args, offscreen=True)
     # Sometimes the first screenshot is rendered with a different
     # resolution on OS X
-    _ = brain.screenshot()
+    brain.screenshot()
     shot = brain.screenshot()
     assert_array_equal(shot.shape, (800, 800, 3))
     brain.close()

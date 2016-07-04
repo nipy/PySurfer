@@ -2252,7 +2252,7 @@ class Brain(object):
                      % (times, time_idx))
         # Sometimes the first screenshot is rendered with a different
         # resolution on OS X
-        _ = self.screenshot()
+        self.screenshot()
         images = (self.screenshot() for _ in
                   self._iter_time(time_idx, interpolation))
         imageio.mimwrite(fname, images, **kwargs)
