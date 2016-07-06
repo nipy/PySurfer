@@ -948,9 +948,6 @@ class Brain(object):
                                   name="time_label", row=row, col=col,
                                   font_size=time_label_size,
                                   justification='right')
-        if initial_time_index is not None:
-            self.set_data_time_index(initial_time_index)
-        self._toggle_render(True, views)
         data['surfaces'] = surfs
         data['colorbars'] = bars
         data['orig_ctable'] = ct
@@ -958,8 +955,11 @@ class Brain(object):
         if remove_existing and self.data_dict[hemi] is not None:
             for surf in self.data_dict[hemi]['surfaces']:
                 surf.parent.parent.remove()
-
         self.data_dict[hemi] = data
+
+        if initial_time_index is not None:
+            self.set_data_time_index(initial_time_index)
+        self._toggle_render(True, views)
 
     def add_annotation(self, annot, borders=True, alpha=1, hemi=None,
                        remove_existing=True):
