@@ -191,16 +191,26 @@ def test_meg_inverse():
     stc = io.read_stc(stc_fname)
     data = stc['data']
     vertices = stc['vertices']
-    time = 1e3 * np.linspace(stc['tmin'],
-                             stc['tmin'] + data.shape[1] * stc['tstep'],
-                             data.shape[1])
+    time = np.linspace(stc['tmin'], stc['tmin'] + data.shape[1] * stc['tstep'],
+                       data.shape[1])
     colormap = 'hot'
-    time_label = 'time=%0.2f ms'
+
+    def time_label(t):
+        return 'time=%0.2f ms' % (1e3 * t)
+
     brain.add_data(data, colormap=colormap, vertices=vertices,
                    smoothing_steps=10, time=time, time_label=time_label)
-    brain.set_data_time_index(2)
     brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
+    assert_equal(brain.data_dict['lh']['time_idx'], 0)
+
+    brain.set_time(.1)
+    assert_equal(brain.data_dict['lh']['time_idx'], 2)
     # viewer = TimeViewer(brain)
+
+    brain.add_data(data, colormap=colormap, vertices=vertices,
+                   smoothing_steps=10, time=time, time_label=time_label,
+                   initial_time=.09, remove_existing=True)
+    assert_equal(brain.data_dict['lh']['time_idx'], 1)
     brain.close()
 
 
