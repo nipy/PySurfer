@@ -192,7 +192,7 @@ def test_meg_inverse():
     data = stc['data']
     vertices = stc['vertices']
     time = np.linspace(stc['tmin'], stc['tmin'] + data.shape[1] * stc['tstep'],
-                       data.shape[1])
+                       data.shape[1], endpoint=False)
     colormap = 'hot'
 
     def time_label(t):

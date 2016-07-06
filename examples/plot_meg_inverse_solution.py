@@ -50,7 +50,7 @@ for hemi in ['lh', 'rh']:
     time points (in seconds)
     """
     time = np.linspace(stc['tmin'], stc['tmin'] + data.shape[1] * stc['tstep'],
-                       data.shape[1])
+                       data.shape[1], endpoint=False)
 
     """
     colormap to use
