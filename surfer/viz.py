@@ -858,8 +858,9 @@ class Brain(object):
             conserving memory when displaying different data in a loop.
         time_label_size : int
             Font size of the time label (default 14)
-        initial_time : float
-            Time initially shown in the plot.
+        initial_time : float | None
+            Time initially shown in the plot. ``None`` to use the first time
+            sample (default).
         """
         hemi = self._check_hemi(hemi)
 
