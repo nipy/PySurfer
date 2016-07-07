@@ -802,7 +802,8 @@ class Brain(object):
                  colormap="RdBu_r", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d", colorbar=True,
-                 hemi=None, remove_existing=False, time_label_size=14):
+                 hemi=None, remove_existing=False, time_label_size=14,
+                 initial_time=None):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to add_overlay, but it displays
@@ -857,6 +858,9 @@ class Brain(object):
             conserving memory when displaying different data in a loop.
         time_label_size : int
             Font size of the time label (default 14)
+        initial_time : float | None
+            Time initially shown in the plot. ``None`` to use the first time
+            sample (default).
         """
         hemi = self._check_hemi(hemi)
 
@@ -907,6 +911,12 @@ class Brain(object):
             if not self.n_times == len(time):
                 raise ValueError('time is not the same length as '
                                  'array.shape[1]')
+            # initial time
+            if initial_time is None:
+                initial_time_index = None
+            else:
+                initial_time_index = self.index_for_time(initial_time)
+            # time label
             if isinstance(time_label, string_types):
                 time_label_fmt = time_label
 
@@ -919,6 +929,7 @@ class Brain(object):
         else:
             self._times = None
             self.n_times = None
+            initial_time_index = None
 
         surfs = []
         bars = []
@@ -938,7 +949,6 @@ class Brain(object):
                                   name="time_label", row=row, col=col,
                                   font_size=time_label_size,
                                   justification='right')
-        self._toggle_render(True, views)
         data['surfaces'] = surfs
         data['colorbars'] = bars
         data['orig_ctable'] = ct
@@ -946,8 +956,11 @@ class Brain(object):
         if remove_existing and self.data_dict[hemi] is not None:
             for surf in self.data_dict[hemi]['surfaces']:
                 surf.parent.parent.remove()
-
         self.data_dict[hemi] = data
+
+        if initial_time_index is not None:
+            self.set_data_time_index(initial_time_index)
+        self._toggle_render(True, views)
 
     def add_annotation(self, annot, borders=True, alpha=1, hemi=None,
                        remove_existing=True):
