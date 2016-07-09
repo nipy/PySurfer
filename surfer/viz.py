@@ -304,7 +304,7 @@ class Brain(object):
         either the name of a preset PySurfer cortex colorscheme (one of
         'classic', 'bone', 'low_contrast', or 'high_contrast'), or the
         name of mayavi colormap, or a tuple with values (colormap, min,
-        max, reverse) to fully specify the curvature colors.
+        max, reverse, alpha) to fully specify the curvature colors.
     size : float or pair of floats
         the size of the window, in pixels. can be one number to specify
         a square window, or the (width, height) of a rectangular window.
@@ -2360,8 +2360,9 @@ class _Hemisphere(object):
         if curv:
             curv_data = self._geo.bin_curv
             meshargs = dict(scalars=curv_data)
-            colormap, vmin, vmax, reverse = self._get_geo_colors(cortex)
-            kwargs = dict(colormap=colormap, vmin=vmin, vmax=vmax)
+            colormap, vmin, vmax, reverse, alpha = self._get_geo_colors(cortex)
+            kwargs = dict(colormap=colormap, vmin=vmin, vmax=vmax,
+                          opacity=alpha)
         else:
             curv_data = None
             meshargs = dict()
@@ -2654,13 +2655,14 @@ class _Hemisphere(object):
                     light.azimuth *= -1
 
     def _get_geo_colors(self, cortex):
-        """Return an mlab colormap name, vmin, and vmax for binary curvature.
+        """Return an mlab colormap name, vmin, vmax, and alpha for binary
+        curvature.
 
         Parameters
         ----------
         cortex : {classic, high_contrast, low_contrast, bone, tuple}
             The name of one of the preset cortex styles, or a tuple
-            with four entries as described in the return vales.
+            with five entries as described in the return vales.
 
         Returns
         -------
@@ -2672,20 +2674,24 @@ class _Hemisphere(object):
             curv colormap maximum
         reverse : boolean
             boolean indicating whether the colormap should be reversed
-
+        alpha : float in [0, 1]
+            alpha level to control opacity
+        
         """
-        colormap_map = dict(classic=("Greys", -1, 2, False),
-                            high_contrast=("Greys", -.1, 1.3, False),
-                            low_contrast=("Greys", -5, 5, False),
-                            bone=("bone", -.2, 2, True))
+        colormap_map = dict(classic=("Greys", -1, 2, False, 1.0),
+                            high_contrast=("Greys", -.1, 1.3, False, 1.0),
+                            low_contrast=("Greys", -5, 5, False, 1.0),
+                            bone=("bone", -.2, 2, True, 1.0))
 
         if cortex in colormap_map:
             color_data = colormap_map[cortex]
         elif cortex in lut_manager.lut_mode_list():
-            color_data = cortex, -1, 2, False
+            color_data = cortex, -1, 2, False, 1.0
         else:
-            color_data = cortex
-
+            if len(cortex) == 4:
+                color_data = tuple(cortex) + (1.0, )
+            else:
+                color_data = cortex
         return color_data
 
     def _format_cbar_text(self, cbar):
