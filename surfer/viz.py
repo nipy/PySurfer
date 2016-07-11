@@ -552,15 +552,15 @@ class Brain(object):
                             bone=(dict(colormap="bone",
                                        vmin=-.2, vmax=2,
                                        opacity=alpha), True, True))
-        if cortex in colormap_map:
+        if isinstance(cortex, dict):
+            geo_params = cortex, False, True
+            if not geo_params[0].has_key('opacity'):
+                geo_params[0]['opacity'] = alpha
+        elif cortex in colormap_map:
             geo_params = colormap_map[cortex]
         elif cortex in lut_manager.lut_mode_list():
             geo_params = dict(colormap=cortex, vmin=-1, vmax=2,
                               opacity=alpha), False, True
-        elif isinstance(cortex, dict):
-            geo_params = cortex, False, True
-            if not geo_params[0].has_key('opacity'):
-                geo_params[0]['opacity'] = alpha
         # check for None before checking len:
         elif cortex is None:
             geo_params = dict(color=(0.5, 0.5, 0.5),
