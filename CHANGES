@@ -1,6 +1,25 @@
 PySurfer Changes
 ================
 
+Version 0.7
+-----------
+
+- A new ``alpha`` keyword to the ``Brain`` constructor now controls
+  opacity of the rendered brain surface.
+- The ``curv`` keyword to the ``Brain`` constructor has been
+  deprecated. To replicate previous behavior when ``curv`` was set to
+  ``True`` simply omit the ``curv`` keyword. To replicate previous
+  behavior when ``curv`` was set to ``False``, simply set the
+  ``cortex`` keyword to None. To ease transition the ``curv`` argument
+  will still be caught and processed, but it will be removed in a
+  future release.
+- The ``cortex`` keyword to the ``Brain`` constructor now also accepts
+  a valid color specification (such as a 3-tuple with RGB values or a
+  color name) to render the cortical surface in that color without
+  rendering binary curvature values. Additionally it now also accepts
+  a dictionary with keyword arguments that are passed on to the call
+  to ``mlab.pipeline.surface``.
+
 Version 0.6
 -----------
 
