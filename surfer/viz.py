@@ -296,20 +296,24 @@ class Brain(object):
         freesurfer surface mesh name (ie 'white', 'inflated', etc.)
     title : str
         title for the window
-    cortex : str, tuple, or dict
-        Specifies if/how binarized curvature values are rendered.  If
-        binarized curvature values should be rendered it can be
-        either the name of a preset PySurfer cortex colorscheme (one
-        of 'classic' (default), 'bone', 'low_contrast', or
-        'high_contrast'), the name of a mayavi colormap, a 4-tuple with
-        values (colormap, min, max, reverse), or a dictionary with
-        corresponding keys to fully specify the curvature colors. If a
-        color is specified instead, the brain is rendered in that
-        color without displaying the binarized curvature values. A
-        setting of `None` produces a gray brain without binarized
-        curvature.
+    cortex : str, tuple, dict, or None
+        Specifies how the cortical surface is rendered. Accepts
+        specification of a colormap (in which case binarized curvature
+        values are rendered) or a color (in which case the cortical
+        surface is rendered without binarized curvature values).  Can
+        be set to: (1) the name of one of the preset cortex styles
+        ('classic' [default], 'high_contrast', 'low_contrast', or
+        'bone'), (2) the name of a colormap, (3) a tuple with four
+        entries for (colormap, vmin, vmax, reverse) indicating the
+        name of the colormap, the min and max values respectively and
+        whether or not the colormap should be reversed, (4) a valid
+        color specification (such as a 3-tuple with RGB values or a
+        valid color name), or (5) a dictionary of keyword arguments
+        that is passed on to the call to surface. If set to `None`,
+        color is set to (0.5, 0.5, 0.5) rendering a gray brain without
+        binarized curvature.
     alpha : float in [0, 1]
-        Alpha level to control opacity.
+        Alpha level to control opacity of the cortical surface.
     size : float or pair of floats
         the size of the window, in pixels. can be one number to specify
         a square window, or the (width, height) of a rectangular window.
@@ -352,7 +356,7 @@ class Brain(object):
                    "be removed in future versions. You should update your "
                    "code and pass these options directly to the `Brain` "
                    "constructor.")
-            warn(msg)
+            warn(msg, DeprecationWarning)
             cortex = config_opts.get("cortex", cortex)
             background = config_opts.get("background", background)
             foreground = config_opts.get("foreground", foreground)
@@ -370,7 +374,7 @@ class Brain(object):
                    "will reproduce the previous behavior when `curv` was "
                    "set to `False`. To emulate the previous behavior for "
                    "cases where `curv` was set to `True`, simply omit it.")
-            warn(msg)
+            warn(msg, DeprecationWarning)
             if not curv:
                 cortex = None
 
@@ -516,11 +520,20 @@ class Brain(object):
 
         Parameters
         ----------
-        cortex : {classic, high_contrast, low_contrast, bone, tuple}
-            The name of one of the preset cortex styles, or a tuple
-            with four entries as described in the return vales.
+        cortex : {str, tuple, dict, None}
+            Can be set to: (1) the name of one of the preset cortex
+            styles ('classic', 'high_contrast', 'low_contrast', or
+            'bone'), (2) the name of a colormap, (3) a tuple with
+            four entries for (colormap, vmin, vmax, reverse)
+            indicating the name of the colormap, the min and max
+            values respectively and whether or not the colormap should
+            be reversed, (4) a valid color specification (such as a
+            3-tuple with RGB values or a valid color name), or (5) a
+            dictionary of keyword arguments that is passed on to the
+            call to surface. If set to None, color is set to (0.5,
+            0.5, 0.5).
         alpha : float in [0, 1]
-            Alpha level to control opacity.
+            Alpha level to control opacity of the cortical surface.
 
         Returns
         -------
@@ -553,9 +566,14 @@ class Brain(object):
                                        vmin=-.2, vmax=2,
                                        opacity=alpha), True, True))
         if isinstance(cortex, dict):
+            if not cortex.has_key('opacity'):
+                cortex['opacity'] = alpha
+            if cortex.has_key('colormap'):
+                if not cortex.has_key('vmin'):
+                    cortex['vmin'] = -1
+                if not cortex.has_key('vmax'):
+                    cortex['vmax'] = 2
             geo_params = cortex, False, True
-            if not geo_params[0].has_key('opacity'):
-                geo_params[0]['opacity'] = alpha
         elif cortex in colormap_map:
             geo_params = colormap_map[cortex]
         elif cortex in lut_manager.lut_mode_list():
