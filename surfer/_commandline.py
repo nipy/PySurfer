@@ -38,8 +38,6 @@ parser.add_argument("hemi", metavar="hemi", choices=["lh", "rh",
                     help="hemisphere to load")
 parser.add_argument("surf",
                     help="surface mesh (e.g. 'pial', 'inflated')")
-parser.add_argument("-no-curv", action="store_false", dest="curv",
-                    help="do not display the binarized surface curvature")
 parser.add_argument("-morphometry", metavar="MEAS",
                     help="load morphometry file (e.g. thickness, curvature)")
 parser.add_argument("-annotation", metavar="ANNOT",
@@ -64,8 +62,12 @@ parser.add_argument("-size", default=800, nargs="?",
                     help="size of the display window (in pixels)")
 parser.add_argument("-background", metavar="COLOR", default="black",
                     help="background color for display")
+parser.add_argument("-foreground", metavar="COLOR", default="white",
+                    help="foreground color for display")
 parser.add_argument("-cortex", metavar="COLOR", default="classic",
-                    help="colormap for binary cortex curvature")
+                    help="colormap or color for rendering the cortex")
+parser.add_argument("-alpha", metavar="COLOR", default="1.0",
+                    help="specifies opacity for the cortical surface")
 parser.add_argument("-title",
                     help="title to use for the figure")
 parser.add_argument("-views", nargs="*", default=['lat'],
