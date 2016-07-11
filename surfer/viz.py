@@ -566,12 +566,12 @@ class Brain(object):
                                        vmin=-.2, vmax=2,
                                        opacity=alpha), True, True))
         if isinstance(cortex, dict):
-            if not 'opacity' in cortex:
+            if 'opacity' not in cortex:
                 cortex['opacity'] = alpha
             if 'colormap' in cortex:
-                if not 'vmin' in cortex:
+                if 'vmin' not in cortex:
                     cortex['vmin'] = -1
-                if not 'vmax' in cortex:
+                if 'vmax' not in cortex:
                     cortex['vmax'] = 2
             geo_params = cortex, False, True
         elif cortex in colormap_map:
