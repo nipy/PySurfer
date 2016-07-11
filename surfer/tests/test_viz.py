@@ -73,21 +73,22 @@ def test_brains():
     # testing backend breaks when passing in a figure, so we use 'auto' here
     # (shouldn't affect usability, but it makes testing more annoying)
     mlab.options.backend = 'auto'
-    surfs = ['inflated', 'white']
-    hemis = ['lh', 'rh']
-    curvs = [True, False]
-    titles = [None, 'Hello']
-    cortices = ["low_contrast", ("Reds", 0, 1, False)]
-    sizes = [500, (400, 300)]
-    backgrounds = ["white", "blue"]
-    foregrounds = ["black", "white"]
-    figs = [None, mlab.figure()]
-    subj_dirs = [None, subj_dir]
-    for surf, hemi, curv, title, cort, s, bg, fg, fig, sd \
-            in zip(surfs, hemis, curvs, titles, cortices, sizes,
-                   backgrounds, foregrounds, figs, subj_dirs):
-        brain = Brain(subject_id, hemi, surf, curv, title,
-                      cort, s, bg, fg, fig, sd)
+    surfs = ['inflated', 'white', 'white']
+    hemis = ['lh', 'rh', 'both']
+    titles = [None, 'Hello', 'Good bye!']
+    cortices = ["low_contrast", ("Reds", 0, 1, False), 'hotpink']
+    sizes = [500, (400, 300), (300, 300)]
+    backgrounds = ["white", "blue", "black"]
+    foregrounds = ["black", "white", "0.75"]
+    figs = [None, mlab.figure(), None]
+    subj_dirs = [None, subj_dir, subj_dir]
+    alphas = [1.0, 0.5, 0.25]
+    for surf, hemi, title, cort, s, bg, fg, fig, sd, alpha \
+            in zip(surfs, hemis, titles, cortices, sizes,
+                   backgrounds, foregrounds, figs, subj_dirs, alphas):
+        brain = Brain(subject_id, hemi, surf, title=title, cortex=cort,
+                      alpha=alpha, size=s, background=bg, foreground=fg,
+                      figure=fig, subj_dir=sd)
         brain.close()
     assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   subjects_dir='')

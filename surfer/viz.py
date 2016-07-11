@@ -294,17 +294,22 @@ class Brain(object):
         in different viewing panes.
     surf :  geometry name
         freesurfer surface mesh name (ie 'white', 'inflated', etc.)
-    curv : boolean
-        if true, loads curv file and displays binary curvature
-        (default: True)
     title : str
         title for the window
-    cortex : str or tuple
-        specifies how binarized curvature values are rendered.
-        either the name of a preset PySurfer cortex colorscheme (one of
-        'classic', 'bone', 'low_contrast', or 'high_contrast'), or the
-        name of mayavi colormap, or a tuple with values (colormap, min,
-        max, reverse, alpha) to fully specify the curvature colors.
+    cortex : str, tuple, or dict
+        Specifies if/how binarized curvature values are rendered.  If
+        binarized curvature values should be rendered it can be
+        either the name of a preset PySurfer cortex colorscheme (one
+        of 'classic' (default), 'bone', 'low_contrast', or
+        'high_contrast'), the name of a mayavi colormap, a 4-tuple with
+        values (colormap, min, max, reverse), or a dictionary with
+        corresponding keys to fully specify the curvature colors. If a
+        color is specified instead, the brain is rendered in that
+        color without displaying the binarized curvature values. A
+        setting of `None` produces a gray brain without binarized
+        curvature.
+    alpha : float in [0, 1]
+        Alpha level to control opacity.
     size : float or pair of floats
         the size of the window, in pixels. can be one number to specify
         a square window, or the (width, height) of a rectangular window.
@@ -335,11 +340,11 @@ class Brain(object):
         List of the underlying brain instances.
 
     """
-    def __init__(self, subject_id, hemi, surf, curv=True, title=None,
-                 cortex="classic", size=800, background="black",
+    def __init__(self, subject_id, hemi, surf, title=None,
+                 cortex="classic", alpha=1.0, size=800, background="black",
                  foreground="white", figure=None, subjects_dir=None,
                  views=['lat'], offset=True, show_toolbar=False,
-                 offscreen=False, config_opts=None):
+                 offscreen=False, config_opts=None, curv=None):
 
         # Keep backwards compatability
         if config_opts is not None:
@@ -356,6 +361,18 @@ class Brain(object):
             width = config_opts.get("width", size)
             height = config_opts.get("height", size)
             size = (width, height)
+        # Keep backwards compatability
+        if curv is not None:
+            msg = ("The `curv` keyword has been deprecated and will "
+                   "be removed in future versions. You should update your "
+                   "code and use the `cortex` keyword to specify how the "
+                   "brain surface is rendered. Setting `cortex` to `None` "
+                   "will reproduce the previous behavior when `curv` was "
+                   "set to `False`. To emulate the previous behavior for "
+                   "cases where `curv` was set to `True`, simply omit it.")
+            warn(msg)
+            if not curv:
+                cortex = None
 
         col_dict = dict(lh=1, rh=1, both=1, split=2)
         n_col = col_dict[hemi]
@@ -385,12 +402,13 @@ class Brain(object):
             geo_hemis = ['rh']
         else:
             raise ValueError('bad hemi value')
+        geo_kwargs, geo_reverse, geo_curv = self._get_geo_params(cortex, alpha)
         for h in geo_hemis:
             # Initialize a Surface object as the geometry
             geo = Surface(subject_id, h, surf, subjects_dir, offset)
             # Load in the geometry and (maybe) curvature
             geo.load_geometry()
-            if curv:
+            if geo_curv:
                 geo.load_curvature()
             self.geo[h] = geo
 
@@ -414,9 +432,9 @@ class Brain(object):
         self._toggle_render(False)
 
         # fill figures with brains
-        kwargs = dict(surf=surf, curv=curv, title=None,
-                      cortex=cortex, subjects_dir=subjects_dir,
-                      bg_color=self._bg_color, offset=offset)
+        kwargs = dict(surf=surf, geo_curv=geo_curv, geo_kwargs=geo_kwargs,
+                      geo_reverse=geo_reverse, subjects_dir=subjects_dir,
+                      bg_color=self._bg_color)
         brains = []
         brain_matrix = []
         for ri, view in enumerate(views):
@@ -491,6 +509,77 @@ class Brain(object):
 
         fg_color_rgb = colorConverter.to_rgb(foreground)
         self._fg_color = fg_color_rgb
+
+    def _get_geo_params(self, cortex, alpha=1.0):
+        """Return keyword arguments and other parameters for surface
+        rendering.
+
+        Parameters
+        ----------
+        cortex : {classic, high_contrast, low_contrast, bone, tuple}
+            The name of one of the preset cortex styles, or a tuple
+            with four entries as described in the return vales.
+        alpha : float in [0, 1]
+            Alpha level to control opacity.
+
+        Returns
+        -------
+        kwargs : dict
+            Dictionary with keyword arguments to be used for surface
+            rendering. For colormaps, keys are ['colormap', 'vmin',
+            'vmax', 'alpha'] to specify the name, minimum, maximum,
+            and alpha transparency of the colormap respectively. For
+            colors, keys are ['color', 'alpha'] to specify the name
+            and alpha transparency of the color respectively.
+        reverse : boolean
+            Boolean indicating whether a colormap should be
+            reversed. Set to False if a color (rather than a colormap)
+            is specified.
+        curv : boolean
+            Boolean indicating whether curv file is loaded and binary
+            curvature is displayed.
+
+        """
+        colormap_map = dict(classic=(dict(colormap="Greys",
+                                          vmin=-1, vmax=2,
+                                          opacity=alpha), False, True),
+                            high_contrast=(dict(colormap="Greys",
+                                                vmin=-.1, vmax=1.3,
+                                                opacity=alpha), False, True),
+                            low_contrast=(dict(colormap="Greys",
+                                               vmin=-5, vmax=5,
+                                               opacity=alpha), False, True),
+                            bone=(dict(colormap="bone",
+                                       vmin=-.2, vmax=2,
+                                       opacity=alpha), True, True))
+        if cortex in colormap_map:
+            geo_params = colormap_map[cortex]
+        elif cortex in lut_manager.lut_mode_list():
+            geo_params = dict(colormap=cortex, vmin=-1, vmax=2,
+                              opacity=alpha), False, True
+        elif isinstance(cortex, dict):
+            geo_params = cortex, False, True
+            if not geo_params[0].has_key('opacity'):
+                geo_params[0]['opacity'] = alpha
+        # check for None before checking len:
+        elif cortex is None:
+            geo_params = dict(color=(0.5, 0.5, 0.5),
+                              opacity=alpha), False, False
+        # Test for 4-tuple specifying colormap parameters. Need to
+        # avoid 4 letter strings and 4-tuples not specifying a
+        # colormap name in the first position (color can be specified
+        # as RGBA tuple, but the A value will be dropped by to_rgb()):
+        elif (not isinstance(cortex, basestring)) and (len(cortex) == 4) and (
+                isinstance(cortex[0], basestring)):
+            geo_params = dict(colormap=cortex[0], vmin=cortex[1],
+                              vmax=cortex[2], opacity=alpha), cortex[3], True
+        else:
+            try:
+                color = colorConverter.to_rgb(cortex)
+                geo_params = dict(color=color, opacity=alpha), False, False
+            except ValueError:
+                geo_params = cortex, False, True
+        return geo_params
 
     def get_data_properties(self):
         """ Get properties of the data shown
@@ -2341,8 +2430,8 @@ class Brain(object):
 
 class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
-    def __init__(self, subject_id, hemi, surf, figure, geo, curv, title,
-                 cortex, subjects_dir, bg_color, offset, backend):
+    def __init__(self, subject_id, hemi, surf, figure, geo, geo_curv,
+                 geo_kwargs, geo_reverse, subjects_dir, bg_color, backend):
         if hemi not in ['lh', 'rh']:
             raise ValueError('hemi must be either "lh" or "rh"')
         # Set the identifying info
@@ -2357,16 +2446,12 @@ class _Hemisphere(object):
 
         # mlab pipeline mesh and surface for geomtery
         self._geo = geo
-        if curv:
+        if geo_curv:
             curv_data = self._geo.bin_curv
             meshargs = dict(scalars=curv_data)
-            colormap, vmin, vmax, reverse, alpha = self._get_geo_colors(cortex)
-            kwargs = dict(colormap=colormap, vmin=vmin, vmax=vmax,
-                          opacity=alpha)
         else:
             curv_data = None
             meshargs = dict()
-            kwargs = dict(color=(.5, .5, .5))
         meshargs['figure'] = self._f
         x, y, z, f = self._geo.x, self._geo.y, self._geo.z, self._geo.faces
         self._geo_mesh = mlab.pipeline.triangular_mesh_source(x, y, z, f,
@@ -2376,8 +2461,8 @@ class _Hemisphere(object):
         self._geo_mesh.data.cell_data.normals = None
         self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                                figure=self._f, reset_zoom=True,
-                                               **kwargs)
-        if curv and reverse:
+                                               **geo_kwargs)
+        if geo_curv and geo_reverse:
             curv_bar = mlab.scalarbar(self._geo_surf)
             curv_bar.reverse_lut = True
             curv_bar.visible = False
@@ -2653,46 +2738,6 @@ class _Hemisphere(object):
                     self._f.scene.light_manager is not None:
                 for light in self._f.scene.light_manager.lights:
                     light.azimuth *= -1
-
-    def _get_geo_colors(self, cortex):
-        """Return an mlab colormap name, vmin, vmax, and alpha for binary
-        curvature.
-
-        Parameters
-        ----------
-        cortex : {classic, high_contrast, low_contrast, bone, tuple}
-            The name of one of the preset cortex styles, or a tuple
-            with five entries as described in the return vales.
-
-        Returns
-        -------
-        colormap : string
-            mlab colormap name
-        vmin : float
-            curv colormap minimum
-        vmax : float
-            curv colormap maximum
-        reverse : boolean
-            boolean indicating whether the colormap should be reversed
-        alpha : float in [0, 1]
-            alpha level to control opacity
-        
-        """
-        colormap_map = dict(classic=("Greys", -1, 2, False, 1.0),
-                            high_contrast=("Greys", -.1, 1.3, False, 1.0),
-                            low_contrast=("Greys", -5, 5, False, 1.0),
-                            bone=("bone", -.2, 2, True, 1.0))
-
-        if cortex in colormap_map:
-            color_data = colormap_map[cortex]
-        elif cortex in lut_manager.lut_mode_list():
-            color_data = cortex, -1, 2, False, 1.0
-        else:
-            if len(cortex) == 4:
-                color_data = tuple(cortex) + (1.0, )
-            else:
-                color_data = cortex
-        return color_data
 
     def _format_cbar_text(self, cbar):
         bg_color = self._bg_color
