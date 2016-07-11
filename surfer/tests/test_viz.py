@@ -88,7 +88,7 @@ def test_brains():
                    backgrounds, foregrounds, figs, subj_dirs, alphas):
         brain = Brain(subject_id, hemi, surf, title=title, cortex=cort,
                       alpha=alpha, size=s, background=bg, foreground=fg,
-                      figure=fig, subj_dir=sd)
+                      figure=fig, subjects_dir=sd)
         brain.close()
     assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   subjects_dir='')
