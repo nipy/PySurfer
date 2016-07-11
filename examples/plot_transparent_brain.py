@@ -7,7 +7,6 @@ Plot a transparent brain to visualize foci below the surface.
 
 """
 import os
-import os.path as op
 from surfer import Brain
 
 print(__doc__)
