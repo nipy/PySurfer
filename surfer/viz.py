@@ -297,21 +297,24 @@ class Brain(object):
     title : str
         title for the window
     cortex : str, tuple, dict, or None
-        Specifies how the cortical surface is rendered. Accepts
-        specification of a colormap (in which case binarized curvature
-        values are rendered) or a color (in which case the cortical
-        surface is rendered without binarized curvature values).  Can
-        be set to: (1) the name of one of the preset cortex styles
-        ('classic' [default], 'high_contrast', 'low_contrast', or
-        'bone'), (2) the name of a colormap, (3) a tuple with four
-        entries for (colormap, vmin, vmax, reverse) indicating the
-        name of the colormap, the min and max values respectively and
-        whether or not the colormap should be reversed, (4) a valid
-        color specification (such as a 3-tuple with RGB values or a
-        valid color name), or (5) a dictionary of keyword arguments
-        that is passed on to the call to surface. If set to `None`,
-        color is set to (0.5, 0.5, 0.5) rendering a gray brain without
-        binarized curvature.
+        Specifies how the cortical surface is rendered. Options:
+
+            1. The name of one of the preset cortex styles:
+               ``'classic'`` (default), ``'high_contrast'``,
+               ``'low_contrast'``, or ``'bone'``.
+            2. A color-like argument to render the cortex as a single
+               color, e.g. ``'red'`` or ``(0.1, 0.4, 1.)``. Setting
+               this to ``None`` is equivalent to ``(0.5, 0.5, 0.5)``.
+            3. The name of a colormap used to render binarized
+               curvature values, e.g., ``Grays``.
+            4. A container with four entries for colormap (string
+               specifiying the name of a colormap), vmin (float
+               specifying the minimum value for the colormap), vmax
+               (float specifying the maximum value for the colormap),
+               and reverse (bool specifying whether the colormap
+               should be reversed. E.g., ``('Greys', -1, 2, False)``.
+            5. A dict of keyword arguments that is passed on to the
+               call to surface.
     alpha : float in [0, 1]
         Alpha level to control opacity of the cortical surface.
     size : float or pair of floats
