@@ -307,13 +307,16 @@ class Brain(object):
                this to ``None`` is equivalent to ``(0.5, 0.5, 0.5)``.
             3. The name of a colormap used to render binarized
                curvature values, e.g., ``Grays``.
-            4. A container with four entries for colormap (string
+            4. A list of colors used to render binarized curvature
+               values. Only the first and last colors are used. E.g.,
+               ['red', 'blue'] or [(1, 0, 0), (0, 0, 1)].
+            5. A container with four entries for colormap (string
                specifiying the name of a colormap), vmin (float
                specifying the minimum value for the colormap), vmax
                (float specifying the maximum value for the colormap),
                and reverse (bool specifying whether the colormap
                should be reversed. E.g., ``('Greys', -1, 2, False)``.
-            5. A dict of keyword arguments that is passed on to the
+            6. A dict of keyword arguments that is passed on to the
                call to surface.
     alpha : float in [0, 1]
         Alpha level to control opacity of the cortical surface.
@@ -577,11 +580,18 @@ class Brain(object):
                 if 'vmax' not in cortex:
                     cortex['vmax'] = 2
             geo_params = cortex, False, True
-        elif cortex in colormap_map:
-            geo_params = colormap_map[cortex]
-        elif cortex in lut_manager.lut_mode_list():
-            geo_params = dict(colormap=cortex, vmin=-1, vmax=2,
-                              opacity=alpha), False, True
+        elif isinstance(cortex, basestring):
+            if cortex in colormap_map:
+                geo_params = colormap_map[cortex]
+            elif cortex in lut_manager.lut_mode_list():
+                geo_params = dict(colormap=cortex, vmin=-1, vmax=2,
+                                  opacity=alpha), False, True
+            else:
+                try:
+                    color = colorConverter.to_rgb(cortex)
+                    geo_params = dict(color=color, opacity=alpha), False, False
+                except ValueError:
+                    pass
         # check for None before checking len:
         elif cortex is None:
             geo_params = dict(color=(0.5, 0.5, 0.5),
@@ -590,16 +600,20 @@ class Brain(object):
         # avoid 4 letter strings and 4-tuples not specifying a
         # colormap name in the first position (color can be specified
         # as RGBA tuple, but the A value will be dropped by to_rgb()):
-        elif (not isinstance(cortex, basestring)) and (len(cortex) == 4) and (
-                isinstance(cortex[0], basestring)):
+        elif (len(cortex) == 4) and (isinstance(cortex[0], basestring)):
             geo_params = dict(colormap=cortex[0], vmin=cortex[1],
                               vmax=cortex[2], opacity=alpha), cortex[3], True
         else:
-            try:
+            try: # check if it's a non-string color specification
                 color = colorConverter.to_rgb(cortex)
                 geo_params = dict(color=color, opacity=alpha), False, False
             except ValueError:
-                geo_params = cortex, False, True
+                try:
+                    lut = create_color_lut(cortex)
+                    geo_params = dict(colormap="Greys", opacity=alpha,
+                                      lut=lut), False, True
+                except ValueError:
+                    geo_params = cortex, False, True
         return geo_params
 
     def get_data_properties(self):
@@ -2480,9 +2494,17 @@ class _Hemisphere(object):
         # add surface normals
         self._geo_mesh.data.point_data.normals = self._geo.nn
         self._geo_mesh.data.cell_data.normals = None
+        if 'lut' in geo_kwargs:
+            # create a new copy we can modify:
+            geo_kwargs = dict(geo_kwargs)
+            lut = geo_kwargs.pop('lut')
+        else:
+            lut = None
         self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
                                                figure=self._f, reset_zoom=True,
                                                **geo_kwargs)
+        if lut is not None:
+            self._geo_surf.module_manager.scalar_lut_manager.lut.table = lut
         if geo_curv and geo_reverse:
             curv_bar = mlab.scalarbar(self._geo_surf)
             curv_bar.reverse_lut = True
