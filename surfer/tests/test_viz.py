@@ -75,14 +75,19 @@ def test_brains():
     mlab.options.backend = 'auto'
     surfs = ['inflated', 'white', 'white', 'white', 'white', 'white', 'white']
     hemis = ['lh', 'rh', 'both', 'both', 'rh', 'both', 'both']
-    titles = [None, 'Hello', 'Good bye!', 'lut test', 'dict test', 'None test', 'RGB test']
+    titles = [None, 'Hello', 'Good bye!', 'lut test',
+              'dict test', 'None test', 'RGB test']
     cortices = ["low_contrast", ("Reds", 0, 1, False), 'hotpink',
-                ['yellow', 'blue'], dict(colormap='Greys'), None, (0.5, 0.5, 0.5)]
+                ['yellow', 'blue'], dict(colormap='Greys'),
+                None, (0.5, 0.5, 0.5)]
     sizes = [500, (400, 300), (300, 300), (300, 400), 500, 400, 300]
-    backgrounds = ["white", "blue", "black", "0.75", (0.2, 0.2, 0.2), "black", "0.75"]
-    foregrounds = ["black", "white", "0.75", "red", (0.2, 0.2, 0.2), "blue", "black"]
+    backgrounds = ["white", "blue", "black", "0.75",
+                   (0.2, 0.2, 0.2), "black", "0.75"]
+    foregrounds = ["black", "white", "0.75", "red",
+                   (0.2, 0.2, 0.2), "blue", "black"]
     figs = [None, mlab.figure(), None, None, mlab.figure(), None, None]
-    subj_dirs = [None, subj_dir, subj_dir, subj_dir, subj_dir, subj_dir, subj_dir]
+    subj_dirs = [None, subj_dir, subj_dir, subj_dir,
+                 subj_dir, subj_dir, subj_dir]
     alphas = [1.0, 0.5, 0.25, 0.7, 0.5, 0.25, 0.7]
     for surf, hemi, title, cort, s, bg, fg, fig, sd, alpha \
             in zip(surfs, hemis, titles, cortices, sizes,
