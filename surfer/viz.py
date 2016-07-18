@@ -604,7 +604,7 @@ class Brain(object):
             geo_params = dict(colormap=cortex[0], vmin=cortex[1],
                               vmax=cortex[2], opacity=alpha), cortex[3], True
         else:
-            try: # check if it's a non-string color specification
+            try:  # check if it's a non-string color specification
                 color = colorConverter.to_rgb(cortex)
                 geo_params = dict(color=color, opacity=alpha), False, False
             except ValueError:
