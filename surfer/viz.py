@@ -591,7 +591,7 @@ class Brain(object):
                     color = colorConverter.to_rgb(cortex)
                     geo_params = dict(color=color, opacity=alpha), False, False
                 except ValueError:
-                    pass
+                    geo_params = cortex, False, True
         # check for None before checking len:
         elif cortex is None:
             geo_params = dict(color=(0.5, 0.5, 0.5),

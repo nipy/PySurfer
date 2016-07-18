@@ -73,17 +73,17 @@ def test_brains():
     # testing backend breaks when passing in a figure, so we use 'auto' here
     # (shouldn't affect usability, but it makes testing more annoying)
     mlab.options.backend = 'auto'
-    surfs = ['inflated', 'white', 'white', 'white']
-    hemis = ['lh', 'rh', 'both', 'both']
-    titles = [None, 'Hello', 'Good bye!', 'lut test']
+    surfs = ['inflated', 'white', 'white', 'white', 'white', 'white', 'white']
+    hemis = ['lh', 'rh', 'both', 'both', 'rh', 'both', 'both']
+    titles = [None, 'Hello', 'Good bye!', 'lut test', 'dict test', 'None test', 'RGB test']
     cortices = ["low_contrast", ("Reds", 0, 1, False), 'hotpink',
-                ['yellow', 'blue']]
-    sizes = [500, (400, 300), (300, 300), (300, 400)]
-    backgrounds = ["white", "blue", "black", '0.75']
-    foregrounds = ["black", "white", "0.75", 'red']
-    figs = [None, mlab.figure(), None, None]
-    subj_dirs = [None, subj_dir, subj_dir, subj_dir]
-    alphas = [1.0, 0.5, 0.25, 0.7]
+                ['yellow', 'blue'], dict(colormap='Grays'), None, (0.5, 0.5, 0.5)]
+    sizes = [500, (400, 300), (300, 300), (300, 400), 500, 400, 300]
+    backgrounds = ["white", "blue", "black", "0.75", (0.2, 0.2, 0.2), "black", "0.75"]
+    foregrounds = ["black", "white", "0.75", "red", (0.2, 0.2, 0.2), "blue", "black"]
+    figs = [None, mlab.figure(), None, None, mlab.figure(), None, None]
+    subj_dirs = [None, subj_dir, subj_dir, subj_dir, subj_dir, subj_dir, subj_dir]
+    alphas = [1.0, 0.5, 0.25, 0.7, 0.5, 0.25, 0.7]
     for surf, hemi, title, cort, s, bg, fg, fig, sd, alpha \
             in zip(surfs, hemis, titles, cortices, sizes,
                    backgrounds, foregrounds, figs, subj_dirs, alphas):
