@@ -77,7 +77,7 @@ def test_brains():
     hemis = ['lh', 'rh', 'both', 'both', 'rh', 'both', 'both']
     titles = [None, 'Hello', 'Good bye!', 'lut test', 'dict test', 'None test', 'RGB test']
     cortices = ["low_contrast", ("Reds", 0, 1, False), 'hotpink',
-                ['yellow', 'blue'], dict(colormap='Grays'), None, (0.5, 0.5, 0.5)]
+                ['yellow', 'blue'], dict(colormap='Greys'), None, (0.5, 0.5, 0.5)]
     sizes = [500, (400, 300), (300, 300), (300, 400), 500, 400, 300]
     backgrounds = ["white", "blue", "black", "0.75", (0.2, 0.2, 0.2), "black", "0.75"]
     foregrounds = ["black", "white", "0.75", "red", (0.2, 0.2, 0.2), "blue", "black"]
