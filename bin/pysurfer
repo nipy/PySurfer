@@ -73,9 +73,10 @@ if __name__ == '__main__':
         from surfer import Brain
 
         # Load  up the figure and underlying brain object
-        b = Brain(args.subject_id, args.hemi, args.surf, args.curv,
-                  args.title, views=args.views, size=args.size,
-                  background=args.background, cortex=args.cortex)
+        b = Brain(args.subject_id, args.hemi, args.surf, title=args.title,
+                  cortex=args.cortex, alpha=args.alpha, size=args.size,
+                  background=args.background, foreground=args.foreground,
+                  views=args.views)
 
         # Maybe load some morphometry
         if args.morphometry is not None:
