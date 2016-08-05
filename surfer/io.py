@@ -7,6 +7,8 @@ import numpy as np
 import nibabel as nib
 from nibabel.spatialimages import ImageFileError
 
+from .utils import verbose
+
 import logging
 logger = logging.getLogger('surfer')
 
@@ -128,6 +130,7 @@ def read_stc(filepath):
     return stc
 
 
+@verbose
 def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
                         projmeth="frac", projsum="avg", projarg=[0, 1, .1],
                         surf="white", smooth_fwhm=3, mask_label=None,
