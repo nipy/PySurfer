@@ -7,10 +7,10 @@ import numpy as np
 import nibabel as nib
 from nibabel.spatialimages import ImageFileError
 
+from .utils import verbose
+
 import logging
 logger = logging.getLogger('surfer')
-
-from .utils import verbose
 
 
 def read_scalar_data(filepath):
