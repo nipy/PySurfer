@@ -10,6 +10,8 @@ from nibabel.spatialimages import ImageFileError
 import logging
 logger = logging.getLogger('surfer')
 
+from .utils import verbose
+
 
 def read_scalar_data(filepath):
     """Load in scalar data from an image.
@@ -128,6 +130,7 @@ def read_stc(filepath):
     return stc
 
 
+@verbose
 def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
                         projmeth="frac", projsum="avg", projarg=[0, 1, .1],
                         surf="white", smooth_fwhm=3, mask_label=None,
