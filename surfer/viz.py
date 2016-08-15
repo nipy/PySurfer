@@ -580,7 +580,7 @@ class Brain(object):
                 if 'vmax' not in cortex:
                     cortex['vmax'] = 2
             geo_params = cortex, False, True
-        elif isinstance(cortex, basestring):
+        elif isinstance(cortex, string_types):
             if cortex in colormap_map:
                 geo_params = colormap_map[cortex]
             elif cortex in lut_manager.lut_mode_list():
@@ -600,7 +600,7 @@ class Brain(object):
         # avoid 4 letter strings and 4-tuples not specifying a
         # colormap name in the first position (color can be specified
         # as RGBA tuple, but the A value will be dropped by to_rgb()):
-        elif (len(cortex) == 4) and (isinstance(cortex[0], basestring)):
+        elif (len(cortex) == 4) and (isinstance(cortex[0], string_types)):
             geo_params = dict(colormap=cortex[0], vmin=cortex[1],
                               vmax=cortex[2], opacity=alpha), cortex[3], True
         else:
