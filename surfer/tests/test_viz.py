@@ -33,8 +33,7 @@ requires_fs = np.testing.dec.skipif(not has_freesurfer(),
 
 @requires_fsaverage
 def test_offscreen():
-    """Test offscreen rendering
-    """
+    """Test offscreen rendering."""
     mlab.options.backend = 'auto'
     brain = Brain(*std_args, offscreen=True)
     # Sometimes the first screenshot is rendered with a different
@@ -47,8 +46,7 @@ def test_offscreen():
 
 @requires_fsaverage
 def test_image():
-    """Test image saving
-    """
+    """Test image saving."""
     tmp_name = mktemp() + '.png'
 
     mlab.options.backend = 'auto'
@@ -68,8 +66,7 @@ def test_image():
 
 @requires_fsaverage
 def test_brains():
-    """Test plotting of Brain with different arguments
-    """
+    """Test plotting of Brain with different arguments."""
     # testing backend breaks when passing in a figure, so we use 'auto' here
     # (shouldn't affect usability, but it makes testing more annoying)
     mlab.options.backend = 'auto'
@@ -102,8 +99,7 @@ def test_brains():
 
 @requires_fsaverage
 def test_annot():
-    """Test plotting of annot
-    """
+    """Test plotting of annot."""
     mlab.options.backend = 'test'
     annots = ['aparc', 'aparc.a2005s']
     borders = [True, False, 2]
@@ -117,8 +113,7 @@ def test_annot():
 
 @requires_fsaverage
 def test_contour():
-    """Test plotting of contour overlay
-    """
+    """Test plotting of contour overlay."""
     mlab.options.backend = 'test'
     brain = Brain(*std_args)
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
@@ -133,21 +128,20 @@ def test_contour():
 @requires_fsaverage
 @requires_fs
 def test_data():
-    """Test plotting of data
-    """
+    """Test plotting of data."""
     mlab.options.backend = 'test'
     brain = Brain(*std_args)
     mri_file = pjoin(data_dir, 'resting_corr.nii.gz')
     reg_file = pjoin(data_dir, 'register.dat')
     surf_data = io.project_volume_data(mri_file, "lh", reg_file)
     brain.add_data(surf_data, -.7, .7, colormap="jet", alpha=.7)
+    brain.add_data([], vertices=np.array([], int))
     brain.close()
 
 
 @requires_fsaverage
 def test_foci():
-    """Test plotting of foci
-    """
+    """Test plotting of foci."""
     mlab.options.backend = 'test'
     brain = Brain(*std_args)
     coords = [[-36, 18, -3],
@@ -167,8 +161,7 @@ def test_foci():
 
 @requires_fsaverage
 def test_label():
-    """Test plotting of label
-    """
+    """Test plotting of label."""
     mlab.options.backend = 'test'
     subject_id = "fsaverage"
     hemi = "lh"
@@ -190,8 +183,7 @@ def test_label():
 
 @requires_fsaverage
 def test_meg_inverse():
-    """Test plotting of MEG inverse solution
-    """
+    """Test plotting of MEG inverse solution."""
     mlab.options.backend = 'test'
     brain = Brain(*std_args)
     stc_fname = os.path.join(data_dir, 'meg_source_estimate-lh.stc')
@@ -223,8 +215,7 @@ def test_meg_inverse():
 
 @requires_fsaverage
 def test_morphometry():
-    """Test plotting of morphometry
-    """
+    """Test plotting of morphometry."""
     mlab.options.backend = 'test'
     brain = Brain(*std_args)
     brain.add_morphometry("curv")
@@ -236,8 +227,7 @@ def test_morphometry():
 @requires_imageio
 @requires_fsaverage
 def test_movie():
-    """Test saving a movie of an MEG inverse solution
-    """
+    """Test saving a movie of an MEG inverse solution."""
     import imageio
 
     # create and setup the Brain instance
@@ -273,8 +263,7 @@ def test_movie():
 
 @requires_fsaverage
 def test_overlay():
-    """Test plotting of overlay
-    """
+    """Test plotting of overlay."""
     mlab.options.backend = 'test'
     # basic overlay support
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
@@ -306,8 +295,7 @@ def test_overlay():
 
 @requires_fsaverage
 def test_probabilistic_labels():
-    """Test plotting of probabilistic labels
-    """
+    """Test plotting of probabilistic labels."""
     mlab.options.backend = 'test'
     brain = Brain("fsaverage", "lh", "inflated",
                   cortex="low_contrast")
@@ -332,8 +320,7 @@ def test_probabilistic_labels():
 
 @requires_fsaverage
 def test_text():
-    """Test plotting of text
-    """
+    """Test plotting of text."""
     mlab.options.backend = 'test'
     brain = Brain(*std_args)
     brain.add_text(0.1, 0.1, 'Hello', 'blah')
@@ -342,8 +329,7 @@ def test_text():
 
 @requires_fsaverage
 def test_animate():
-    """Test animation
-    """
+    """Test animation."""
     mlab.options.backend = 'auto'
     brain = Brain(*std_args, size=100)
     brain.add_morphometry('curv')
@@ -357,8 +343,7 @@ def test_animate():
 
 @requires_fsaverage
 def test_views():
-    """Test showing different views
-    """
+    """Test showing different views."""
     mlab.options.backend = 'test'
     brain = Brain(*std_args)
     brain.show_view('lateral')
