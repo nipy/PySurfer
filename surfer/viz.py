@@ -987,11 +987,12 @@ class Brain(object):
             sample (default).
         """
         hemi = self._check_hemi(hemi)
+        array = np.asarray(array)
 
         if min is None:
-            min = array.min()
+            min = array.min() if array.size > 0 else 0
         if max is None:
-            max = array.max()
+            max = array.max() if array.size > 0 else 0
 
         # Create smoothing matrix if necessary
         if len(array) < self.geo[hemi].x.shape[0]:
