@@ -4,6 +4,7 @@ PySurfer Changes
 Version 0.7
 -----------
 
+- Support for Python 3.3 and up.
 - A new ``alpha`` keyword to the ``Brain`` constructor now controls
   opacity of the rendered brain surface.
 - The ``curv`` keyword to the ``Brain`` constructor has been
@@ -19,6 +20,10 @@ Version 0.7
   rendering binary curvature values. Additionally it now also accepts
   a dictionary with keyword arguments that are passed on to the call
   to ``mlab.pipeline.surface``.
+- ``Brain.save_movie`` now uses the ``imageio`` library, eliminating the need
+  to manually install ``ffmpeg``. ``imageio`` has been added as an optional
+  dependency which can be installed with
+  ``$ pip install pysurfer[save_movie]``.
 
 Version 0.6
 -----------
