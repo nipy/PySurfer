@@ -2027,6 +2027,8 @@ class Brain(object):
             Antialias the image (see mlab.screenshot() for details; default
             False)
 
+        Notes
+        -----
         Due to limitations in TraitsUI, if multiple views or hemi='split'
         is used, there is no guarantee painting of the windows will
         complete before control is returned to the command line. Thus
@@ -2046,11 +2048,8 @@ class Brain(object):
         mode: string
             Either 'rgb' or 'rgba' for values to return
         antialiased: bool
-            Antialias the image (see mlab.screenshot() for details)
-        row : int
-            row index of the brain to use
-        col : int
-            column index of the brain to use
+            Antialias the image (see mlab.screenshot() for details; default
+            False)
 
         Returns
         -------
