@@ -24,6 +24,8 @@ Version 0.7
   to manually install ``ffmpeg``. ``imageio`` has been added as an optional
   dependency which can be installed with
   ``$ pip install pysurfer[save_movie]``.
+- ``Brain.save_image`` now has the option to save with alpha channel and
+  antialiasing.
 
 Version 0.6
 -----------
