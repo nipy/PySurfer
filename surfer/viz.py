@@ -2010,7 +2010,7 @@ class Brain(object):
         mlab.draw(brain._f)
         mlab.savefig(filename, figure=brain._f)
 
-    def save_image(self, filename):
+    def save_image(self, filename, mode='rgb', antialiased=False):
         """Save view from all panels to disk
 
         Only mayavi image types are supported:
@@ -2020,6 +2020,12 @@ class Brain(object):
         ----------
         filename: string
             path to new image file
+        mode: string
+            Either 'rgb' (default) to render solid background, or 'rgba' to
+            include alpha channel for transparent background
+        antialiased: bool
+            Antialias the image (see mlab.screenshot() for details; default
+            False)
 
         Due to limitations in TraitsUI, if multiple views or hemi='split'
         is used, there is no guarantee painting of the windows will
@@ -2028,7 +2034,7 @@ class Brain(object):
         a Mayavi figure to plot instead of TraitsUI) if you intend to
         script plotting commands.
         """
-        misc.imsave(filename, self.screenshot())
+        misc.imsave(filename, self.screenshot(mode, antialiased))
 
     def screenshot(self, mode='rgb', antialiased=False):
         """Generate a screenshot of current view
