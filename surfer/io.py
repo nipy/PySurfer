@@ -225,7 +225,7 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
     out = p.returncode
     if out:
         raise RuntimeError(("mri_vol2surf command failed "
-                            "with command-line: ") + " ".join(cmd_list))
+                            "with output: \n\n{}".format(stderr)))
 
     # Read in the data
     surf_data = read_scalar_data(out_file)
