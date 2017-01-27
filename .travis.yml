@@ -1,12 +1,6 @@
-language: python
+language: c
 
 env:
-    # Enable Python 2 and Python 3 builds
-    # DEPS=full: build optional dependencies: pandas, nitime, statsmodels,
-    #            scikit-learn, patsy, nibabel; in the case of Python 2, also
-    #            nitime
-    # DEPS=minimal: don't build optional dependencies; tests that require those
-    #               dependencies are supposed to be skipped
     - PYTHON=2.7 DEPS=full
     # PYTHON=3.3 DEPS=full  # Mayavi doesn't support Py3 :(
     - PYTHON=2.7 DEPS=minimal  # mencoder is an optional dependency
@@ -23,12 +17,12 @@ install:
     - conda create -n testenv --yes pip python=$PYTHON
     - source activate testenv
     # Pillow (or PIL/imaging) is necessary for scipy.misc.imsave to exist
-    - conda install --yes --quiet numpy scipy mayavi matplotlib nose imaging
+    - conda install --yes --quiet numpy scipy matplotlib mayavi nose imaging flake8 coverage pandas scikit-learn h5py pillow statsmodels
     - if [ "${DEPS}" == "full" ]; then
         travis_retry sudo apt-get update -qq;
         travis_retry sudo apt-get install mencoder;
       fi;
-    - pip install -q coverage coveralls nose-timer nibabel flake8 imageio
+    - pip install -q coveralls nose-timer nibabel imageio nitime faulthandler joblib
     - python setup.py build
     - python setup.py install
     - SRC_DIR=$(pwd)
