@@ -22,7 +22,7 @@ install:
         travis_retry sudo apt-get update -qq;
         travis_retry sudo apt-get install mencoder;
       fi;
-    - pip install -q coveralls nose-timer nibabel imageio
+    - pip install -q coveralls nose-timer nibabel imageio nitime faulthandler joblib
     - python setup.py build
     - python setup.py install
     - SRC_DIR=$(pwd)
