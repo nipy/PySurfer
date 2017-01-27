@@ -23,12 +23,12 @@ install:
     - conda create -n testenv --yes pip python=$PYTHON
     - source activate testenv
     # Pillow (or PIL/imaging) is necessary for scipy.misc.imsave to exist
-    - conda install --yes --quiet numpy scipy mayavi matplotlib nose imaging
+    - conda install --yes --quiet numpy scipy mayavi matplotlib nose imaging flake8 coverage coveralls
     - if [ "${DEPS}" == "full" ]; then
         travis_retry sudo apt-get update -qq;
         travis_retry sudo apt-get install mencoder;
       fi;
-    - pip install -q coverage coveralls nose-timer nibabel flake8 imageio
+    - pip install -q coveralls nose-timer nibabel imageio
     - python setup.py build
     - python setup.py install
     - SRC_DIR=$(pwd)
