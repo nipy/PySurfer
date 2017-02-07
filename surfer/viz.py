@@ -1,6 +1,7 @@
 from math import floor
 import os
 from os.path import join as pjoin
+import warnings
 from warnings import warn
 
 import numpy as np
@@ -204,14 +205,16 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
         if offscreen is True:
             orig_val = mlab.options.offscreen
             mlab.options.offscreen = True
-            figures = [[mlab.figure(size=(h / n_row, w / n_col))
-                        for _ in range(n_col)] for __ in range(n_row)]
+            with warnings.catch_warnings(record=True):  # traits
+                figures = [[mlab.figure(size=(h / n_row, w / n_col))
+                            for _ in range(n_col)] for __ in range(n_row)]
             mlab.options.offscreen = orig_val
             _v = None
         else:
             # Triage: don't make TraitsUI if we don't have to
             if n_row == 1 and n_col == 1:
-                figure = mlab.figure(title, size=(w, h))
+                with warnings.catch_warnings(record=True):  # traits
+                    figure = mlab.figure(title, size=(w, h))
                 mlab.clf(figure)
                 figures = [[figure]]
                 _v = None
@@ -499,7 +502,8 @@ class Brain(object):
 
             if state is True and view is not None:
                 mlab.draw(figure=_f)
-                mlab.view(*view, figure=_f)
+                with warnings.catch_warnings(record=True):  # traits focalpoint
+                    mlab.view(*view, figure=_f)
         # let's do the ugly force draw
         if state is True:
             _force_render(self._figures, self._window_backend)
@@ -1555,11 +1559,9 @@ class Brain(object):
         cl = []
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                cl.append(brain['brain'].add_contour_overlay(scalar_data,
-                                                             min, max,
-                                                             n_contours,
-                                                             line_width, lut,
-                                                             colorbar))
+                cl.append(brain['brain'].add_contour_overlay(
+                    scalar_data, min, max, n_contours, line_width, lut,
+                    colorbar))
         self.contour_list = cl
         self._toggle_render(True, views)
 
@@ -2284,7 +2286,8 @@ class Brain(object):
         brain = self.brain_matrix[row, col]
 
         # store current view + colorbar visibility
-        current_view = mlab.view(figure=brain._f)
+        with warnings.catch_warnings(record=True):  # traits focalpoint
+            current_view = mlab.view(figure=brain._f)
         colorbars = self._get_colorbars(row, col)
         colorbars_visibility = dict()
         for cb in colorbars:
@@ -2297,7 +2300,8 @@ class Brain(object):
                            border_size)
 
         # get back original view and colorbars
-        mlab.view(*current_view, figure=brain._f)
+        with warnings.catch_warnings(record=True):  # traits focalpoint
+            mlab.view(*current_view, figure=brain._f)
         for cb in colorbars:
             if cb is not None:
                 cb.visible = colorbars_visibility[cb]
@@ -2495,8 +2499,9 @@ class _Hemisphere(object):
             meshargs = dict()
         meshargs['figure'] = self._f
         x, y, z, f = self._geo.x, self._geo.y, self._geo.z, self._geo.faces
-        self._geo_mesh = mlab.pipeline.triangular_mesh_source(x, y, z, f,
-                                                              **meshargs)
+        with warnings.catch_warnings(record=True):  # traits
+            self._geo_mesh = mlab.pipeline.triangular_mesh_source(
+                x, y, z, f, **meshargs)
         # add surface normals
         self._geo_mesh.data.point_data.normals = self._geo.nn
         self._geo_mesh.data.cell_data.normals = None
@@ -2506,9 +2511,9 @@ class _Hemisphere(object):
             lut = geo_kwargs.pop('lut')
         else:
             lut = None
-        self._geo_surf = mlab.pipeline.surface(self._geo_mesh,
-                                               figure=self._f, reset_zoom=True,
-                                               **geo_kwargs)
+        with warnings.catch_warnings(record=True):  # traits warnings
+            self._geo_surf = mlab.pipeline.surface(
+               self._geo_mesh, figure=self._f, reset_zoom=True, **geo_kwargs)
         if lut is not None:
             self._geo_surf.module_manager.scalar_lut_manager.lut.table = lut
         if geo_curv and geo_reverse:
@@ -2633,23 +2638,23 @@ class _Hemisphere(object):
             raise ValueError("data has to be 1D or 2D")
 
         # Set up the visualization pipeline
-        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
-                                                    self._geo.y,
-                                                    self._geo.z,
-                                                    self._geo.faces,
-                                                    scalars=mlab_plot,
-                                                    figure=self._f)
+        with warnings.catch_warnings(record=True):  # traits warnings
+            mesh = mlab.pipeline.triangular_mesh_source(
+                self._geo.x, self._geo.y, self._geo.z, self._geo.faces,
+                scalars=mlab_plot, figure=self._f)
         mesh.data.point_data.normals = self._geo.nn
         mesh.data.cell_data.normals = None
         if thresh is not None:
             if array_plot.min() >= thresh:
                 warn("Data min is greater than threshold.")
             else:
-                mesh = mlab.pipeline.threshold(mesh, low=thresh)
+                with warnings.catch_warnings(record=True):
+                    mesh = mlab.pipeline.threshold(mesh, low=thresh)
 
-        surf = mlab.pipeline.surface(mesh, colormap=colormap,
-                                     vmin=min, vmax=max,
-                                     opacity=float(alpha), figure=self._f)
+        with warnings.catch_warnings(record=True):
+            surf = mlab.pipeline.surface(
+                mesh, colormap=colormap, vmin=min, vmax=max,
+                opacity=float(alpha), figure=self._f)
 
         # apply look up table if given
         if lut is not None:
@@ -2672,15 +2677,14 @@ class _Hemisphere(object):
     def add_annotation(self, annot, ids, cmap):
         """Add an annotation file"""
         # Create an mlab surface to visualize the annot
-        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
-                                                    self._geo.y,
-                                                    self._geo.z,
-                                                    self._geo.faces,
-                                                    scalars=ids,
-                                                    figure=self._f)
+        with warnings.catch_warnings(record=True):  # traits
+            mesh = mlab.pipeline.triangular_mesh_source(
+                self._geo.x, self._geo.y, self._geo.z, self._geo.faces,
+                scalars=ids, figure=self._f)
         mesh.data.point_data.normals = self._geo.nn
         mesh.data.cell_data.normals = None
-        surf = mlab.pipeline.surface(mesh, name=annot, figure=self._f)
+        with warnings.catch_warnings(record=True):
+            surf = mlab.pipeline.surface(mesh, name=annot, figure=self._f)
 
         # Set the color table
         surf.module_manager.scalar_lut_manager.lut.table = cmap
@@ -2691,15 +2695,14 @@ class _Hemisphere(object):
 
     def add_label(self, label, label_name, color, alpha):
         """Add an ROI label to the image"""
-        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
-                                                    self._geo.y,
-                                                    self._geo.z,
-                                                    self._geo.faces,
-                                                    scalars=label,
-                                                    figure=self._f)
+        with warnings.catch_warnings(record=True):  # traits
+            mesh = mlab.pipeline.triangular_mesh_source(
+                self._geo.x, self._geo.y, self._geo.z, self._geo.faces,
+                scalars=label, figure=self._f)
         mesh.data.point_data.normals = self._geo.nn
         mesh.data.cell_data.normals = None
-        surf = mlab.pipeline.surface(mesh, name=label_name, figure=self._f)
+        with warnings.catch_warnings(record=True):
+            surf = mlab.pipeline.surface(mesh, name=label_name, figure=self._f)
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color]) * 255
         surf.module_manager.scalar_lut_manager.lut.table = cmap
@@ -2708,18 +2711,16 @@ class _Hemisphere(object):
     def add_morphometry(self, morph_data, colormap, measure,
                         min, max, colorbar):
         """Add a morphometry overlay to the image"""
-        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x,
-                                                    self._geo.y,
-                                                    self._geo.z,
-                                                    self._geo.faces,
-                                                    scalars=morph_data,
-                                                    figure=self._f)
+        with warnings.catch_warnings(record=True):
+            mesh = mlab.pipeline.triangular_mesh_source(
+                self._geo.x, self._geo.y, self._geo.z, self._geo.faces,
+                scalars=morph_data, figure=self._f)
         mesh.data.point_data.normals = self._geo.nn
         mesh.data.cell_data.normals = None
-
-        surf = mlab.pipeline.surface(mesh, colormap=colormap,
-                                     vmin=min, vmax=max,
-                                     name=measure, figure=self._f)
+        with warnings.catch_warnings(record=True):
+            surf = mlab.pipeline.surface(mesh, colormap=colormap,
+                                         vmin=min, vmax=max,
+                                         name=measure, figure=self._f)
 
         # Get the colorbar
         if colorbar:
@@ -2735,13 +2736,11 @@ class _Hemisphere(object):
     def add_foci(self, foci_coords, scale_factor, color, alpha, name):
         """Add spherical foci, possibly mapping to displayed surf"""
         # Create the visualization
-        points = mlab.points3d(foci_coords[:, 0],
-                               foci_coords[:, 1],
-                               foci_coords[:, 2],
-                               np.ones(foci_coords.shape[0]),
-                               scale_factor=(10. * scale_factor),
-                               color=color, opacity=alpha, name=name,
-                               figure=self._f)
+        with warnings.catch_warnings(record=True):  # traits
+            points = mlab.points3d(
+                foci_coords[:, 0], foci_coords[:, 1], foci_coords[:, 2],
+                np.ones(foci_coords.shape[0]), name=name, figure=self._f,
+                scale_factor=(10. * scale_factor), color=color, opacity=alpha)
         return points
 
     def add_contour_overlay(self, scalar_data, min=None, max=None,
@@ -2749,23 +2748,23 @@ class _Hemisphere(object):
                             colorbar=True):
         """Add a topographic contour overlay of the positive data"""
         # Set up the pipeline
-        mesh = mlab.pipeline.triangular_mesh_source(self._geo.x, self._geo.y,
-                                                    self._geo.z,
-                                                    self._geo.faces,
-                                                    scalars=scalar_data,
-                                                    figure=self._f)
+        with warnings.catch_warnings(record=True):  # traits
+            mesh = mlab.pipeline.triangular_mesh_source(
+                self._geo.x, self._geo.y, self._geo.z, self._geo.faces,
+                scalars=scalar_data, figure=self._f)
         mesh.data.point_data.normals = self._geo.nn
         mesh.data.cell_data.normals = None
-        thresh = mlab.pipeline.threshold(mesh, low=min)
-        surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
-                                             line_width=line_width)
+        with warnings.catch_warnings(record=True):
+            thresh = mlab.pipeline.threshold(mesh, low=min)
+            surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
+                                                 line_width=line_width)
         if lut is not None:
             surf.module_manager.scalar_lut_manager.lut.table = lut
 
         # Set the colorbar and range correctly
-        bar = mlab.scalarbar(surf,
-                             nb_colors=n_contours,
-                             nb_labels=n_contours + 1)
+        with warnings.catch_warnings(record=True):  # traits
+            bar = mlab.scalarbar(surf, nb_colors=n_contours,
+                                 nb_labels=n_contours + 1)
         bar.data_range = min, max
         self._format_cbar_text(bar)
         bar.scalar_bar_representation.position2 = .8, 0.09
@@ -2777,8 +2776,9 @@ class _Hemisphere(object):
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0):
         """ Add a text to the visualization"""
-        return mlab.text(x, y, text, name=name, color=color,
-                         opacity=opacity, figure=self._f)
+        with warnings.catch_warnings(record=True):
+            return mlab.text(x, y, text, name=name, color=color,
+                             opacity=opacity, figure=self._f)
 
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
@@ -2841,30 +2841,35 @@ class OverlayDisplay():
         args = [ol.geo.x, ol.geo.y, ol.geo.z, ol.geo.faces]
         kwargs = dict(scalars=ol.mlab_data, figure=figure)
         if ol.pos_lims is not None:
-            pos_mesh = mlab.pipeline.triangular_mesh_source(*args, **kwargs)
+            with warnings.catch_warnings(record=True):  # traits
+                pos_mesh = mlab.pipeline.triangular_mesh_source(
+                    *args, **kwargs)
             pos_mesh.data.point_data.normals = ol.geo.nn
             pos_mesh.data.cell_data.normals = None
-            pos_thresh = mlab.pipeline.threshold(pos_mesh, low=ol.pos_lims[0])
-            self.pos = mlab.pipeline.surface(pos_thresh, colormap="YlOrRd",
-                                             vmin=ol.pos_lims[1],
-                                             vmax=ol.pos_lims[2],
-                                             figure=figure)
-            self.pos_bar = mlab.scalarbar(self.pos, nb_labels=5)
+            with warnings.catch_warnings(record=True):
+                pos_thresh = mlab.pipeline.threshold(pos_mesh,
+                                                     low=ol.pos_lims[0])
+                self.pos = mlab.pipeline.surface(
+                    pos_thresh, colormap="YlOrRd", figure=figure,
+                    vmin=ol.pos_lims[1], vmax=ol.pos_lims[2])
+                self.pos_bar = mlab.scalarbar(self.pos, nb_labels=5)
             self.pos_bar.reverse_lut = True
         else:
             self.pos = None
 
         if ol.neg_lims is not None:
-            neg_mesh = mlab.pipeline.triangular_mesh_source(*args, **kwargs)
+            with warnings.catch_warnings(record=True):
+                neg_mesh = mlab.pipeline.triangular_mesh_source(
+                    *args, **kwargs)
             neg_mesh.data.point_data.normals = ol.geo.nn
             neg_mesh.data.cell_data.normals = None
-            neg_thresh = mlab.pipeline.threshold(neg_mesh,
-                                                 up=ol.neg_lims[0])
-            self.neg = mlab.pipeline.surface(neg_thresh, colormap="PuBu",
-                                             vmin=ol.neg_lims[1],
-                                             vmax=ol.neg_lims[2],
-                                             figure=figure)
-            self.neg_bar = mlab.scalarbar(self.neg, nb_labels=5)
+            with warnings.catch_warnings(record=True):
+                neg_thresh = mlab.pipeline.threshold(neg_mesh,
+                                                     up=ol.neg_lims[0])
+                self.neg = mlab.pipeline.surface(
+                    neg_thresh, colormap="PuBu", figure=figure,
+                    vmin=ol.neg_lims[1], vmax=ol.neg_lims[2])
+                self.neg_bar = mlab.scalarbar(self.neg, nb_labels=5)
         else:
             self.neg = None
         self._format_colorbar()
