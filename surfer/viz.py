@@ -17,6 +17,7 @@ from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
 from traits.api import (HasTraits, Range, Int, Float,
                         Bool, Enum, on_trait_change, Instance)
+from tvtk.api import tvtk
 
 from . import utils, io
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
@@ -190,7 +191,8 @@ def _force_render(figures, backend):
         _gui.process_events()
 
 
-def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
+def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
+                 interaction='trackball'):
     """Triage viewer creation
 
     If n_row == n_col == 1, then we can use a Mayavi figure, which
@@ -218,6 +220,11 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
             else:
                 window = _MlabGenerator(n_row, n_col, w, h, title)
                 figures, _v = window._get_figs_view()
+            if interaction == 'terrain':  # "trackball" is default
+                for figure in figures:
+                    for f in figure:
+                        f.scene.interactor.interactor_style = \
+                            tvtk.InteractorStyleTerrain()
     else:
         if not isinstance(figure, (list, tuple)):
             figure = [figure]
@@ -343,6 +350,9 @@ class Brain(object):
         If True, rendering will be done offscreen (not shown). Useful
         mostly for generating images or screenshots, but can be buggy.
         Use at your own risk.
+    interaction : str
+        Can be "trackball" (default) or "terrain", i.e. a turntable-style
+        camera.
 
     Attributes
     ----------
@@ -354,7 +364,8 @@ class Brain(object):
                  cortex="classic", alpha=1.0, size=800, background="black",
                  foreground="white", figure=None, subjects_dir=None,
                  views=['lat'], offset=True, show_toolbar=False,
-                 offscreen=False, config_opts=None, curv=None):
+                 offscreen=False, interaction='trackball',
+                 config_opts=None, curv=None):
 
         # Keep backwards compatability
         if config_opts is not None:
@@ -384,6 +395,10 @@ class Brain(object):
             if not curv:
                 cortex = None
 
+        if not isinstance(interaction, string_types) or \
+                interaction not in ('trackball', 'terrain'):
+            raise ValueError('interaction must be "trackball" or "terrain", '
+                             'got "%s"' % (interaction,))
         col_dict = dict(lh=1, rh=1, both=1, split=2)
         n_col = col_dict[hemi]
         if hemi not in col_dict.keys():
@@ -425,7 +440,8 @@ class Brain(object):
         # deal with making figures
         self._set_window_properties(size, background, foreground)
         figures, _v = _make_viewer(figure, n_row, n_col, title,
-                                   self._scene_size, offscreen)
+                                   self._scene_size, offscreen,
+                                   interaction)
         self._figures = figures
         self._v = _v
         self._window_backend = 'Mayavi' if self._v is None else 'TraitsUI'

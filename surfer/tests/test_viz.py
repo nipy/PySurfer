@@ -95,8 +95,13 @@ def test_brains():
                       alpha=alpha, size=s, background=bg, foreground=fg,
                       figure=fig, subjects_dir=sd)
         brain.close()
+    brain = Brain(subject_id, hemi, surf, subjects_dir=sd,
+                  interaction='terrain')
+    brain.close()
     assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   subjects_dir='')
+    assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
+                  interaction='foo', subjects_dir=sd)
 
 
 @requires_fsaverage
