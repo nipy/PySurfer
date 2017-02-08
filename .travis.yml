@@ -1,41 +1,40 @@
-language: python
-
+language: c
+sudo: false
+# This list of requirements is way overkill, but it helps ensure we
+# actually load a usable config (it works for MNE-Python)
 env:
-    # Enable Python 2 and Python 3 builds
-    # DEPS=full: build optional dependencies: pandas, nitime, statsmodels,
-    #            scikit-learn, patsy, nibabel; in the case of Python 2, also
-    #            nitime
-    # DEPS=minimal: don't build optional dependencies; tests that require those
-    #               dependencies are supposed to be skipped
-    - PYTHON=2.7 DEPS=full
-    # PYTHON=3.3 DEPS=full  # Mayavi doesn't support Py3 :(
-    - PYTHON=2.7 DEPS=minimal  # mencoder is an optional dependency
+    global: PYTHON_VERSION=2.7
+            DISPLAY=:99.0
+            CONDA_DEPENDENCIES="numpy scipy matplotlib pandas scikit-learn h5py pillow statsmodels mayavi"
+            PIP_DEPENDENCIES="coverage coveralls nose-timer nibabel flake8 imageio"
+
+matrix:
+    include:
+        # Full (Linux, 2.7)
+        - os: linux
+          addons:
+            apt:
+              packages:
+                - mencoder
+
+        # Minimal (no mencoder)
+        - os: linux
+
+        # OSX (disabled because it's slow)
+        # - os: osx
 
 # Setup anaconda
 before_install:
-    - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-    - chmod +x miniconda.sh
-    - ./miniconda.sh -b -p /home/travis/miniconda
-    - export PATH=/home/travis/miniconda/bin:$PATH
-    - conda update --yes conda
+    - git clone https://github.com/astropy/ci-helpers.git
+    - source ci-helpers/travis/setup_conda.sh
 
 install:
-    - conda create -n testenv --yes pip python=$PYTHON
-    - source activate testenv
-    # Pillow (or PIL/imaging) is necessary for scipy.misc.imsave to exist
-    - conda install --yes --quiet numpy scipy mayavi matplotlib nose imaging
-    - if [ "${DEPS}" == "full" ]; then
-        travis_retry sudo apt-get update -qq;
-        travis_retry sudo apt-get install mencoder;
-      fi;
-    - pip install -q coverage coveralls nose-timer nibabel flake8 imageio
     - python setup.py build
     - python setup.py install
     - SRC_DIR=$(pwd)
 
 before_script:
     # Let's create a (fake) display on Travis, and let's use a funny resolution
-    - export DISPLAY=:99.0
     - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
     - cd ~
     - wget --quiet http://faculty.washington.edu/larsoner/fsaverage_min.zip
@@ -44,6 +43,7 @@ before_script:
     - unzip ../fsaverage_min.zip
     - cd ..
     - export SUBJECTS_DIR="${PWD}/subjects"
+    - python -c "import imageio; imageio.plugins.ffmpeg.download()"
 
 script:
     - cd ${SRC_DIR}
