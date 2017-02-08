@@ -3,6 +3,7 @@ import os.path as op
 from os.path import join as pjoin
 import shutil
 from tempfile import mkdtemp, mktemp
+import warnings
 
 from nose.tools import assert_equal
 from mayavi import mlab
@@ -12,6 +13,8 @@ from numpy.testing import assert_raises, assert_array_equal
 
 from surfer import Brain, io, utils
 from surfer.utils import requires_fsaverage, requires_imageio
+
+warnings.simplefilter('always')
 
 subj_dir = utils._get_subjects_dir()
 subject_id = 'fsaverage'
@@ -84,7 +87,8 @@ def test_brains():
                    (0.2, 0.2, 0.2), "black", "0.75"]
     foregrounds = ["black", "white", "0.75", "red",
                    (0.2, 0.2, 0.2), "blue", "black"]
-    figs = [None, mlab.figure(), None, None, mlab.figure(), None, None]
+    with warnings.catch_warnings(record=True):  # traits for mlab.figure()
+        figs = [None, mlab.figure(), None, None, mlab.figure(), None, None]
     subj_dirs = [None, subj_dir, subj_dir, subj_dir,
                  subj_dir, subj_dir, subj_dir]
     alphas = [1.0, 0.5, 0.25, 0.7, 0.5, 0.25, 0.7]
