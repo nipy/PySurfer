@@ -32,6 +32,7 @@ label for time annotation in milliseconds
 def time_label(t):
     return 'time=%0.2f ms' % (t * 1e3)
 
+
 """
 read MNE dSPM inverse solution
 """

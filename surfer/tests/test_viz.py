@@ -27,6 +27,7 @@ def has_freesurfer():
     else:
         return True
 
+
 requires_fs = np.testing.dec.skipif(not has_freesurfer(),
                                     'Requires FreeSurfer command line tools')
 
