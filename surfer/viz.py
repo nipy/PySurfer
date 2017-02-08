@@ -221,8 +221,10 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
                 figures, _v = window._get_figs_view()
     else:
         if isinstance(figure, int):  # use figure with specified id
-            figure = (mlab.figure(figure, size=scene_size),)
-        if not isinstance(figure, (list, tuple)):
+            figure = [mlab.figure(figure, size=scene_size)]
+        elif isinstance(figure, tuple):
+            figure = list(figure)
+        elif not isinstance(figure, list):
             figure = [figure]
         if not all(isinstance(f, Scene) for f in figure):
             raise TypeError('figure must be a mayavi scene or list of scenes')
