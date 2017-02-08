@@ -152,10 +152,7 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
             x += im.size[0]
         y += h
     if filename is not None:
-        try:
-            new.save(filename)
-        except Exception:
-            print("Error saving %s" % filename)
+        new.save(filename)
     return np.array(new)
 
 
