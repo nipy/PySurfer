@@ -14,6 +14,7 @@ import nibabel as nib
 from mayavi import mlab
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core import lut_manager
+from mayavi.core.scene import Scene
 from mayavi.core.ui.api import SceneEditor
 from mayavi.core.ui.mayavi_scene import MayaviScene
 from traits.api import (HasTraits, Range, Int, Float,
@@ -219,8 +220,14 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen):
                 window = _MlabGenerator(n_row, n_col, w, h, title)
                 figures, _v = window._get_figs_view()
     else:
-        if not isinstance(figure, (list, tuple)):
+        if isinstance(figure, int):  # use figure with specified id
+            figure = [mlab.figure(figure, size=scene_size)]
+        elif isinstance(figure, tuple):
+            figure = list(figure)
+        elif not isinstance(figure, list):
             figure = [figure]
+        if not all(isinstance(f, Scene) for f in figure):
+            raise TypeError('figure must be a mayavi scene or list of scenes')
         if not len(figure) == n_row * n_col:
             raise ValueError('For the requested view, figure must be a '
                              'list or tuple with exactly %i elements, '
@@ -325,9 +332,10 @@ class Brain(object):
         a square window, or the (width, height) of a rectangular window.
     background, foreground : matplotlib colors
         color of the background and foreground of the display window
-    figure : list of instances of mayavi.core.scene.Scene | None
-        If None, a new window will be created with the appropriate
-        views.
+    figure : list of mayavi.core.scene.Scene | None | int
+        If None (default), a new window will be created with the appropriate
+        views. For single view plots, the figure can be specified as int to
+        retrieve the corresponding Mayavi window.
     subjects_dir : str | None
         If not None, this directory will be used as the subjects directory
         instead of the value set using the SUBJECTS_DIR environment

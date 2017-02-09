@@ -75,6 +75,8 @@ def test_brains():
     # testing backend breaks when passing in a figure, so we use 'auto' here
     # (shouldn't affect usability, but it makes testing more annoying)
     mlab.options.backend = 'auto'
+    with warnings.catch_warnings(record=True):  # traits for mlab.figure()
+        mlab.figure(101)
     surfs = ['inflated', 'white', 'white', 'white', 'white', 'white', 'white']
     hemis = ['lh', 'rh', 'both', 'both', 'rh', 'both', 'both']
     titles = [None, 'Hello', 'Good bye!', 'lut test',
@@ -88,7 +90,7 @@ def test_brains():
     foregrounds = ["black", "white", "0.75", "red",
                    (0.2, 0.2, 0.2), "blue", "black"]
     with warnings.catch_warnings(record=True):  # traits for mlab.figure()
-        figs = [None, mlab.figure(), None, None, mlab.figure(), None, None]
+        figs = [101, mlab.figure(), None, None, mlab.figure(), None, None]
     subj_dirs = [None, subj_dir, subj_dir, subj_dir,
                  subj_dir, subj_dir, subj_dir]
     alphas = [1.0, 0.5, 0.25, 0.7, 0.5, 0.25, 0.7]
