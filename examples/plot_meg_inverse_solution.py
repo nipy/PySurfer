@@ -13,6 +13,8 @@ from surfer.io import read_stc
 
 print(__doc__)
 
+path = os.path.dirname(__file__)
+
 """
 define subject, surface and hemisphere(s) to plot
 """
@@ -22,7 +24,8 @@ hemi = 'split'
 """
 create Brain object for visualization
 """
-brain = Brain(subject_id, hemi, surface, size=(800, 400))
+brain = Brain(subject_id, hemi, surface, size=(800, 400),
+              interaction='terrain')
 
 """
 label for time annotation in milliseconds
@@ -37,7 +40,7 @@ def time_label(t):
 read MNE dSPM inverse solution
 """
 for hemi in ['lh', 'rh']:
-    stc_fname = os.path.join('example_data/meg_source_estimate-' +
+    stc_fname = os.path.join(path, 'example_data', 'meg_source_estimate-' +
                              hemi + '.stc')
     stc = read_stc(stc_fname)
 
