@@ -1063,14 +1063,7 @@ class Brain(object):
 
         # clean up existing data
         if remove_existing:
-            for data in self._data_dicts[hemi]:
-                for surf in data['surfaces']:
-                    surf.parent.parent.remove()
-            self._data_dicts[hemi] = []
-            # if no data is left, reset time properties
-            other_hemi = 'rh' if hemi == 'lh' else 'lh'
-            if not self._data_dicts[other_hemi]:
-                self.n_times = self._times = None
+            self.remove_data(hemi)
 
         # Create time array and add label if 2D
         if array.ndim == 2:
@@ -1368,6 +1361,26 @@ class Brain(object):
                     keep_idx = keep_idx[np.in1d(keep_idx, restrict_idx)]
             show[keep_idx] = 1
             label *= show
+
+    def remove_data(self, hemi=None):
+        """Remove data shown with ``Brain.add_data()``.
+
+        Parameters
+        ----------
+        hemi : str | None
+            Hemisphere from which to remove data (default is all shown
+            hemispheres).
+        """
+        hemis = self._check_hemis(hemi)
+        for hemi in hemis:
+            for data in self._data_dicts[hemi]:
+                for surf in data['surfaces']:
+                    surf.parent.parent.remove()
+            self._data_dicts[hemi] = []
+
+        # if no data is left, reset time properties
+        if not self._data_dicts['lh'] and not self._data_dicts['rh']:
+            self.n_times = self._times = None
 
     def remove_labels(self, labels=None, hemi=None):
         """Remove one or more previously added labels from the image.
