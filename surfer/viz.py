@@ -500,10 +500,19 @@ class Brain(object):
         self.contour_list = []
         self.morphometry_list = []
         self.annot_list = []
-        self.data_dict = dict(lh=None, rh=None)
+        self._data_dicts = dict(lh=[], rh=[])
         # note that texts gets treated differently
         self.texts_dict = dict()
+        self._times = None
         self.n_times = None
+
+    @property
+    def data_dict(self):
+        """For backwards compatibility"""
+        lh_list = self._data_dicts['lh']
+        rh_list = self._data_dicts['rh']
+        return dict(lh=lh_list[-1] if lh_list else None,
+                    rh=rh_list[-1] if rh_list else None)
 
     ###########################################################################
     # HELPERS
@@ -1052,20 +1061,45 @@ class Brain(object):
                     transparent=False, time=0, time_idx=0,
                     vertices=vertices, smooth_mat=smooth_mat)
 
+        # clean up existing data
+        if remove_existing:
+            for data in self._data_dicts[hemi]:
+                for surf in data['surfaces']:
+                    surf.parent.parent.remove()
+            self._data_dicts[hemi] = []
+            # if no data is left, reset time properties
+            other_hemi = 'rh' if hemi == 'lh' else 'lh'
+            if not self._data_dicts[other_hemi]:
+                self.n_times = self._times = None
+
         # Create time array and add label if 2D
         if array.ndim == 2:
+            # check time array
             if time is None:
                 time = np.arange(array.shape[1])
-            self._times = time
-            self.n_times = array.shape[1]
-            if not self.n_times == len(time):
-                raise ValueError('time is not the same length as '
-                                 'array.shape[1]')
+            else:
+                time = np.asarray(time)
+                if time.shape != (array.shape[1],):
+                    raise ValueError('time has shape %s, but need shape %s '
+                                     '(array.shape[1])' %
+                                     (time.shape, (array.shape[1],)))
+
+            if self.n_times is None:
+                self.n_times = len(time)
+                self._times = time
+            elif len(time) != self.n_times:
+                raise ValueError("New n_times is different from previous "
+                                 "n_times")
+            elif not np.all(time == self._times):
+                raise ValueError("Not all time values are consistent with "
+                                 "previously set times.")
+
             # initial time
             if initial_time is None:
                 initial_time_index = None
             else:
                 initial_time_index = self.index_for_time(initial_time)
+
             # time label
             if isinstance(time_label, string_types):
                 time_label_fmt = time_label
@@ -1077,8 +1111,6 @@ class Brain(object):
             data["time_idx"] = 0
             y_txt = 0.05 + 0.05 * bool(colorbar)
         else:
-            self._times = None
-            self.n_times = None
             initial_time_index = None
 
         surfs = []
@@ -1103,10 +1135,7 @@ class Brain(object):
         data['colorbars'] = bars
         data['orig_ctable'] = ct
 
-        if remove_existing and self.data_dict[hemi] is not None:
-            for surf in self.data_dict[hemi]['surfaces']:
-                surf.parent.parent.remove()
-        self.data_dict[hemi] = data
+        self._data_dicts[hemi].append(data)
 
         if initial_time_index is not None:
             self.set_data_time_index(initial_time_index)
@@ -1797,8 +1826,7 @@ class Brain(object):
 
         views = self._toggle_render(False)
         for hemi in ['lh', 'rh']:
-            data = self.data_dict[hemi]
-            if data is not None:
+            for data in self._data_dicts[hemi]:
                 # interpolation
                 if isinstance(time_idx, float):
                     times = np.arange(self.n_times)
