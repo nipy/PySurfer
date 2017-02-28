@@ -1083,7 +1083,7 @@ class Brain(object):
             elif len(time) != self.n_times:
                 raise ValueError("New n_times is different from previous "
                                  "n_times")
-            elif not np.all(time == self._times):
+            elif not np.array_equal(time, self._times):
                 raise ValueError("Not all time values are consistent with "
                                  "previously set times.")
 
