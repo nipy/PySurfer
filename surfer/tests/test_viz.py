@@ -219,10 +219,27 @@ def test_meg_inverse():
     assert_equal(brain.data_dict['lh']['time_idx'], 2)
     # viewer = TimeViewer(brain)
 
+    # multiple data layers
+    assert_raises(ValueError, brain.add_data, data, vertices=vertices,
+                  time=time[:-1])
     brain.add_data(data, colormap=colormap, vertices=vertices,
                    smoothing_steps=10, time=time, time_label=time_label,
-                   initial_time=.09, remove_existing=True)
+                   initial_time=.09)
     assert_equal(brain.data_dict['lh']['time_idx'], 1)
+    data_dicts = brain._data_dicts['lh']
+    assert_equal(len(data_dicts), 2)
+    assert_equal(data_dicts[0]['time_idx'], 1)
+    assert_equal(data_dicts[1]['time_idx'], 1)
+
+    # shift time in both layers
+    brain.set_data_time_index(0)
+    assert_equal(data_dicts[0]['time_idx'], 0)
+    assert_equal(data_dicts[1]['time_idx'], 0)
+
+    # remove all layers
+    brain.remove_data()
+    assert_equal(brain._data_dicts['lh'], [])
+
     brain.close()
 
 
