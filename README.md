@@ -1,7 +1,7 @@
-PySurfer
-========
+PySurfer: Neuroimaging visualization in Python
+==============================================
 
-![](doc/logo_files/pysurfer_logo_small_crop.png)
+<img src=doc/logo_files/pysurfer_logo_small_crop.png width=500px style="horizontal-align:middle">
 
 PySurfer is a Python package for interacting with a cortical surface
 representations of neuroimaging data. It extends Mayavi's powerful
