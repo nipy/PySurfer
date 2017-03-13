@@ -1391,12 +1391,13 @@ class Brain(object):
             Labels to remove. Can be a string naming a single label, or None to
             remove all labels. Possible names can be found in the Brain.labels
             attribute.
-        hemi : str | None
-            If None, it is assumed to belong to the hemipshere being
-            shown. If two hemispheres are being shown, an error will
-            be thrown.
+        hemi : None
+            Deprecated parameter, do not use.
         """
-        hemi = self._check_hemi(hemi)
+        if hemi is not None:
+            warn("The `hemi` parameter to Brain.remove_labels() has no effect "
+                 "and will be removed in PySurfer 0.9", DeprecationWarning)
+
         if labels is None:
             labels = self.labels_dict.keys()
         elif isinstance(labels, str):
