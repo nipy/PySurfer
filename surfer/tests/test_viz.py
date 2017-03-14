@@ -5,7 +5,7 @@ import shutil
 from tempfile import mkdtemp, mktemp
 import warnings
 
-from nose.tools import assert_equal
+from nose.tools import assert_equal, assert_in, assert_not_in
 from mayavi import mlab
 import nibabel as nib
 import numpy as np
@@ -191,6 +191,14 @@ def test_label():
     brain.add_label("V1", color="steelblue", alpha=.6)
     brain.add_label("V2", color="#FF6347", alpha=.6)
     brain.add_label("entorhinal", color=(.2, 1, .5), alpha=.6)
+
+    # remove labels
+    brain.remove_labels('V1')
+    assert_in('V2', brain.labels_dict)
+    assert_not_in('V1', brain.labels_dict)
+    brain.remove_labels()
+    assert_not_in('V2', brain.labels_dict)
+
     brain.close()
 
 
