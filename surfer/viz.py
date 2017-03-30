@@ -493,9 +493,10 @@ class Brain(object):
         self.brains = [b['brain'] for b in brains]
         self.brain_matrix = np.array(brain_matrix)
         self.subjects_dir = subjects_dir
+        self.surf = surf
         # Initialize the overlay and label dictionaries
         self.foci_dict = dict()
-        self.labels_dict = dict()
+        self._label_dicts = dict()
         self.overlays_dict = dict()
         self.contour_list = []
         self.morphometry_list = []
@@ -513,6 +514,12 @@ class Brain(object):
         rh_list = self._data_dicts['rh']
         return dict(lh=lh_list[-1] if lh_list else None,
                     rh=rh_list[-1] if rh_list else None)
+
+    @property
+    def labels_dict(self):
+        """For backwards compatibility"""
+        return {key: data['surfaces'] for key, data in
+                self._label_dicts.items()}
 
     ###########################################################################
     # HELPERS
@@ -1109,6 +1116,7 @@ class Brain(object):
         else:
             initial_time_index = None
 
+        meshes = []
         surfs = []
         bars = []
         views = self._toggle_render(False)
@@ -1118,7 +1126,8 @@ class Brain(object):
                                               smooth_mat, min, max, thresh,
                                               lut, colormap, alpha, time,
                                               time_label, colorbar)
-                s, ct, bar = out
+                mesh, s, ct, bar = out
+                meshes.append(mesh)
                 surfs.append(s)
                 bars.append(bar)
                 row, col = np.unravel_index(bi, self.brain_matrix.shape)
@@ -1127,6 +1136,7 @@ class Brain(object):
                                   name="time_label", row=row, col=col,
                                   font_size=time_label_size,
                                   justification='right')
+        data['meshes'] = meshes
         data['surfaces'] = surfs
         data['colorbars'] = bars
         data['orig_ctable'] = ct
@@ -1325,23 +1335,27 @@ class Brain(object):
         label[ids] = 1
 
         # make sure we have a unique name
-        if label_name in self.labels_dict:
+        if label_name in self._label_dicts:
             i = 2
             name = label_name + '_%i'
-            while name % i in self.labels_dict:
+            while name % i in self._label_dicts:
                 i += 1
             label_name = name % i
 
         self._to_borders(label, hemi, borders, restrict_idx=ids)
 
         # make a list of all the plotted labels
-        ll = []
+        surfaces = []
+        meshes = []
         views = self._toggle_render(False)
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                ll.append(brain['brain'].add_label(label, label_name,
-                          color, alpha))
-        self.labels_dict[label_name] = ll
+                mesh, surf = brain['brain'].add_label(label, label_name, color,
+                                                      alpha)
+                surfaces.append(surf)
+                meshes.append(mesh)
+        self._label_dicts[label_name] = {'hemi': hemi, 'meshes': meshes,
+                                         'surfaces': surfaces}
         self._toggle_render(True, views)
 
     def _to_borders(self, label, hemi, borders, restrict_idx=None):
@@ -1402,14 +1416,14 @@ class Brain(object):
                  "and will be removed in PySurfer 0.9", DeprecationWarning)
 
         if labels is None:
-            labels = self.labels_dict.keys()
+            labels = self._label_dicts.keys()
         elif isinstance(labels, str):
             labels = [labels]
 
         for key in labels:
-            label = self.labels_dict.pop(key)
-            for ll in label:
-                ll.remove()
+            for data in self._label_dicts.pop(key):
+                for surf in data['surfaces']:
+                    surf.remove()
 
     def add_morphometry(self, measure, grayscale=False, hemi=None,
                         remove_existing=True, colormap=None,
@@ -1744,6 +1758,42 @@ class Brain(object):
             for f in ff:
                 mlab.view(distance=distance, figure=f)
         return distance
+
+    def set_surface(self, surface):
+        if self.surf == surface:
+            return
+
+        views = self._toggle_render(False)
+        for h in self.brains:
+            try:
+                h._geo.surf = surface
+                h._geo.load_geometry()
+            except IOError:
+                h._geo.surf = h.surf
+                self._toggle_render(True)
+                raise
+            # collect meshes: main surface mesh
+            meshes = [h._geo_mesh]
+            # data overlays
+            for data in self._data_dicts[h.hemi]:
+                meshes.extend(data['meshes'])
+            # labels
+            for data in self._label_dicts.values():
+                if data['hemi'] == h.hemi:
+                    meshes.extend(data['meshes'])
+            # annotations
+            for data in self.annot_list:
+                if data['hemi'] == h.hemi:
+                    meshes.append(data['mesh'])
+
+            for mesh in meshes:
+                mesh.data.points = h._geo.coords
+                mesh.data.point_data.normals = h._geo.nn
+            for mesh in meshes:
+                mesh.update()
+            h.surf = surface
+        self.surf = surface
+        self._toggle_render(True, views)
 
     @verbose
     def scale_data_colormap(self, fmin, fmid, fmax, transparent, verbose=None):
@@ -2740,7 +2790,7 @@ class _Hemisphere(object):
         else:
             bar = None
 
-        return surf, orig_ctable, bar
+        return mesh, surf, orig_ctable, bar
 
     def add_annotation(self, annot, ids, cmap):
         """Add an annotation file"""
@@ -2759,8 +2809,8 @@ class _Hemisphere(object):
         lut_manager.load_lut_from_list(cmap / 255.)
 
         # Set the brain attributes
-        annot = dict(surface=surf, name=annot, colormap=cmap)
-        return annot
+        return dict(surface=surf, name=annot, colormap=cmap, mesh=mesh,
+                    hemi=self.hemi)
 
     def add_label(self, label, label_name, color, alpha):
         """Add an ROI label to the image"""
@@ -2776,7 +2826,7 @@ class _Hemisphere(object):
         cmap = np.array([(0, 0, 0, 0,), color])
         lut_manager = surf.module_manager.scalar_lut_manager
         lut_manager.load_lut_from_list(cmap)
-        return surf
+        return mesh, surf
 
     def add_morphometry(self, morph_data, colormap, measure,
                         min, max, colorbar):
