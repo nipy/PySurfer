@@ -1205,7 +1205,6 @@ class Brain(object):
                 a['surface'].remove()
             self.annot_list = []
 
-        al = self.annot_list
         for hemi, filepath in zip(hemis, filepaths):
             # Read in the data
             labels, cmap, _ = nib.freesurfer.read_annot(filepath,
@@ -1233,8 +1232,8 @@ class Brain(object):
 
             for brain in self._brain_list:
                 if brain['hemi'] == hemi:
-                    al.append(brain['brain'].add_annotation(annot, ids, cmap))
-        self.annot_list = al
+                    self.annot_list.append(
+                        brain['brain'].add_annotation(annot, ids, cmap))
         self._toggle_render(True, views)
 
     def add_label(self, label, color=None, alpha=1, scalar_thresh=None,
