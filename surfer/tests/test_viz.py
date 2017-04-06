@@ -264,6 +264,11 @@ def test_meg_inverse():
     assert_equal(data_dicts[0]['time_idx'], 0)
     assert_equal(data_dicts[1]['time_idx'], 0)
 
+    # add second data-layer without time axis
+    brain.add_data(data[:, 1], colormap=colormap, vertices=vertices,
+                   smoothing_steps=2)
+    brain.set_data_time_index(2)
+
     # change surface
     brain.set_surf('white')
 

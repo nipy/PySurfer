@@ -1889,6 +1889,9 @@ class Brain(object):
         views = self._toggle_render(False)
         for hemi in ['lh', 'rh']:
             for data in self._data_dicts[hemi]:
+                if data['array'].ndim == 1:
+                    continue  # skip data without time axis
+
                 # interpolation
                 if isinstance(time_idx, float):
                     times = np.arange(self.n_times)
