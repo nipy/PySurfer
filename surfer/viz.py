@@ -1149,14 +1149,19 @@ class Brain(object):
 
         Parameters
         ----------
-        annot : str
-            Either path to annotation file or annotation name
+        annot : str | tuple
+            Either path to annotation file or annotation name. Alternatively, 
+            the annotation can be specified as a ``(labels, ctab)`` tuple per 
+            hemisphere, i.e. ``annot=(labels, ctab)`` for a single hemisphere 
+            or ``annot=((lh_labels, lh_ctab), (rh_labels, rh_ctab))`` for both
+            hemispheres. ``labels`` and ``ctab`` should be arrays as returned
+            by :func:`nibabel.freesurfer.read_annot`.
         borders : bool | int
             Show only label borders. If int, specify the number of steps
             (away from the true border) along the cortical mesh to include
             as part of the border definition.
         alpha : float in [0, 1]
-            Alpha level to control opacity
+            Alpha level to control opacity.
         hemi : str | None
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, data must exist
@@ -1167,32 +1172,42 @@ class Brain(object):
         hemis = self._check_hemis(hemi)
 
         # Figure out where the data is coming from
-        if os.path.isfile(annot):
-            filepath = annot
-            path = os.path.split(filepath)[0]
-            file_hemi, annot = os.path.basename(filepath).split('.')[:2]
-            if len(hemis) > 1:
-                if annot[:2] == 'lh.':
-                    filepaths = [filepath, pjoin(path, 'rh' + annot[2:])]
-                elif annot[:2] == 'rh.':
-                    filepaths = [pjoin(path, 'lh' + annot[2:], filepath)]
+        if isinstance(annot, string_types):
+            if os.path.isfile(annot):
+                filepath = annot
+                path = os.path.split(filepath)[0]
+                file_hemi, annot = os.path.basename(filepath).split('.')[:2]
+                if len(hemis) > 1:
+                    if annot[:2] == 'lh.':
+                        filepaths = [filepath, pjoin(path, 'rh' + annot[2:])]
+                    elif annot[:2] == 'rh.':
+                        filepaths = [pjoin(path, 'lh' + annot[2:], filepath)]
+                    else:
+                        raise RuntimeError('To add both hemispheres '
+                                           'simultaneously, filename must '
+                                           'begin with "lh." or "rh."')
                 else:
-                    raise RuntimeError('To add both hemispheres '
-                                       'simultaneously, filename must '
-                                       'begin with "lh." or "rh."')
+                    filepaths = [filepath]
             else:
-                filepaths = [filepath]
+                filepaths = []
+                for hemi in hemis:
+                    filepath = pjoin(self.subjects_dir,
+                                     self.subject_id,
+                                     'label',
+                                     ".".join([hemi, annot, 'annot']))
+                    if not os.path.exists(filepath):
+                        raise ValueError('Annotation file %s does not exist'
+                                         % filepath)
+                    filepaths += [filepath]
+            annots = []
+            for hemi, filepath in zip(hemis, filepaths):
+                # Read in the data
+                labels, cmap, _ = nib.freesurfer.read_annot(
+                    filepath, orig_ids=True)
+                annots.append((labels, cmap))
         else:
-            filepaths = []
-            for hemi in hemis:
-                filepath = pjoin(self.subjects_dir,
-                                 self.subject_id,
-                                 'label',
-                                 ".".join([hemi, annot, 'annot']))
-                if not os.path.exists(filepath):
-                    raise ValueError('Annotation file %s does not exist'
-                                     % filepath)
-                filepaths += [filepath]
+            annots = [annot] if len(hemis) == 1 else annot
+            annot = 'annotation'
 
         views = self._toggle_render(False)
         if remove_existing:
@@ -1201,10 +1216,7 @@ class Brain(object):
                 a['brain']._remove_scalar_data(a['array_id'])
             self.annot_list = []
 
-        for hemi, filepath in zip(hemis, filepaths):
-            # Read in the data
-            labels, cmap, _ = nib.freesurfer.read_annot(filepath,
-                                                        orig_ids=True)
+        for hemi, (labels, cmap) in zip(hemis, annots):
 
             # Maybe zero-out the non-border vertices
             self._to_borders(labels, hemi, borders)
