@@ -1,0 +1,44 @@
+#!/usr/bin/make -f
+# -*- mode: makefile; coding: utf-8 -*-
+
+srcpkg = $(shell LC_ALL=C dpkg-parsechangelog | grep '^Source:' | cut -d ' ' -f 2,2)
+debver = $(shell LC_ALL=C dpkg-parsechangelog | grep '^Version:' | cut -d ' ' -f 2,2 )
+upstreamver = $(shell echo $(debver) | sed -e 's/-[^-]*$$//')
+
+# this figures out the last merge point from 'master' into the Debian branch and
+# then described this commit relative to the last release tag (V...)
+# If this should make any sense the local master branch must track upstreams
+# master.
+gitver = $(shell [ -x /usr/bin/git ] && git describe --tags $$(git merge-base -a HEAD master) | sed -e 's/-/+git/')
+
+
+# one ring to rule them all ...
+%:
+# need to enforce distutils, since we also have a makefile
+	dh $@ --buildsystem=python_distutils --builddirectory=build
+
+# tests need data files from Freesurfer -- need to wait
+#override_dh_auto_test:
+#ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+#	for buildver in $(shell pyversions -vr); do \
+#		echo "I: Running PySurfer unittests using python$$buildver"; \
+#		$(MAKE) unittest PYTHON=python$$buildver || exit 1 ;\
+#	done
+#endif
+
+override_dh_installman:
+	PYTHONPATH=. help2man --version-string="$(upstreamver)" -N \
+		-n 'visualize cortical surface reconstruction from Freesurfer' \
+		debian/python-surfer/usr/bin/pysurfer > build/pysurfer.1
+	dh_installman build/pysurfer.1
+
+override_dh_clean:
+	rm -rf pysurfer.egg-info build
+	dh_clean
+
+# make orig tarball from repository content
+get-orig-source:
+	# orig tarball, turn directory into something nicer
+	git archive --format=tar --prefix=$(srcpkg)-$(gitver)/ HEAD | \
+		gzip -9 > $(srcpkg)_$(gitver).orig.tar.gz
+

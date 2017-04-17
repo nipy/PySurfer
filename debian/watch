@@ -1,0 +1,4 @@
+# Compulsory line, this is a version 3 file
+version=3
+opts="filenamemangle=s/.*\/(.*)/PySurfer-$1\.tar\.gz/" \
+  http://github.com/nipy/PySurfer/downloads .*tarball/([\d\.a-z]+)
