@@ -1811,7 +1811,7 @@ class Brain(object):
             if data is not None:
                 for surf in data['surfaces']:
                     cmap = surf.module_manager.scalar_lut_manager
-                    cmap.lut.table = table_new
+                    cmap.load_lut_from_list(table_new / 255.)
                     cmap.data_range = np.array([fmin, fmax])
 
                 # Update the data properties
@@ -2578,7 +2578,8 @@ class _Hemisphere(object):
             self._geo_surf = mlab.pipeline.surface(
                self._geo_mesh, figure=self._f, reset_zoom=True, **geo_kwargs)
         if lut is not None:
-            self._geo_surf.module_manager.scalar_lut_manager.lut.table = lut
+            lut_manager = self._geo_surf.module_manager.scalar_lut_manager
+            lut_manager.load_lut_from_list(lut / 255.)
         if geo_curv and geo_reverse:
             curv_bar = mlab.scalarbar(self._geo_surf)
             curv_bar.reverse_lut = True
@@ -2721,7 +2722,8 @@ class _Hemisphere(object):
 
         # apply look up table if given
         if lut is not None:
-            surf.module_manager.scalar_lut_manager.lut.table = lut
+            lut_manager = surf.module_manager.scalar_lut_manager
+            lut_manager.load_lut_from_list(lut / 255.)
 
         # Get the original colormap table
         orig_ctable = \
@@ -2750,7 +2752,8 @@ class _Hemisphere(object):
             surf = mlab.pipeline.surface(mesh, name=annot, figure=self._f)
 
         # Set the color table
-        surf.module_manager.scalar_lut_manager.lut.table = cmap
+        lut_manager = surf.module_manager.scalar_lut_manager
+        lut_manager.load_lut_from_list(cmap / 255.)
 
         # Set the brain attributes
         annot = dict(surface=surf, name=annot, colormap=cmap)
@@ -2767,8 +2770,9 @@ class _Hemisphere(object):
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(mesh, name=label_name, figure=self._f)
         color = colorConverter.to_rgba(color, alpha)
-        cmap = np.array([(0, 0, 0, 0,), color]) * 255
-        surf.module_manager.scalar_lut_manager.lut.table = cmap
+        cmap = np.array([(0, 0, 0, 0,), color])
+        lut_manager = surf.module_manager.scalar_lut_manager
+        lut_manager.load_lut_from_list(cmap)
         return surf
 
     def add_morphometry(self, morph_data, colormap, measure,
@@ -2822,7 +2826,8 @@ class _Hemisphere(object):
             surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
                                                  line_width=line_width)
         if lut is not None:
-            surf.module_manager.scalar_lut_manager.lut.table = lut
+            lut_manager = surf.module_manager.scalar_lut_manager
+            lut_manager.load_lut_from_list(lut / 255.)
 
         # Set the colorbar and range correctly
         with warnings.catch_warnings(record=True):  # traits
