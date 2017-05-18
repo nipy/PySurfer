@@ -120,6 +120,7 @@ def test_annot():
     brain = Brain(*std_args)
     for a, b, p in zip(annots, borders, alphas):
         brain.add_annotation(a, b, p)
+    brain.set_surface('smoothwm')
     assert_raises(ValueError, brain.add_annotation, 'aparc', borders=-1)
     brain.close()
 
@@ -148,6 +149,7 @@ def test_data():
     reg_file = pjoin(data_dir, 'register.dat')
     surf_data = io.project_volume_data(mri_file, "lh", reg_file)
     brain.add_data(surf_data, -.7, .7, colormap="jet", alpha=.7)
+    brain.set_surface('smoothwm')
     brain.add_data([], vertices=np.array([], int))
     brain.close()
 
@@ -191,6 +193,7 @@ def test_label():
     brain.add_label("V1", color="steelblue", alpha=.6)
     brain.add_label("V2", color="#FF6347", alpha=.6)
     brain.add_label("entorhinal", color=(.2, 1, .5), alpha=.6)
+    brain.set_surface('smoothwm')
 
     # remove labels
     brain.remove_labels('V1')
@@ -243,6 +246,9 @@ def test_meg_inverse():
     brain.set_data_time_index(0)
     assert_equal(data_dicts[0]['time_idx'], 0)
     assert_equal(data_dicts[1]['time_idx'], 0)
+
+    # change surface
+    brain.set_surface('smoothwm')
 
     # remove all layers
     brain.remove_data()
