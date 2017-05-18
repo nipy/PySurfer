@@ -518,22 +518,25 @@ class Brain(object):
     # HELPERS
     def _toggle_render(self, state, views=None):
         """Turn rendering on (True) or off (False)"""
-        figs = []
-        [figs.extend(f) for f in self._figures]
+        figs = [fig for fig_row in self._figures for fig in fig_row]
         if views is None:
             views = [None] * len(figs)
         for vi, (_f, view) in enumerate(zip(figs, views)):
-            if state is False and view is None:
-                views[vi] = mlab.view(figure=_f)
+            # Testing backend doesn't have these options
+            if mlab.options.backend == 'test':
+                continue
 
-            # Testing backend doesn't have this option
-            if mlab.options.backend != 'test':
-                _f.scene.disable_render = not state
+            if state is False and view is None:
+                views[vi] = (mlab.view(figure=_f),
+                             _f.scene.camera.parallel_scale)
+
+            _f.scene.disable_render = not state
 
             if state is True and view is not None:
                 mlab.draw(figure=_f)
                 with warnings.catch_warnings(record=True):  # traits focalpoint
-                    mlab.view(*view, figure=_f)
+                    mlab.view(*view[0], figure=_f)
+                _f.scene.camera.parallel_scale = view[1]
         # let's do the ugly force draw
         if state is True:
             _force_render(self._figures, self._window_backend)
