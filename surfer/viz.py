@@ -1415,14 +1415,18 @@ class Brain(object):
                  "and will be removed in PySurfer 0.9", DeprecationWarning)
 
         if labels is None:
-            labels = self._label_dicts.keys()
-        elif isinstance(labels, str):
-            labels = [labels]
+            labels_ = self._label_dicts.keys()
+        else:
+            labels_ = [labels] if isinstance(labels, str) else labels
+            missing = [key for key in labels_ if key not in self._label_dicts]
+            if missing:
+                raise ValueError("labels=%r contains unknown labels: %s" %
+                                 (labels, ', '.join(map(repr, missing))))
 
-        for key in labels:
-            for data in self._label_dicts.pop(key):
-                for surf in data['surfaces']:
-                    surf.remove()
+        for key in labels_:
+            data = self._label_dicts.pop(key)
+            for surf in data['surfaces']:
+                surf.remove()
 
     def add_morphometry(self, measure, grayscale=False, hemi=None,
                         remove_existing=True, colormap=None,
