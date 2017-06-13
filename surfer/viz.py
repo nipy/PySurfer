@@ -774,15 +774,6 @@ class Brain(object):
         return out
 
     @property
-    def _geo(self):
-        """Wrap to _geo"""
-        self._get_one_brain([[]], '_geo')
-        if ('lh' in self.geo) and ['lh'] is not None:
-            return self.geo['lh']
-        else:
-            return self.geo['rh']
-
-    @property
     def data(self):
         """Wrap to data"""
         self._get_one_brain([[]], 'data')
@@ -1934,7 +1925,6 @@ class Brain(object):
         -----
         Raises a RuntimeError if the Brain instance has not data overlay.
         """
-        time_idx = None
         for hemi in ['lh', 'rh']:
             data = self.data_dict[hemi]
             if data is not None:
