@@ -76,6 +76,9 @@ class Surface(object):
         self.hemi = hemi
         self.surf = surf
         self.offset = offset
+        self.coords = None
+        self.faces = None
+        self.nn = None
 
         subjects_dir = _get_subjects_dir(subjects_dir)
         self.data_path = op.join(subjects_dir, subject_id)
@@ -83,13 +86,22 @@ class Surface(object):
     def load_geometry(self):
         surf_path = op.join(self.data_path, "surf",
                             "%s.%s" % (self.hemi, self.surf))
-        self.coords, self.faces = nib.freesurfer.read_geometry(surf_path)
+        coords, faces = nib.freesurfer.read_geometry(surf_path)
         if self.offset is not None:
             if self.hemi == 'lh':
-                self.coords[:, 0] -= (np.max(self.coords[:, 0]) + self.offset)
+                coords[:, 0] -= (np.max(coords[:, 0]) + self.offset)
             else:
-                self.coords[:, 0] -= (np.min(self.coords[:, 0]) + self.offset)
-        self.nn = _compute_normals(self.coords, self.faces)
+                coords[:, 0] -= (np.min(coords[:, 0]) + self.offset)
+        nn = _compute_normals(coords, faces)
+
+        if self.coords is None:
+            self.coords = coords
+            self.faces = faces
+            self.nn = nn
+        else:
+            self.coords[:] = coords
+            self.faces[:] = faces
+            self.nn[:] = nn
 
     def save_geometry(self):
         surf_path = op.join(self.data_path, "surf",

@@ -1057,10 +1057,17 @@ class Brain(object):
         lut = create_color_lut(colormap)
         colormap = "Greys"
 
+        # determine unique data layer ID
+        data_dicts = self._data_dicts['lh'] + self._data_dicts['rh']
+        if data_dicts:
+            layer = np.max([data['layer'] for data in data_dicts]) + 1
+        else:
+            layer = 0
+
         data = dict(array=array, smoothing_steps=smoothing_steps,
                     fmin=min, fmid=(min + max) / 2, fmax=max,
                     transparent=False, time=0, time_idx=0,
-                    vertices=vertices, smooth_mat=smooth_mat)
+                    vertices=vertices, smooth_mat=smooth_mat, layer=layer)
 
         # clean up existing data
         if remove_existing:
@@ -1107,27 +1114,21 @@ class Brain(object):
         else:
             initial_time_index = None
 
-        meshes = []
         surfs = []
         bars = []
         views = self._toggle_render(False)
-        for bi, brain in enumerate(self._brain_list):
+        for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                out = brain['brain'].add_data(array, mlab_plot, vertices,
-                                              smooth_mat, min, max, thresh,
-                                              lut, colormap, alpha, time,
-                                              time_label, colorbar)
-                mesh, s, ct, bar = out
-                meshes.append(mesh)
+                s, ct, bar = brain['brain'].add_data(
+                    array, mlab_plot, vertices, smooth_mat, min, max, thresh,
+                    lut, colormap, alpha, time, time_label, colorbar, layer)
                 surfs.append(s)
                 bars.append(bar)
-                row, col = np.unravel_index(bi, self.brain_matrix.shape)
                 if array.ndim == 2 and time_label is not None:
                     self.add_text(0.95, y_txt, time_label(time[0]),
-                                  name="time_label", row=row, col=col,
-                                  font_size=time_label_size,
+                                  name="time_label", row=brain['row'],
+                                  col=brain['col'], font_size=time_label_size,
                                   justification='right')
-        data['meshes'] = meshes
         data['surfaces'] = surfs
         data['colorbars'] = bars
         data['orig_ctable'] = ct
@@ -1380,13 +1381,14 @@ class Brain(object):
         """
         hemis = self._check_hemis(hemi)
         for hemi in hemis:
-            for data in self._data_dicts[hemi]:
-                for surf in data['surfaces']:
-                    surf.parent.parent.remove()
+            for brain in self.brains:
+                if brain.hemi == hemi:
+                    for data in self._data_dicts[hemi]:
+                        brain.remove_data(data['layer'])
             self._data_dicts[hemi] = []
 
         # if no data is left, reset time properties
-        if not self._data_dicts['lh'] and not self._data_dicts['rh']:
+        if all(len(brain.data) == 0 for brain in self.brains):
             self.n_times = self._times = None
 
     def remove_labels(self, labels=None, hemi=None):
@@ -1758,34 +1760,21 @@ class Brain(object):
             return
 
         views = self._toggle_render(False)
-        for h in self.brains:
+
+        # load new geometry
+        for geo in self.geo.values():
             try:
-                h._geo.surf = surface
-                h._geo.load_geometry()
+                geo.surf = surface
+                geo.load_geometry()
             except IOError:
-                h._geo.surf = h.surf
+                geo.surf = self.surf
                 self._toggle_render(True)
                 raise
-            # collect meshes: main surface mesh
-            meshes = [h._geo_mesh]
-            # data overlays
-            for data in self._data_dicts[h.hemi]:
-                meshes.extend(data['meshes'])
-            # labels
-            for data in self._label_dicts.values():
-                if data['hemi'] == h.hemi:
-                    meshes.extend(data['meshes'])
-            # annotations
-            for data in self.annot_list:
-                if data['hemi'] == h.hemi:
-                    meshes.append(data['mesh'])
 
-            for mesh in meshes:
-                mesh.data.points = h._geo.coords
-                mesh.data.point_data.normals = h._geo.nn
-            for mesh in meshes:
-                mesh.update()
-            h.surf = surface
+        # update mesh objects (the use a reference to geo.coords)
+        for brain in self.brains:
+            brain.update_surface()
+
         self.surf = surface
         self._toggle_render(True, views)
 
@@ -1898,8 +1887,10 @@ class Brain(object):
 
                 if data["smooth_mat"] is not None:
                     plot_data = data["smooth_mat"] * plot_data
-                for surf in data["surfaces"]:
-                    surf.mlab_source.scalars = plot_data
+
+                for brain in self.brains:
+                    if brain.hemi == hemi:
+                        brain.set_data(data['layer'], plot_data)
                 data["time_idx"] = time_idx
 
                 # Update time label
@@ -2593,26 +2584,22 @@ class _Hemisphere(object):
         self.hemi = hemi
         self.subjects_dir = subjects_dir
         self.viewdict = viewdicts[hemi]
-        self.surf = surf
         self._f = figure
         self._bg_color = bg_color
         self._backend = backend
+        self.data = {}
+        self._mesh_clones = {}  # surface mesh data-sources
 
         # mlab pipeline mesh and surface for geomtery
         self._geo = geo
-        if geo_curv:
-            curv_data = self._geo.bin_curv
-            meshargs = dict(scalars=curv_data)
-        else:
-            curv_data = None
-            meshargs = dict()
-        meshargs['figure'] = self._f
-        x, y, z, f = self._geo.x, self._geo.y, self._geo.z, self._geo.faces
+        meshargs = dict(scalars=geo.bin_curv) if geo_curv else dict()
         with warnings.catch_warnings(record=True):  # traits
             self._geo_mesh = mlab.pipeline.triangular_mesh_source(
-                x, y, z, f, **meshargs)
+                geo.x, geo.y, geo.z, geo.faces, figure=self._f, **meshargs)
+        self._geo_mesh.data.points = geo.coords
+        self._mesh_dataset = self._geo_mesh.mlab_source.dataset
         # add surface normals
-        self._geo_mesh.data.point_data.normals = self._geo.nn
+        self._geo_mesh.data.point_data.normals = geo.nn
         self._geo_mesh.data.cell_data.normals = None
         if 'lut' in geo_kwargs:
             # create a new copy we can modify:
@@ -2737,7 +2724,8 @@ class _Hemisphere(object):
 
     @verbose
     def add_data(self, array, mlab_plot, vertices, smooth_mat, min, max,
-                 thresh, lut, colormap, alpha, time, time_label, colorbar):
+                 thresh, lut, colormap, alpha, time, time_label, colorbar,
+                 layer):
         """Add data to the brain"""
         # Calculate initial data to plot
         if array.ndim == 1:
@@ -2747,24 +2735,31 @@ class _Hemisphere(object):
         else:
             raise ValueError("data has to be 1D or 2D")
 
-        # Set up the visualization pipeline
-        with warnings.catch_warnings(record=True):  # traits warnings
-            mesh = mlab.pipeline.triangular_mesh_source(
-                self._geo.x, self._geo.y, self._geo.z, self._geo.faces,
-                scalars=mlab_plot, figure=self._f)
-        mesh.data.point_data.normals = self._geo.nn
-        mesh.data.cell_data.normals = None
+        # Add scalar values to dataset
+        array_id = self._mesh_dataset.point_data.add_array(mlab_plot)
+        self._mesh_dataset.point_data.get_array(array_id).name = array_id
+        self._mesh_dataset.point_data.update()
+
+        # build visualization pipeline
+        pipe = mlab.pipeline.set_active_attribute(
+            self._mesh_dataset, point_scalars=array_id, figure=self._f)
+        # The new data-source is added to the wrong figure by default (a Mayavi
+        # bug??)
+        self._f.add_child(pipe.parent)
+        self._mesh_clones[array_id] = pipe.parent
+        pipeline = [pipe, pipe.parent]
         if thresh is not None:
             if array_plot.min() >= thresh:
                 warn("Data min is greater than threshold.")
             else:
                 with warnings.catch_warnings(record=True):
-                    mesh = mlab.pipeline.threshold(mesh, low=thresh)
-
+                    pipe = mlab.pipeline.threshold(pipe, low=thresh)
+                pipeline.insert(0, pipe)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(
-                mesh, colormap=colormap, vmin=min, vmax=max,
+                pipe, colormap=colormap, vmin=min, vmax=max,
                 opacity=float(alpha), figure=self._f)
+        pipeline.insert(0, surf)
 
         # apply look up table if given
         if lut is not None:
@@ -2783,7 +2778,9 @@ class _Hemisphere(object):
         else:
             bar = None
 
-        return mesh, surf, orig_ctable, bar
+        self.data[layer] = {'array_id': array_id, 'pipeline': pipeline}
+
+        return surf, orig_ctable, bar
 
     def add_annotation(self, annot, ids, cmap):
         """Add an annotation file"""
@@ -2894,6 +2891,21 @@ class _Hemisphere(object):
             return mlab.text(x, y, text, name=name, color=color,
                              opacity=opacity, figure=self._f)
 
+    def remove_data(self, layer):
+        "Remove data shown with .add_data()"
+        data = self.data.pop(layer)
+        for pipe in data['pipeline']:
+            pipe.remove()
+        del self._mesh_clones[data['array_id']]
+        self._mesh_dataset.point_data.remove_array(data['array_id'])
+
+    def set_data(self, layer, values):
+        "Set displayed data"
+        data = self.data[layer]
+        self._mesh_dataset.point_data.get_array(
+            data['array_id']).from_array(values)
+        data['pipeline'][-1].update()
+
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
         if self.hemi == "rh":
@@ -2909,6 +2921,12 @@ class _Hemisphere(object):
         else:
             text_color = (0., 0., 0.)
         cbar.label_text_property.color = text_color
+
+    def update_surface(self):
+        "Update surface mesh after mesh coordinates change"
+        self._geo_mesh.update()
+        for mesh in self._mesh_clones.values():
+            mesh.update()
 
 
 class OverlayData(object):
