@@ -1191,10 +1191,10 @@ class Brain(object):
                 filepaths += [filepath]
 
         views = self._toggle_render(False)
-        if remove_existing is True:
+        if remove_existing:
             # Get rid of any old annots
             for a in self.annot_list:
-                a['surface'].remove()
+                a['brain']._remove_scalar_data(a['array_id'])
             self.annot_list = []
 
         for hemi, filepath in zip(hemis, filepaths):
@@ -1337,16 +1337,16 @@ class Brain(object):
 
         # make a list of all the plotted labels
         surfaces = []
-        meshes = []
+        array_ids = []
         views = self._toggle_render(False)
-        for brain in self._brain_list:
-            if brain['hemi'] == hemi:
-                mesh, surf = brain['brain'].add_label(label, label_name, color,
-                                                      alpha)
+        for brain in self.brains:
+            if brain.hemi == hemi:
+                array_id, surf = brain.add_label(label, label_name, color,
+                                                 alpha)
                 surfaces.append(surf)
-                meshes.append(mesh)
-        self._label_dicts[label_name] = {'hemi': hemi, 'meshes': meshes,
-                                         'surfaces': surfaces}
+                array_ids.append((brain, array_id))
+        self._label_dicts[label_name] = {'surfaces': surfaces,
+                                         'array_ids': array_ids}
         self._toggle_render(True, views)
 
     def _to_borders(self, label, hemi, borders, restrict_idx=None):
@@ -1418,8 +1418,8 @@ class Brain(object):
 
         for key in labels_:
             data = self._label_dicts.pop(key)
-            for surf in data['surfaces']:
-                surf.remove()
+            for brain, array_id in data['array_ids']:
+                brain._remove_scalar_data(array_id)
 
     def add_morphometry(self, measure, grayscale=False, hemi=None,
                         remove_existing=True, colormap=None,
@@ -1462,11 +1462,10 @@ class Brain(object):
         if remove_existing is True:
             # Get rid of any old overlays
             for m in self.morphometry_list:
-                m['surface'].remove()
                 if m["colorbar"] is not None:
                     m['colorbar'].visible = False
+                m['brain']._remove_scalar_data(m['array_id'])
             self.morphometry_list = []
-        ml = self.morphometry_list
 
         for hemi, morph_file in zip(hemis, morph_files):
 
@@ -1504,13 +1503,10 @@ class Brain(object):
             # Set up the Mayavi pipeline
             morph_data = _prepare_data(morph_data)
 
-            for brain in self._brain_list:
-                if brain['hemi'] == hemi:
-                    ml.append(brain['brain'].add_morphometry(morph_data,
-                                                             colormap, measure,
-                                                             min, max,
-                                                             colorbar))
-        self.morphometry_list = ml
+            for brain in self.brains:
+                if brain.hemi == hemi:
+                    self.morphometry_list.append(brain.add_morphometry(
+                        morph_data, colormap, measure, min, max, colorbar))
         self._toggle_render(True, views)
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
@@ -1625,21 +1621,20 @@ class Brain(object):
         # Maybe get rid of an old overlay
         if remove_existing:
             for c in self.contour_list:
-                c['surface'].remove()
                 if c['colorbar'] is not None:
                     c['colorbar'].visible = False
+                c['brain']._remove_scalar_data(c['array_id'])
+            self.contour_list = []
 
         # Process colormap argument into a lut
         lut = create_color_lut(colormap)
 
         views = self._toggle_render(False)
-        cl = []
-        for brain in self._brain_list:
-            if brain['hemi'] == hemi:
-                cl.append(brain['brain'].add_contour_overlay(
+        for brain in self.brains:
+            if brain.hemi == hemi:
+                self.contour_list.append(brain.add_contour_overlay(
                     scalar_data, min, max, n_contours, line_width, lut,
                     colorbar))
-        self.contour_list = cl
         self._toggle_render(True, views)
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0,
@@ -2591,7 +2586,6 @@ class _Hemisphere(object):
         self._mesh_clones = {}  # surface mesh data-sources
 
         # mlab pipeline mesh and surface for geomtery
-        self._geo = geo
         meshargs = dict(scalars=geo.bin_curv) if geo_curv else dict()
         with warnings.catch_warnings(record=True):  # traits
             self._geo_mesh = mlab.pipeline.triangular_mesh_source(
@@ -2712,6 +2706,27 @@ class _Hemisphere(object):
             dr = np.array(end_d['r']) - np.array(beg_d['r'])
         return (np.array(dv), dr)
 
+    def _add_scalar_data(self, data):
+        # Add scalar values to dataset
+        array_id = self._mesh_dataset.point_data.add_array(data)
+        self._mesh_dataset.point_data.get_array(array_id).name = array_id
+        self._mesh_dataset.point_data.update()
+
+        # build visualization pipeline
+        with warnings.catch_warnings(record=True):
+            pipe = mlab.pipeline.set_active_attribute(
+                self._mesh_dataset, point_scalars=array_id, figure=self._f)
+            # The new data-source is added to the wrong figure by default
+            # (a Mayavi bug??)
+            self._f.add_child(pipe.parent)
+        self._mesh_clones[array_id] = pipe.parent
+        return array_id, pipe
+
+    def _remove_scalar_data(self, array_id):
+        "Removes scalar data"
+        self._mesh_clones.pop(array_id).remove()
+        self._mesh_dataset.point_data.remove_array(array_id)
+
     def add_overlay(self, old):
         """Add an overlay to the overlay dict from a file or array"""
         surf = OverlayDisplay(old, figure=self._f)
@@ -2735,25 +2750,15 @@ class _Hemisphere(object):
         else:
             raise ValueError("data has to be 1D or 2D")
 
-        # Add scalar values to dataset
-        array_id = self._mesh_dataset.point_data.add_array(mlab_plot)
-        self._mesh_dataset.point_data.get_array(array_id).name = array_id
-        self._mesh_dataset.point_data.update()
-
-        # build visualization pipeline
-        pipe = mlab.pipeline.set_active_attribute(
-            self._mesh_dataset, point_scalars=array_id, figure=self._f)
-        # The new data-source is added to the wrong figure by default (a Mayavi
-        # bug??)
-        self._f.add_child(pipe.parent)
-        self._mesh_clones[array_id] = pipe.parent
+        array_id, pipe = self._add_scalar_data(mlab_plot)
         pipeline = [pipe, pipe.parent]
         if thresh is not None:
             if array_plot.min() >= thresh:
                 warn("Data min is greater than threshold.")
             else:
                 with warnings.catch_warnings(record=True):
-                    pipe = mlab.pipeline.threshold(pipe, low=thresh)
+                    pipe = mlab.pipeline.threshold(pipe, low=thresh,
+                                                   figure=self._f)
                 pipeline.insert(0, pipe)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(
@@ -2784,51 +2789,36 @@ class _Hemisphere(object):
 
     def add_annotation(self, annot, ids, cmap):
         """Add an annotation file"""
-        # Create an mlab surface to visualize the annot
-        with warnings.catch_warnings(record=True):  # traits
-            mesh = mlab.pipeline.triangular_mesh_source(
-                self._geo.x, self._geo.y, self._geo.z, self._geo.faces,
-                scalars=ids, figure=self._f)
-        mesh.data.point_data.normals = self._geo.nn
-        mesh.data.cell_data.normals = None
+        # Add scalar values to dataset
+        array_id, pipe = self._add_scalar_data(ids)
         with warnings.catch_warnings(record=True):
-            surf = mlab.pipeline.surface(mesh, name=annot, figure=self._f)
+            surf = mlab.pipeline.surface(pipe, name=annot, figure=self._f)
 
         # Set the color table
         lut_manager = surf.module_manager.scalar_lut_manager
         lut_manager.load_lut_from_list(cmap / 255.)
 
         # Set the brain attributes
-        return dict(surface=surf, name=annot, colormap=cmap, mesh=mesh,
-                    hemi=self.hemi)
+        return dict(surface=surf, name=annot, colormap=cmap, brain=self,
+                    array_id=array_id)
 
     def add_label(self, label, label_name, color, alpha):
         """Add an ROI label to the image"""
-        with warnings.catch_warnings(record=True):  # traits
-            mesh = mlab.pipeline.triangular_mesh_source(
-                self._geo.x, self._geo.y, self._geo.z, self._geo.faces,
-                scalars=label, figure=self._f)
-        mesh.data.point_data.normals = self._geo.nn
-        mesh.data.cell_data.normals = None
+        array_id, pipe = self._add_scalar_data(label)
         with warnings.catch_warnings(record=True):
-            surf = mlab.pipeline.surface(mesh, name=label_name, figure=self._f)
+            surf = mlab.pipeline.surface(pipe, name=label_name, figure=self._f)
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color])
         lut_manager = surf.module_manager.scalar_lut_manager
         lut_manager.load_lut_from_list(cmap)
-        return mesh, surf
+        return array_id, surf
 
     def add_morphometry(self, morph_data, colormap, measure,
                         min, max, colorbar):
         """Add a morphometry overlay to the image"""
+        array_id, pipe = self._add_scalar_data(morph_data)
         with warnings.catch_warnings(record=True):
-            mesh = mlab.pipeline.triangular_mesh_source(
-                self._geo.x, self._geo.y, self._geo.z, self._geo.faces,
-                scalars=morph_data, figure=self._f)
-        mesh.data.point_data.normals = self._geo.nn
-        mesh.data.cell_data.normals = None
-        with warnings.catch_warnings(record=True):
-            surf = mlab.pipeline.surface(mesh, colormap=colormap,
+            surf = mlab.pipeline.surface(pipe, colormap=colormap,
                                          vmin=min, vmax=max,
                                          name=measure, figure=self._f)
 
@@ -2841,7 +2831,8 @@ class _Hemisphere(object):
             bar = None
 
         # Fil in the morphometry dict
-        return dict(surface=surf, colorbar=bar, measure=measure)
+        return dict(surface=surf, colorbar=bar, measure=measure, brain=self,
+                    array_id=array_id)
 
     def add_foci(self, foci_coords, scale_factor, color, alpha, name):
         """Add spherical foci, possibly mapping to displayed surf"""
@@ -2857,15 +2848,9 @@ class _Hemisphere(object):
                             n_contours=7, line_width=1.5, lut=None,
                             colorbar=True):
         """Add a topographic contour overlay of the positive data"""
-        # Set up the pipeline
-        with warnings.catch_warnings(record=True):  # traits
-            mesh = mlab.pipeline.triangular_mesh_source(
-                self._geo.x, self._geo.y, self._geo.z, self._geo.faces,
-                scalars=scalar_data, figure=self._f)
-        mesh.data.point_data.normals = self._geo.nn
-        mesh.data.cell_data.normals = None
+        array_id, pipe = self._add_scalar_data(scalar_data)
         with warnings.catch_warnings(record=True):
-            thresh = mlab.pipeline.threshold(mesh, low=min)
+            thresh = mlab.pipeline.threshold(pipe, low=min)
             surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
                                                  line_width=line_width)
         if lut is not None:
@@ -2883,7 +2868,7 @@ class _Hemisphere(object):
             bar.visible = False
 
         # Set up a dict attribute with pointers at important things
-        return dict(surface=surf, colorbar=bar)
+        return dict(surface=surf, colorbar=bar, brain=self, array_id=array_id)
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0):
         """ Add a text to the visualization"""
@@ -2894,10 +2879,7 @@ class _Hemisphere(object):
     def remove_data(self, layer):
         "Remove data shown with .add_data()"
         data = self.data.pop(layer)
-        for pipe in data['pipeline']:
-            pipe.remove()
-        del self._mesh_clones[data['array_id']]
-        self._mesh_dataset.point_data.remove_array(data['array_id'])
+        self._remove_scalar_data(data['array_id'])
 
     def set_data(self, layer, values):
         "Set displayed data"

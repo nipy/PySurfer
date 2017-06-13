@@ -352,7 +352,7 @@ def test_probabilistic_labels():
     brain.add_label("BA45", color="salmon", borders=True, scalar_thresh=.5)
 
     label_file = pjoin(subj_dir, "fsaverage", "label", "lh.BA6.label")
-    prob_field = np.zeros_like(brain._geo.x)
+    prob_field = np.zeros_like(brain.geo['lh'].x)
     ids, probs = nib.freesurfer.read_label(label_file, read_scalars=True)
     prob_field[ids] = probs
     brain.add_data(prob_field, thresh=1e-5)
