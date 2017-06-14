@@ -2466,8 +2466,8 @@ class Brain(object):
         # Sometimes the first screenshot is rendered with a different
         # resolution on OS X
         self.screenshot()
-        images = (self.screenshot() for _ in
-                  self._iter_time(time_idx, interpolation))
+        images = [self.screenshot() for _ in
+                  self._iter_time(time_idx, interpolation)]
         imageio.mimwrite(fname, images, **kwargs)
 
     def animate(self, views, n_steps=180., fname=None, use_cache=False,
@@ -2848,8 +2848,9 @@ class _Hemisphere(object):
     def add_text(self, x, y, text, name, color=None, opacity=1.0):
         """ Add a text to the visualization"""
         with warnings.catch_warnings(record=True):
-            return mlab.text(x, y, text, name=name, color=color,
+            text = mlab.text(x, y, text, name=name, color=color,
                              opacity=opacity, figure=self._f)
+            return text
 
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
