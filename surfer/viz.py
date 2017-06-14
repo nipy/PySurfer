@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 from math import floor
 import os
 from os.path import join as pjoin
@@ -11,6 +12,7 @@ from matplotlib.colors import colorConverter
 
 import nibabel as nib
 
+import mayavi
 from mayavi import mlab
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core import lut_manager
@@ -28,6 +30,12 @@ from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
 
 import logging
 logger = logging.getLogger('surfer')
+
+
+# Monkey-patch for Mayavi 4.5: filters are missing a point_data attribute that
+# Threshold accesses on initialization
+if LooseVersion(mayavi.__version__) <= LooseVersion('4.5.0'):
+    mayavi.filters.api.Threshold._get_data_range = lambda x: []
 
 
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
