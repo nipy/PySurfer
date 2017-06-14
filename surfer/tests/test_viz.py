@@ -357,8 +357,9 @@ def test_probabilistic_labels():
     prob_field[ids] = probs
     brain.add_data(prob_field, thresh=1e-5)
 
-    brain.data["colorbar"].number_of_colors = 10
-    brain.data["colorbar"].number_of_labels = 11
+    with warnings.catch_warnings(record=True):
+        brain.data["colorbar"].number_of_colors = 10
+        brain.data["colorbar"].number_of_labels = 11
     brain.close()
 
 
