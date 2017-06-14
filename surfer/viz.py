@@ -1,4 +1,3 @@
-from distutils.version import LooseVersion
 from math import floor
 import os
 from os.path import join as pjoin
@@ -25,17 +24,11 @@ from tvtk.api import tvtk
 
 from . import utils, io
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
-                    string_types)
+                    mayavi_threshold_patch, string_types)
 
 
 import logging
 logger = logging.getLogger('surfer')
-
-
-# Monkey-patch for Mayavi 4.5: filters are missing a point_data attribute that
-# Threshold accesses on initialization
-if LooseVersion(mayavi.__version__) <= LooseVersion('4.5.0'):
-    mayavi.filters.api.Threshold._get_data_range = lambda x: []
 
 
 lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
@@ -2772,8 +2765,9 @@ class _Hemisphere(object):
                 warn("Data min is greater than threshold.")
             else:
                 with warnings.catch_warnings(record=True):
-                    pipe = mlab.pipeline.threshold(pipe, low=thresh,
-                                                   figure=self._f)
+                    with mayavi_threshold_patch:
+                        pipe = mlab.pipeline.threshold(
+                            pipe, low=thresh, figure=self._f)
                 pipeline.insert(0, pipe)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(
@@ -2865,7 +2859,8 @@ class _Hemisphere(object):
         """Add a topographic contour overlay of the positive data"""
         array_id, pipe = self._add_scalar_data(scalar_data)
         with warnings.catch_warnings(record=True):
-            thresh = mlab.pipeline.threshold(pipe, low=min)
+            with mayavi_threshold_patch:
+                thresh = mlab.pipeline.threshold(pipe, low=min)
             surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
                                                  line_width=line_width)
         if lut is not None:

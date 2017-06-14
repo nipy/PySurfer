@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 import logging
 import warnings
 import sys
@@ -6,6 +7,8 @@ from os import path as op
 import inspect
 from functools import wraps
 
+import mayavi
+from mayavi.filters.api import Threshold
 import numpy as np
 import nibabel as nib
 from scipy import sparse
@@ -21,6 +24,28 @@ if sys.version[0] == '2':
     string_types = basestring  # noqa
 else:
     string_types = str
+
+
+class _MayaviThresholdPatch(object):
+    """Context to monkey-patch Mayavi 4.5
+
+    In Mayavi 4.5, filters seem to be missing a .point_data attribute that
+    Threshold accesses on initialization.
+    """
+    need_patch = LooseVersion(mayavi.__version__) <= LooseVersion('4.5.0')
+    _orig_func = Threshold._get_data_range
+    _patch_func = lambda x: []
+
+    def __enter__(self):
+        if self.need_patch:
+            Threshold._get_data_range = self._patch_func
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.need_patch:
+            Threshold._get_data_range = self._orig_func
+
+
+mayavi_threshold_patch = _MayaviThresholdPatch()
 
 
 class Surface(object):
