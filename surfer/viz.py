@@ -306,7 +306,7 @@ class Brain(object):
         of 'both', both hemispheres are shown in the same window.
         In the case of 'split' hemispheres are displayed side-by-side
         in different viewing panes.
-    surf :  geometry name
+    surf : str
         freesurfer surface mesh name (ie 'white', 'inflated', etc.)
     title : str
         title for the window
@@ -1751,6 +1751,13 @@ class Brain(object):
         return distance
 
     def set_surface(self, surface):
+        """Change the surface geometry
+
+        Parameters
+        ----------
+        surface : str
+            freesurfer surface mesh name (ie 'white', 'inflated', etc.)
+        """
         if self.surf == surface:
             return
 
