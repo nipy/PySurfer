@@ -113,7 +113,7 @@ def test_brains():
 @requires_fsaverage
 def test_annot():
     """Test plotting of annot."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     annots = ['aparc', 'aparc.a2005s']
     borders = [True, False, 2]
     alphas = [1, 0.5]
@@ -128,7 +128,7 @@ def test_annot():
 @requires_fsaverage
 def test_contour():
     """Test plotting of contour overlay."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     brain = Brain(*std_args)
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
     brain.add_contour_overlay(overlay_file)
@@ -143,7 +143,7 @@ def test_contour():
 @requires_fs
 def test_data():
     """Test plotting of data."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     brain = Brain(*std_args)
     mri_file = pjoin(data_dir, 'resting_corr.nii.gz')
     reg_file = pjoin(data_dir, 'register.dat')
@@ -177,7 +177,7 @@ def test_foci():
 @requires_fsaverage
 def test_label():
     """Test plotting of label."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     subject_id = "fsaverage"
     hemi = "lh"
     surf = "inflated"
@@ -208,7 +208,7 @@ def test_label():
 @requires_fsaverage
 def test_meg_inverse():
     """Test plotting of MEG inverse solution."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     brain = Brain(*std_args)
     stc_fname = os.path.join(data_dir, 'meg_source_estimate-lh.stc')
     stc = io.read_stc(stc_fname)
@@ -260,7 +260,7 @@ def test_meg_inverse():
 @requires_fsaverage
 def test_morphometry():
     """Test plotting of morphometry."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     brain = Brain(*std_args)
     brain.add_morphometry("curv")
     brain.add_morphometry("sulc", grayscale=True)
@@ -340,7 +340,7 @@ def test_overlay():
 @requires_fsaverage
 def test_probabilistic_labels():
     """Test plotting of probabilistic labels."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     brain = Brain("fsaverage", "lh", "inflated",
                   cortex="low_contrast")
 
