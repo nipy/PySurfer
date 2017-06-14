@@ -308,7 +308,7 @@ def test_movie():
 @requires_fsaverage
 def test_overlay():
     """Test plotting of overlay."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     # basic overlay support
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
     brain = Brain(*std_args)

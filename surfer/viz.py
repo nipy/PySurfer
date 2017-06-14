@@ -947,7 +947,7 @@ class Brain(object):
         min, max = self._get_display_range(scalar_data, min, max, sign)
         if sign not in ["abs", "pos", "neg"]:
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
-        old = OverlayData(scalar_data, self.geo[hemi], min, max, sign)
+        old = OverlayData(scalar_data, min, max, sign)
         ol = []
         views = self._toggle_render(False)
         for brain in self._brain_list:
@@ -2737,13 +2737,40 @@ class _Hemisphere(object):
 
     def add_overlay(self, old):
         """Add an overlay to the overlay dict from a file or array"""
-        surf = OverlayDisplay(old, figure=self._f)
-        for bar in ["pos_bar", "neg_bar"]:
-            try:
-                self._format_cbar_text(getattr(surf, bar))
-            except AttributeError:
-                pass
-        return surf
+        array_id, mesh = self._add_scalar_data(old.mlab_data)
+
+        with mayavi_threshold_patch:
+            if old.pos_lims is not None:
+                with warnings.catch_warnings(record=True):
+                    pos_thresh = mlab.pipeline.threshold(
+                        mesh, low=old.pos_lims[0])
+                    pos = mlab.pipeline.surface(
+                        pos_thresh, colormap="YlOrRd", figure=self._f,
+                        vmin=old.pos_lims[1], vmax=old.pos_lims[2])
+                    pos_bar = mlab.scalarbar(pos, nb_labels=5)
+                pos_bar.reverse_lut = True
+                pos_bar.scalar_bar_representation.position = (0.53, 0.01)
+                pos_bar.scalar_bar_representation.position2 = (0.42, 0.09)
+                self._format_cbar_text(pos_bar)
+            else:
+                pos = pos_bar = None
+
+            if old.neg_lims is not None:
+                with warnings.catch_warnings(record=True):
+                    neg_thresh = mlab.pipeline.threshold(
+                        mesh, up=old.neg_lims[0])
+                    neg = mlab.pipeline.surface(
+                        neg_thresh, colormap="PuBu", figure=self._f,
+                        vmin=old.neg_lims[1], vmax=old.neg_lims[2])
+                    neg_bar = mlab.scalarbar(neg, nb_labels=5)
+                neg_bar.reverse_lut = True
+                neg_bar.scalar_bar_representation.position = (0.05, 0.01)
+                neg_bar.scalar_bar_representation.position2 = (0.42, 0.09)
+                self._format_cbar_text(neg_bar)
+            else:
+                neg = neg_bar = None
+
+        return OverlayDisplay(self, array_id, pos, pos_bar, neg, neg_bar)
 
     @verbose
     def add_data(self, array, mlab_plot, vertices, smooth_mat, min, max,
@@ -2924,12 +2951,11 @@ class _Hemisphere(object):
 class OverlayData(object):
     """Encapsulation of statistical neuroimaging overlay viz data"""
 
-    def __init__(self, scalar_data, geo, min, max, sign):
+    def __init__(self, scalar_data, min, max, sign):
         if scalar_data.min() >= 0:
             sign = "pos"
         elif scalar_data.max() <= 0:
             sign = "neg"
-        self.geo = geo
 
         if sign in ["abs", "pos"]:
             # Figure out the correct threshold to avoid TraitErrors
@@ -2961,58 +2987,20 @@ class OverlayData(object):
 class OverlayDisplay():
     """Encapsulation of overlay viz plotting"""
 
-    def __init__(self, ol, figure):
-        args = [ol.geo.x, ol.geo.y, ol.geo.z, ol.geo.faces]
-        kwargs = dict(scalars=ol.mlab_data, figure=figure)
-        if ol.pos_lims is not None:
-            with warnings.catch_warnings(record=True):  # traits
-                pos_mesh = mlab.pipeline.triangular_mesh_source(
-                    *args, **kwargs)
-            pos_mesh.data.point_data.normals = ol.geo.nn
-            pos_mesh.data.cell_data.normals = None
-            with warnings.catch_warnings(record=True):
-                pos_thresh = mlab.pipeline.threshold(pos_mesh,
-                                                     low=ol.pos_lims[0])
-                self.pos = mlab.pipeline.surface(
-                    pos_thresh, colormap="YlOrRd", figure=figure,
-                    vmin=ol.pos_lims[1], vmax=ol.pos_lims[2])
-                self.pos_bar = mlab.scalarbar(self.pos, nb_labels=5)
-            self.pos_bar.reverse_lut = True
-        else:
-            self.pos = None
-
-        if ol.neg_lims is not None:
-            with warnings.catch_warnings(record=True):
-                neg_mesh = mlab.pipeline.triangular_mesh_source(
-                    *args, **kwargs)
-            neg_mesh.data.point_data.normals = ol.geo.nn
-            neg_mesh.data.cell_data.normals = None
-            with warnings.catch_warnings(record=True):
-                neg_thresh = mlab.pipeline.threshold(neg_mesh,
-                                                     up=ol.neg_lims[0])
-                self.neg = mlab.pipeline.surface(
-                    neg_thresh, colormap="PuBu", figure=figure,
-                    vmin=ol.neg_lims[1], vmax=ol.neg_lims[2])
-                self.neg_bar = mlab.scalarbar(self.neg, nb_labels=5)
-        else:
-            self.neg = None
-        self._format_colorbar()
+    def __init__(self, brain, array_id, pos, pos_bar, neg, neg_bar):
+        self._brain = brain
+        self._array_id = array_id
+        self.pos = pos
+        self.pos_bar = pos_bar
+        self.neg = neg
+        self.neg_bar = neg_bar
 
     def remove(self):
-        if self.pos is not None:
-            self.pos.remove()
+        self._brain._remove_scalar_data(self._array_id)
+        if self.pos_bar is not None:
             self.pos_bar.visible = False
-        if self.neg is not None:
-            self.neg.remove()
+        if self.neg_bar is not None:
             self.neg_bar.visible = False
-
-    def _format_colorbar(self):
-        if self.pos is not None:
-            self.pos_bar.scalar_bar_representation.position = (0.53, 0.01)
-            self.pos_bar.scalar_bar_representation.position2 = (0.42, 0.09)
-        if self.neg is not None:
-            self.neg_bar.scalar_bar_representation.position = (0.05, 0.01)
-            self.neg_bar.scalar_bar_representation.position2 = (0.42, 0.09)
 
 
 class TimeViewer(HasTraits):
