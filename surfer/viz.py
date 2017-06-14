@@ -1769,7 +1769,7 @@ class Brain(object):
             try:
                 geo.surf = surface
                 geo.load_geometry()
-            except IOError:
+            except IOError:  # surface file does not exist
                 geo.surf = self.surf
                 self._toggle_render(True)
                 raise
