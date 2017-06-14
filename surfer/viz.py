@@ -1774,9 +1774,10 @@ class Brain(object):
                 self._toggle_render(True)
                 raise
 
-        # update mesh objects (the use a reference to geo.coords)
-        for brain in self.brains:
-            brain.update_surface()
+        # update mesh objects (they use a reference to geo.coords)
+        with mayavi_threshold_patch:
+            for brain in self.brains:
+                brain.update_surface()
 
         self.surf = surface
         self._toggle_render(True, views)

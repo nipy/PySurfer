@@ -334,6 +334,9 @@ def test_overlay():
     brain.add_overlay(conjunct, 4, 30, name="conjunct")
     brain.overlays["conjunct"].pos_bar.lut_mode = "Purples"
     brain.overlays["conjunct"].pos_bar.visible = False
+
+    brain.set_surface('white')
+
     brain.close()
 
 
