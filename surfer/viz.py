@@ -11,7 +11,6 @@ from matplotlib.colors import colorConverter
 
 import nibabel as nib
 
-import mayavi
 from mayavi import mlab
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from mayavi.core import lut_manager

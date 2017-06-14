@@ -34,7 +34,10 @@ class _MayaviThresholdPatch(object):
     """
     need_patch = LooseVersion(mayavi.__version__) <= LooseVersion('4.5.0')
     _orig_func = Threshold._get_data_range
-    _patch_func = lambda x: []
+
+    @staticmethod
+    def _patch_func(self):
+        return []
 
     def __enter__(self):
         if self.need_patch:
