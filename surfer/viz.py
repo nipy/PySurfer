@@ -1699,10 +1699,10 @@ class Brain(object):
 
         Parameters
         ----------
-        view : {'lateral' | 'medial' | 'rostral' | 'caudal' |
-                'dorsal' | 'ventral' | 'frontal' | 'parietal' |
-                dict}
-            brain surface to view or kwargs to pass to mlab.view()
+        view : str | dict
+            brain surface to view (one of 'lateral', 'medial', 'rostral',
+            'caudal', 'dorsal', 'ventral', 'frontal', 'parietal') or kwargs to
+            pass to mlab.view()
 
         Returns
         -------
@@ -2275,25 +2275,25 @@ class Brain(object):
                             colorbar='auto', interpolation='quadratic'):
         """Save a temporal image sequence
 
-        The files saved are named "fname_pattern % (pos)" where "pos" is a
-        relative or absolute index (controlled by "use_abs_idx")
+        The files saved are named ``fname_pattern % pos`` where ``pos`` is a
+        relative or absolute index (controlled by ``use_abs_idx``).
 
         Parameters
         ----------
-        time_idx : array-like
+        time_idx : array_like
             Time indices to save. Non-integer values will be displayed using
             interpolation between samples.
         fname_pattern : str
             Filename pattern, e.g. 'movie-frame_%0.4d.png'.
-        use_abs_idx : boolean
-            If True the indices given by "time_idx" are used in the filename
+        use_abs_idx : bool
+            If True the indices given by ``time_idx`` are used in the filename
             if False the index in the filename starts at zero and is
             incremented by one for each image (Default: True).
         row : int
             Row index of the brain to use.
         col : int
             Column index of the brain to use.
-        montage: 'current' | 'single' | list
+        montage : 'current' | 'single' | list
             Views to include in the images: 'current' uses the currently
             displayed image; 'single' (default) uses a single view, specified
             by the ``row`` and ``col`` parameters; a 1 or 2 dimensional list
@@ -2301,13 +2301,13 @@ class Brain(object):
             ``['lat', 'med']`` lateral and ventral views ordered horizontally;
             ``[['fro'], ['ven']]`` frontal and ventral views ordered
             vertically.
-        border_size: int
+        border_size : int
             Size of image border (more or less space between images).
-        colorbar: 'auto' | int | list of int | None
+        colorbar : 'auto' | int | list of int | None
             For 'auto', the colorbar is shown in the middle view (default).
             For int or list of int, the colorbar is shown in the specified
             views. For ``None``, no colorbar is shown.
-       interpolation : str
+        interpolation : str
             Interpolation method (``scipy.interpolate.interp1d`` parameter,
             one of 'linear' | 'nearest' | 'zero' | 'slinear' | 'quadratic' |
             'cubic', default 'quadratic'). Interpolation is only used for
@@ -2315,8 +2315,8 @@ class Brain(object):
 
         Returns
         -------
-        images_written: list
-            all filenames written
+        images_written : list
+            All filenames written.
         """
         images_written = list()
         for i, idx in enumerate(self._iter_time(time_idx, interpolation)):
