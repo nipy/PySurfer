@@ -1781,6 +1781,8 @@ class Brain(object):
 
         self.surf = surf
         self._toggle_render(True, views)
+        for brain in self.brains:
+            brain._f.scene.reset_zoom()
 
     @verbose
     def scale_data_colormap(self, fmin, fmid, fmax, transparent, verbose=None):
