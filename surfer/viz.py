@@ -1121,8 +1121,8 @@ class Brain(object):
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
                 s, ct, bar = brain['brain'].add_data(
-                    array, mlab_plot, vertices, smooth_mat, min, max, thresh,
-                    lut, colormap, alpha, time, time_label, colorbar, layer_id)
+                    array, mlab_plot, min, max, thresh, lut, colormap, alpha,
+                    colorbar, layer_id)
                 surfs.append(s)
                 bars.append(bar)
                 if array.ndim == 2 and time_label is not None:
@@ -2774,9 +2774,8 @@ class _Hemisphere(object):
         return OverlayDisplay(self, array_id, pos, pos_bar, neg, neg_bar)
 
     @verbose
-    def add_data(self, array, mlab_plot, vertices, smooth_mat, min, max,
-                 thresh, lut, colormap, alpha, time, time_label, colorbar,
-                 layer_id):
+    def add_data(self, array, mlab_plot, min, max, thresh, lut, colormap,
+                 alpha, colorbar, layer_id):
         """Add data to the brain"""
         # Calculate initial data to plot
         if array.ndim == 1:
