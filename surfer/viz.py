@@ -466,7 +466,7 @@ class Brain(object):
         self._toggle_render(False)
 
         # fill figures with brains
-        kwargs = dict(surf=surf, geo_curv=geo_curv, geo_kwargs=geo_kwargs,
+        kwargs = dict(geo_curv=geo_curv, geo_kwargs=geo_kwargs,
                       geo_reverse=geo_reverse, subjects_dir=subjects_dir,
                       bg_color=self._bg_color)
         brains = []
@@ -2579,7 +2579,7 @@ class Brain(object):
 
 class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
-    def __init__(self, subject_id, hemi, surf, figure, geo, geo_curv,
+    def __init__(self, subject_id, hemi, figure, geo, geo_curv,
                  geo_kwargs, geo_reverse, subjects_dir, bg_color, backend):
         if hemi not in ['lh', 'rh']:
             raise ValueError('hemi must be either "lh" or "rh"')
