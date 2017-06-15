@@ -1750,15 +1750,15 @@ class Brain(object):
                 mlab.view(distance=distance, figure=f)
         return distance
 
-    def set_surface(self, surface):
+    def set_surf(self, surf):
         """Change the surface geometry
 
         Parameters
         ----------
-        surface : str
+        surf : str
             freesurfer surface mesh name (ie 'white', 'inflated', etc.)
         """
-        if self.surf == surface:
+        if self.surf == surf:
             return
 
         views = self._toggle_render(False)
@@ -1766,7 +1766,7 @@ class Brain(object):
         # load new geometry
         for geo in self.geo.values():
             try:
-                geo.surf = surface
+                geo.surf = surf
                 geo.load_geometry()
             except IOError:  # surface file does not exist
                 geo.surf = self.surf
@@ -1776,9 +1776,9 @@ class Brain(object):
         # update mesh objects (they use a reference to geo.coords)
         with mayavi_threshold_patch:
             for brain in self.brains:
-                brain.update_surface()
+                brain.update_surf()
 
-        self.surf = surface
+        self.surf = surf
         self._toggle_render(True, views)
 
     @verbose
@@ -2941,7 +2941,7 @@ class _Hemisphere(object):
             text_color = (0., 0., 0.)
         cbar.label_text_property.color = text_color
 
-    def update_surface(self):
+    def update_surf(self):
         "Update surface mesh after mesh coordinates change"
         self._geo_mesh.update()
         for mesh in self._mesh_clones.values():

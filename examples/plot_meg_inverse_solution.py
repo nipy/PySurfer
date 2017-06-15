@@ -18,13 +18,13 @@ path = os.path.dirname(__file__)
 """
 define subject, surface and hemisphere(s) to plot
 """
-subject_id, surface = 'fsaverage', 'inflated'
+subject_id, surf = 'fsaverage', 'inflated'
 hemi = 'split'
 
 """
 create Brain object for visualization
 """
-brain = Brain(subject_id, hemi, surface, size=(800, 400),
+brain = Brain(subject_id, hemi, surf, size=(800, 400),
               interaction='terrain')
 
 """

@@ -13,13 +13,13 @@ print(__doc__)
 
 subject_id = 'fsaverage'
 hemi = 'both'
-surface = 'inflated'
+surf = 'inflated'
 view = 'frontal'
 
 """
 Bring up the visualization
 """
-brain = Brain(subject_id, hemi, surface, views=view,
+brain = Brain(subject_id, hemi, surf, views=view,
               cortex="bone", background="ivory")
 
 """
