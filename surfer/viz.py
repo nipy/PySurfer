@@ -999,7 +999,7 @@ class Brain(object):
         vertices : numpy array
             vertices for which the data is defined (needed if len(data) < nvtx)
         smoothing_steps : int or None
-            number of smoothing steps (smooting is used if len(data) < nvtx)
+            number of smoothing steps (smoothing is used if len(data) < nvtx)
             Default : 20
         time : numpy array
             time points in the data array (if data is 2D)
@@ -1009,7 +1009,7 @@ class Brain(object):
         colorbar : bool
             whether to add a colorbar to the figure
         hemi : str | None
-            If None, it is assumed to belong to the hemipshere being
+            If None, it is assumed to belong to the hemisphere being
             shown. If two hemispheres are being shown, an error will
             be thrown.
         remove_existing : bool
