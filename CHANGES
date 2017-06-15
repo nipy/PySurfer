@@ -1,6 +1,12 @@
 PySurfer Changes
 ================
 
+Version 0.8
+-----------
+
+- The surface geometry that is displayed can now be changed after initializing
+  a ``Brain`` instance with e.g. ``Brain.set_surf("smoothwm")``.
+
 Version 0.7
 -----------
 
