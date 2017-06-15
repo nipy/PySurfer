@@ -1060,14 +1060,15 @@ class Brain(object):
         # determine unique data layer ID
         data_dicts = self._data_dicts['lh'] + self._data_dicts['rh']
         if data_dicts:
-            layer = np.max([data['layer'] for data in data_dicts]) + 1
+            layer_id = np.max([data['layer_id'] for data in data_dicts]) + 1
         else:
-            layer = 0
+            layer_id = 0
 
         data = dict(array=array, smoothing_steps=smoothing_steps,
                     fmin=min, fmid=(min + max) / 2, fmax=max,
                     transparent=False, time=0, time_idx=0,
-                    vertices=vertices, smooth_mat=smooth_mat, layer=layer)
+                    vertices=vertices, smooth_mat=smooth_mat,
+                    layer_id=layer_id)
 
         # clean up existing data
         if remove_existing:
@@ -1121,7 +1122,7 @@ class Brain(object):
             if brain['hemi'] == hemi:
                 s, ct, bar = brain['brain'].add_data(
                     array, mlab_plot, vertices, smooth_mat, min, max, thresh,
-                    lut, colormap, alpha, time, time_label, colorbar, layer)
+                    lut, colormap, alpha, time, time_label, colorbar, layer_id)
                 surfs.append(s)
                 bars.append(bar)
                 if array.ndim == 2 and time_label is not None:
@@ -1384,7 +1385,7 @@ class Brain(object):
             for brain in self.brains:
                 if brain.hemi == hemi:
                     for data in self._data_dicts[hemi]:
-                        brain.remove_data(data['layer'])
+                        brain.remove_data(data['layer_id'])
             self._data_dicts[hemi] = []
 
         # if no data is left, reset time properties
@@ -1893,7 +1894,7 @@ class Brain(object):
 
                 for brain in self.brains:
                     if brain.hemi == hemi:
-                        brain.set_data(data['layer'], plot_data)
+                        brain.set_data(data['layer_id'], plot_data)
                 data["time_idx"] = time_idx
 
                 # Update time label
@@ -2775,7 +2776,7 @@ class _Hemisphere(object):
     @verbose
     def add_data(self, array, mlab_plot, vertices, smooth_mat, min, max,
                  thresh, lut, colormap, alpha, time, time_label, colorbar,
-                 layer):
+                 layer_id):
         """Add data to the brain"""
         # Calculate initial data to plot
         if array.ndim == 1:
@@ -2819,7 +2820,7 @@ class _Hemisphere(object):
         else:
             bar = None
 
-        self.data[layer] = {'array_id': array_id, 'pipeline': pipeline}
+        self.data[layer_id] = {'array_id': array_id, 'pipeline': pipeline}
 
         return surf, orig_ctable, bar
 
@@ -2913,14 +2914,14 @@ class _Hemisphere(object):
             return mlab.text(x, y, text, name=name, color=color,
                              opacity=opacity, figure=self._f)
 
-    def remove_data(self, layer):
+    def remove_data(self, layer_id):
         "Remove data shown with .add_data()"
-        data = self.data.pop(layer)
+        data = self.data.pop(layer_id)
         self._remove_scalar_data(data['array_id'])
 
-    def set_data(self, layer, values):
+    def set_data(self, layer_id, values):
         "Set displayed data"
-        data = self.data[layer]
+        data = self.data[layer_id]
         self._mesh_dataset.point_data.get_array(
             data['array_id']).from_array(values)
         data['pipeline'][-1].update()
