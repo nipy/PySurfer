@@ -32,7 +32,7 @@ class _MayaviThresholdPatch(object):
     In Mayavi 4.5, filters seem to be missing a .point_data attribute that
     Threshold accesses on initialization.
     """
-    need_patch = LooseVersion(mayavi.__version__) <= LooseVersion('4.5.0')
+    need_patch = LooseVersion(mayavi.__version__) == LooseVersion('4.5.0')
     _orig_func = Threshold._get_data_range
 
     @staticmethod

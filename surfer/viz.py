@@ -2729,7 +2729,8 @@ class _Hemisphere(object):
                 self._mesh_dataset, point_scalars=array_id, figure=self._f)
             # The new data-source is added to the wrong figure by default
             # (a Mayavi bug??)
-            self._f.add_child(pipe.parent)
+            if pipe.parent not in self._f.children:
+                self._f.add_child(pipe.parent)
         self._mesh_clones[array_id] = pipe.parent
         return array_id, pipe
 
