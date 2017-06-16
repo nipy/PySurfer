@@ -8,6 +8,7 @@ import inspect
 from functools import wraps
 
 import mayavi
+from mayavi import mlab
 from mayavi.filters.api import Threshold
 import numpy as np
 import nibabel as nib
@@ -26,29 +27,35 @@ else:
     string_types = str
 
 
-class _MayaviThresholdPatch(object):
-    """Context to monkey-patch Mayavi 4.5
+if LooseVersion(mayavi.__version__) == LooseVersion('4.5.0'):
+    # Monkey-patch Mayavi 4.5:
+    # In Mayavi 4.5, filters seem to be missing a .point_data attribute that
+    # Threshold accesses on initialization.
+    _orig_meth = Threshold._get_data_range
 
-    In Mayavi 4.5, filters seem to be missing a .point_data attribute that
-    Threshold accesses on initialization.
-    """
-    need_patch = LooseVersion(mayavi.__version__) == LooseVersion('4.5.0')
-    _orig_func = Threshold._get_data_range
-
-    @staticmethod
-    def _patch_func(self):
+    def _patch_func():
         return []
 
-    def __enter__(self):
-        if self.need_patch:
-            Threshold._get_data_range = self._patch_func
+    def _patch_meth(self):
+        return []
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.need_patch:
-            Threshold._get_data_range = self._orig_func
+    class _MayaviThresholdPatch(object):
 
+        def __enter__(self):
+            Threshold._get_data_range = _patch_meth
 
-mayavi_threshold_patch = _MayaviThresholdPatch()
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            Threshold._get_data_range = _orig_meth
+
+    _mayavi_threshold_patch = _MayaviThresholdPatch()
+
+    def threshold_filter(*args, **kwargs):
+        with _mayavi_threshold_patch:
+            thresh = mlab.pipeline.threshold(*args, **kwargs)
+        thresh._get_data_range = _patch_func
+        return thresh
+else:
+    threshold_filter = mlab.pipeline.threshold
 
 
 class Surface(object):

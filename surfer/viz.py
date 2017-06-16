@@ -23,7 +23,7 @@ from tvtk.api import tvtk
 
 from . import utils, io
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
-                    mayavi_threshold_patch, string_types)
+                    string_types, threshold_filter)
 
 
 import logging
@@ -1775,9 +1775,8 @@ class Brain(object):
                 raise
 
         # update mesh objects (they use a reference to geo.coords)
-        with mayavi_threshold_patch:
-            for brain in self.brains:
-                brain.update_surf()
+        for brain in self.brains:
+            brain.update_surf()
 
         self.surf = surf
         self._toggle_render(True, views)
@@ -2743,36 +2742,33 @@ class _Hemisphere(object):
         """Add an overlay to the overlay dict from a file or array"""
         array_id, mesh = self._add_scalar_data(old.mlab_data)
 
-        with mayavi_threshold_patch:
-            if old.pos_lims is not None:
-                with warnings.catch_warnings(record=True):
-                    pos_thresh = mlab.pipeline.threshold(
-                        mesh, low=old.pos_lims[0])
-                    pos = mlab.pipeline.surface(
-                        pos_thresh, colormap="YlOrRd", figure=self._f,
-                        vmin=old.pos_lims[1], vmax=old.pos_lims[2])
-                    pos_bar = mlab.scalarbar(pos, nb_labels=5)
-                pos_bar.reverse_lut = True
-                pos_bar.scalar_bar_representation.position = (0.53, 0.01)
-                pos_bar.scalar_bar_representation.position2 = (0.42, 0.09)
-                self._format_cbar_text(pos_bar)
-            else:
-                pos = pos_bar = None
+        if old.pos_lims is not None:
+            with warnings.catch_warnings(record=True):
+                pos_thresh = threshold_filter(mesh, low=old.pos_lims[0])
+                pos = mlab.pipeline.surface(
+                    pos_thresh, colormap="YlOrRd", figure=self._f,
+                    vmin=old.pos_lims[1], vmax=old.pos_lims[2])
+                pos_bar = mlab.scalarbar(pos, nb_labels=5)
+            pos_bar.reverse_lut = True
+            pos_bar.scalar_bar_representation.position = (0.53, 0.01)
+            pos_bar.scalar_bar_representation.position2 = (0.42, 0.09)
+            self._format_cbar_text(pos_bar)
+        else:
+            pos = pos_bar = None
 
-            if old.neg_lims is not None:
-                with warnings.catch_warnings(record=True):
-                    neg_thresh = mlab.pipeline.threshold(
-                        mesh, up=old.neg_lims[0])
-                    neg = mlab.pipeline.surface(
-                        neg_thresh, colormap="PuBu", figure=self._f,
-                        vmin=old.neg_lims[1], vmax=old.neg_lims[2])
-                    neg_bar = mlab.scalarbar(neg, nb_labels=5)
-                neg_bar.reverse_lut = True
-                neg_bar.scalar_bar_representation.position = (0.05, 0.01)
-                neg_bar.scalar_bar_representation.position2 = (0.42, 0.09)
-                self._format_cbar_text(neg_bar)
-            else:
-                neg = neg_bar = None
+        if old.neg_lims is not None:
+            with warnings.catch_warnings(record=True):
+                neg_thresh = threshold_filter(mesh, up=old.neg_lims[0])
+                neg = mlab.pipeline.surface(
+                    neg_thresh, colormap="PuBu", figure=self._f,
+                    vmin=old.neg_lims[1], vmax=old.neg_lims[2])
+                neg_bar = mlab.scalarbar(neg, nb_labels=5)
+            neg_bar.reverse_lut = True
+            neg_bar.scalar_bar_representation.position = (0.05, 0.01)
+            neg_bar.scalar_bar_representation.position2 = (0.42, 0.09)
+            self._format_cbar_text(neg_bar)
+        else:
+            neg = neg_bar = None
 
         return OverlayDisplay(self, array_id, pos, pos_bar, neg, neg_bar)
 
@@ -2789,21 +2785,17 @@ class _Hemisphere(object):
             raise ValueError("data has to be 1D or 2D")
 
         array_id, pipe = self._add_scalar_data(mlab_plot)
-        pipeline = [pipe, pipe.parent]
+        mesh = pipe.parent
         if thresh is not None:
             if array_plot.min() >= thresh:
                 warn("Data min is greater than threshold.")
             else:
                 with warnings.catch_warnings(record=True):
-                    with mayavi_threshold_patch:
-                        pipe = mlab.pipeline.threshold(
-                            pipe, low=thresh, figure=self._f)
-                pipeline.insert(0, pipe)
+                    pipe = threshold_filter(pipe, low=thresh, figure=self._f)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(
                 pipe, colormap=colormap, vmin=min, vmax=max,
                 opacity=float(alpha), figure=self._f)
-        pipeline.insert(0, surf)
 
         # apply look up table if given
         if lut is not None:
@@ -2822,7 +2814,7 @@ class _Hemisphere(object):
         else:
             bar = None
 
-        self.data[layer_id] = {'array_id': array_id, 'pipeline': pipeline}
+        self.data[layer_id] = {'array_id': array_id, 'mesh': mesh}
 
         return surf, orig_ctable, bar
 
@@ -2889,8 +2881,7 @@ class _Hemisphere(object):
         """Add a topographic contour overlay of the positive data"""
         array_id, pipe = self._add_scalar_data(scalar_data)
         with warnings.catch_warnings(record=True):
-            with mayavi_threshold_patch:
-                thresh = mlab.pipeline.threshold(pipe, low=min)
+            thresh = threshold_filter(pipe, low=min)
             surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
                                                  line_width=line_width)
         if lut is not None:
@@ -2926,7 +2917,7 @@ class _Hemisphere(object):
         data = self.data[layer_id]
         self._mesh_dataset.point_data.get_array(
             data['array_id']).from_array(values)
-        data['pipeline'][-1].update()
+        data['mesh'].update()
 
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
