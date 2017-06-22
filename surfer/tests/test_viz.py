@@ -100,6 +100,7 @@ def test_brains():
         brain = Brain(subject_id, hemi, surf, title=title, cortex=cort,
                       alpha=alpha, size=s, background=bg, foreground=fg,
                       figure=fig, subjects_dir=sd)
+        brain.set_distance()
         brain.close()
     brain = Brain(subject_id, hemi, surf, subjects_dir=sd,
                   interaction='terrain')
