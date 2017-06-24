@@ -1780,6 +1780,12 @@ class Brain(object):
 
         self.surf = surf
         self._toggle_render(True, views)
+
+        if mlab.options.backend == 'test':
+            # required SetActiveAttribute filter attributes are not set under
+            # the testing backend
+            return
+
         for brain in self.brains:
             brain._f.scene.reset_zoom()
 
@@ -2717,7 +2723,11 @@ class _Hemisphere(object):
         return (np.array(dv), dr)
 
     def _add_scalar_data(self, data):
-        # Add scalar values to dataset
+        """Add scalar values to dataset"""
+        if mlab.options.backend == 'test':
+            # required SetActiveAttribute filter attributes are not set under
+            # the testing backend
+            return 0, self._geo_mesh
         array_id = self._mesh_dataset.point_data.add_array(data)
         self._mesh_dataset.point_data.get_array(array_id).name = array_id
         self._mesh_dataset.point_data.update()
@@ -2734,7 +2744,11 @@ class _Hemisphere(object):
         return array_id, pipe
 
     def _remove_scalar_data(self, array_id):
-        "Removes scalar data"
+        """Removes scalar data"""
+        if mlab.options.backend == 'test':
+            # required SetActiveAttribute filter attributes are not set under
+            # the testing backend
+            return
         self._mesh_clones.pop(array_id).remove()
         self._mesh_dataset.point_data.remove_array(array_id)
 
