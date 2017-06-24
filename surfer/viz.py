@@ -1781,13 +1781,9 @@ class Brain(object):
         self.surf = surf
         self._toggle_render(True, views)
 
-        if mlab.options.backend == 'test':
-            # required SetActiveAttribute filter attributes are not set under
-            # the testing backend
-            return
-
         for brain in self.brains:
-            brain._f.scene.reset_zoom()
+            if brain._f.scene is not None:
+                brain._f.scene.reset_zoom()
 
     @verbose
     def scale_data_colormap(self, fmin, fmid, fmax, transparent, verbose=None):
