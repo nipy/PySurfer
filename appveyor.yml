@@ -2,8 +2,8 @@ environment:
   global:
       PYTHON: "C:\\conda"
       MINICONDA_VERSION: "latest"
-      CONDA_DEPENDENCIES: "numpy scipy mayavi matplotlib nose imaging"
-      PIP_DEPENDENCIES: "nose-timer nibabel imageio"
+      CONDA_DEPENDENCIES: "numpy scipy mayavi matplotlib nose imaging sphinx"
+      PIP_DEPENDENCIES: "nose-timer nibabel imageio sphinx-gallery numpydoc"
   matrix:
       - PYTHON_VERSION: "2.7"
         PYTHON_ARCH: "64"
@@ -16,6 +16,7 @@ install:
   - "activate test"
   - "python setup.py develop"
   - "SET SUBJECTS_DIR=%CD%\\subjects"
+  - "ls | get-member"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
