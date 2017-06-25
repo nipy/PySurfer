@@ -268,6 +268,7 @@ intersphinx_mapping = {
     # 'python': ('http://docs.python.org/', None),
     # 'numpy': ('http://docs.scipy.org/doc/numpy-dev/', None),
     # 'scipy': ('http://scipy.github.io/devdocs/', None),
+    'matplotlib': ('http://matplotlib.org', None),
     'imageio': ('http://imageio.readthedocs.io/en/latest/', None),
     'mayavi': ('http://docs.enthought.com/mayavi/mayavi/', None),
 }
