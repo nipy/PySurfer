@@ -10,7 +10,7 @@ the data.
 
 """
 import os
-from surfer import Brain, io
+from surfer import Brain, project_volume_data
 
 print(__doc__)
 
@@ -22,8 +22,8 @@ brain = Brain("fsaverage", "split", "inflated",
 mri_file = "example_data/resting_corr.nii.gz"
 reg_file = os.path.join(os.environ["FREESURFER_HOME"],
                         "average/mni152.register.dat")
-surf_data_lh = io.project_volume_data(mri_file, "lh", reg_file)
-surf_data_rh = io.project_volume_data(mri_file, "rh", reg_file)
+surf_data_lh = project_volume_data(mri_file, "lh", reg_file)
+surf_data_rh = project_volume_data(mri_file, "rh", reg_file)
 
 """
 You can pass this array to the add_overlay method for a typical activation

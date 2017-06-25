@@ -13,7 +13,7 @@ consecutive vertical frames on the right. For example, running the following::
 Will produce a window with two columns (hemispheres) and two rows (the
 lateral and medial views, respectively), shown below.
 
-.. image:: ../../_static/split_view.png
+.. image:: ../_static/split_view.png
 
 Adding and displaying data
 --------------------------

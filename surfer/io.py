@@ -185,7 +185,7 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
 
     # Set the basic commands
     cmd_list = ["mri_vol2surf",
-                "--mov", filepath,
+                "--mov", os.path.abspath(filepath),
                 "--hemi", hemi,
                 "--surf", surf]
 
