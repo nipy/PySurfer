@@ -4,6 +4,7 @@
 *~
 .#*
 *.swp
+*.orig
 build
 
 dist/
