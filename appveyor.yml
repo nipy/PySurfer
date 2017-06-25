@@ -3,7 +3,7 @@ environment:
       PYTHON: "C:\\conda"
       MINICONDA_VERSION: "latest"
       CONDA_DEPENDENCIES: "numpy scipy mayavi matplotlib nose imaging sphinx"
-      PIP_DEPENDENCIES: "nose-timer nibabel imageio sphinx-gallery numpydoc"
+      PIP_DEPENDENCIES: "nose-timer nibabel imageio sphinx-gallery numpydoc coverage"
   matrix:
       - PYTHON_VERSION: "2.7"
         PYTHON_ARCH: "64"
@@ -15,8 +15,9 @@ install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "activate test"
   - "python setup.py develop"
+  - "conda install ffmpeg -c conda-forge"
   - "SET SUBJECTS_DIR=%CD%\\subjects"
-  - "ls"
+  - "ls %CD%\\subjects"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
