@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 import logging
 import warnings
 import sys
@@ -6,6 +7,9 @@ from os import path as op
 import inspect
 from functools import wraps
 
+import mayavi
+from mayavi import mlab
+from mayavi.filters.api import Threshold
 import numpy as np
 import nibabel as nib
 from scipy import sparse
@@ -21,6 +25,37 @@ if sys.version[0] == '2':
     string_types = basestring  # noqa
 else:
     string_types = str
+
+
+if LooseVersion(mayavi.__version__) == LooseVersion('4.5.0'):
+    # Monkey-patch Mayavi 4.5:
+    # In Mayavi 4.5, filters seem to be missing a .point_data attribute that
+    # Threshold accesses on initialization.
+    _orig_meth = Threshold._get_data_range
+
+    def _patch_func():
+        return []
+
+    def _patch_meth(self):
+        return []
+
+    class _MayaviThresholdPatch(object):
+
+        def __enter__(self):
+            Threshold._get_data_range = _patch_meth
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            Threshold._get_data_range = _orig_meth
+
+    _mayavi_threshold_patch = _MayaviThresholdPatch()
+
+    def threshold_filter(*args, **kwargs):
+        with _mayavi_threshold_patch:
+            thresh = mlab.pipeline.threshold(*args, **kwargs)
+        thresh._get_data_range = _patch_func
+        return thresh
+else:
+    threshold_filter = mlab.pipeline.threshold
 
 
 class Surface(object):
@@ -76,6 +111,9 @@ class Surface(object):
         self.hemi = hemi
         self.surf = surf
         self.offset = offset
+        self.coords = None
+        self.faces = None
+        self.nn = None
 
         subjects_dir = _get_subjects_dir(subjects_dir)
         self.data_path = op.join(subjects_dir, subject_id)
@@ -83,13 +121,22 @@ class Surface(object):
     def load_geometry(self):
         surf_path = op.join(self.data_path, "surf",
                             "%s.%s" % (self.hemi, self.surf))
-        self.coords, self.faces = nib.freesurfer.read_geometry(surf_path)
+        coords, faces = nib.freesurfer.read_geometry(surf_path)
         if self.offset is not None:
             if self.hemi == 'lh':
-                self.coords[:, 0] -= (np.max(self.coords[:, 0]) + self.offset)
+                coords[:, 0] -= (np.max(coords[:, 0]) + self.offset)
             else:
-                self.coords[:, 0] -= (np.min(self.coords[:, 0]) + self.offset)
-        self.nn = _compute_normals(self.coords, self.faces)
+                coords[:, 0] -= (np.min(coords[:, 0]) + self.offset)
+        nn = _compute_normals(coords, faces)
+
+        if self.coords is None:
+            self.coords = coords
+            self.faces = faces
+            self.nn = nn
+        else:
+            self.coords[:] = coords
+            self.faces[:] = faces
+            self.nn[:] = nn
 
     def save_geometry(self):
         surf_path = op.join(self.data_path, "surf",

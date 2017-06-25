@@ -17,12 +17,12 @@ print(__doc__)
 
 subject_id = "fsaverage"
 hemi = "lh"
-surface = "inflated"
+surf = "inflated"
 
 """
 Bring up the visualization.
 """
-brain = Brain(subject_id, hemi, surface, background="white")
+brain = Brain(subject_id, hemi, surf, background="white")
 
 """
 Read in the Buckner resting state network annotation. (This requires a

@@ -100,6 +100,7 @@ def test_brains():
         brain = Brain(subject_id, hemi, surf, title=title, cortex=cort,
                       alpha=alpha, size=s, background=bg, foreground=fg,
                       figure=fig, subjects_dir=sd)
+        brain.set_distance()
         brain.close()
     brain = Brain(subject_id, hemi, surf, subjects_dir=sd,
                   interaction='terrain')
@@ -113,13 +114,14 @@ def test_brains():
 @requires_fsaverage
 def test_annot():
     """Test plotting of annot."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     annots = ['aparc', 'aparc.a2005s']
     borders = [True, False, 2]
     alphas = [1, 0.5]
     brain = Brain(*std_args)
     for a, b, p in zip(annots, borders, alphas):
         brain.add_annotation(a, b, p)
+    brain.set_surf('white')
     assert_raises(ValueError, brain.add_annotation, 'aparc', borders=-1)
     brain.close()
 
@@ -127,7 +129,7 @@ def test_annot():
 @requires_fsaverage
 def test_contour():
     """Test plotting of contour overlay."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     brain = Brain(*std_args)
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
     brain.add_contour_overlay(overlay_file)
@@ -142,12 +144,13 @@ def test_contour():
 @requires_fs
 def test_data():
     """Test plotting of data."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     brain = Brain(*std_args)
     mri_file = pjoin(data_dir, 'resting_corr.nii.gz')
     reg_file = pjoin(data_dir, 'register.dat')
     surf_data = io.project_volume_data(mri_file, "lh", reg_file)
     brain.add_data(surf_data, -.7, .7, colormap="jet", alpha=.7)
+    brain.set_surf('white')
     brain.add_data([], vertices=np.array([], int))
     brain.close()
 
@@ -175,7 +178,7 @@ def test_foci():
 @requires_fsaverage
 def test_label():
     """Test plotting of label."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     subject_id = "fsaverage"
     hemi = "lh"
     surf = "inflated"
@@ -191,6 +194,7 @@ def test_label():
     brain.add_label("V1", color="steelblue", alpha=.6)
     brain.add_label("V2", color="#FF6347", alpha=.6)
     brain.add_label("entorhinal", color=(.2, 1, .5), alpha=.6)
+    brain.set_surf('white')
 
     # remove labels
     brain.remove_labels('V1')
@@ -205,7 +209,7 @@ def test_label():
 @requires_fsaverage
 def test_meg_inverse():
     """Test plotting of MEG inverse solution."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     brain = Brain(*std_args)
     stc_fname = os.path.join(data_dir, 'meg_source_estimate-lh.stc')
     stc = io.read_stc(stc_fname)
@@ -244,6 +248,9 @@ def test_meg_inverse():
     assert_equal(data_dicts[0]['time_idx'], 0)
     assert_equal(data_dicts[1]['time_idx'], 0)
 
+    # change surface
+    brain.set_surf('white')
+
     # remove all layers
     brain.remove_data()
     assert_equal(brain._data_dicts['lh'], [])
@@ -254,7 +261,7 @@ def test_meg_inverse():
 @requires_fsaverage
 def test_morphometry():
     """Test plotting of morphometry."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     brain = Brain(*std_args)
     brain.add_morphometry("curv")
     brain.add_morphometry("sulc", grayscale=True)
@@ -302,7 +309,7 @@ def test_movie():
 @requires_fsaverage
 def test_overlay():
     """Test plotting of overlay."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     # basic overlay support
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
     brain = Brain(*std_args)
@@ -328,13 +335,16 @@ def test_overlay():
     brain.add_overlay(conjunct, 4, 30, name="conjunct")
     brain.overlays["conjunct"].pos_bar.lut_mode = "Purples"
     brain.overlays["conjunct"].pos_bar.visible = False
+
+    brain.set_surf('white')
+
     brain.close()
 
 
 @requires_fsaverage
 def test_probabilistic_labels():
     """Test plotting of probabilistic labels."""
-    mlab.options.backend = 'test'
+    mlab.options.backend = 'auto'
     brain = Brain("fsaverage", "lh", "inflated",
                   cortex="low_contrast")
 
@@ -346,13 +356,14 @@ def test_probabilistic_labels():
     brain.add_label("BA45", color="salmon", borders=True, scalar_thresh=.5)
 
     label_file = pjoin(subj_dir, "fsaverage", "label", "lh.BA6.label")
-    prob_field = np.zeros_like(brain._geo.x)
+    prob_field = np.zeros_like(brain.geo['lh'].x)
     ids, probs = nib.freesurfer.read_label(label_file, read_scalars=True)
     prob_field[ids] = probs
     brain.add_data(prob_field, thresh=1e-5)
 
-    brain.data["colorbar"].number_of_colors = 10
-    brain.data["colorbar"].number_of_labels = 11
+    with warnings.catch_warnings(record=True):
+        brain.data["colorbar"].number_of_colors = 10
+        brain.data["colorbar"].number_of_labels = 11
     brain.close()
 
 

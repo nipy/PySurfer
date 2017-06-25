@@ -16,10 +16,10 @@ in tksurfer (and pysurfer for that matter).
 """
 subject_id = 'fsaverage'
 hemi = 'lh'
-surface = 'inflated'
+surf = 'inflated'
 
 """
 Call the Brain object constructor with these
 parameters to initialize the visualization session.
 """
-brain = Brain(subject_id, hemi, surface)
+brain = Brain(subject_id, hemi, surf)
