@@ -16,7 +16,7 @@ install:
   - "activate test"
   - "python setup.py develop"
   - "SET SUBJECTS_DIR=%CD%\\subjects"
-  - "ls | get-member"
+  - "ls"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 

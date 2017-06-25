@@ -1,14 +1,8 @@
-from os.path import join as pjoin
-
 import numpy as np
 import nose.tools as nt
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from surfer import utils
-
-subj_dir = utils._get_subjects_dir()
-subject_id = 'fsaverage'
-data_path = pjoin(subj_dir, subject_id)
 
 
 def _slow_compute_normals(rr, tris):
@@ -38,6 +32,7 @@ def _slow_compute_normals(rr, tris):
 @utils.requires_fsaverage
 def test_surface():
     """Test IO for Surface class"""
+    subj_dir = utils._get_subjects_dir()
     for subjects_dir in [None, subj_dir]:
         surface = utils.Surface('fsaverage', 'lh', 'inflated',
                                 subjects_dir=subjects_dir)
@@ -58,8 +53,7 @@ def test_surface():
 
 
 def test_huge_cross():
-    """Test cross product with lots of elements
-    """
+    """Test cross product with lots of elements."""
     x = np.random.rand(100000, 3)
     y = np.random.rand(1, 3)
     z = np.cross(x, y)

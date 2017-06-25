@@ -16,7 +16,6 @@ from surfer.utils import requires_fsaverage, requires_imageio
 
 warnings.simplefilter('always')
 
-subj_dir = utils._get_subjects_dir()
 subject_id = 'fsaverage'
 std_args = [subject_id, 'lh', 'inflated']
 data_dir = pjoin(op.dirname(__file__), '..', '..', 'examples', 'example_data')
@@ -91,6 +90,7 @@ def test_brains():
                    (0.2, 0.2, 0.2), "blue", "black"]
     with warnings.catch_warnings(record=True):  # traits for mlab.figure()
         figs = [101, mlab.figure(), None, None, mlab.figure(), None, None]
+    subj_dir = utils._get_subjects_dir()
     subj_dirs = [None, subj_dir, subj_dir, subj_dir,
                  subj_dir, subj_dir, subj_dir]
     alphas = [1.0, 0.5, 0.25, 0.7, 0.5, 0.25, 0.7]
@@ -165,6 +165,7 @@ def test_foci():
               [-48, 26, -2]]
     brain.add_foci(coords, map_surface="white", color="gold")
 
+    subj_dir = utils._get_subjects_dir()
     annot_path = pjoin(subj_dir, subject_id, 'label', 'lh.aparc.a2009s.annot')
     ids, ctab, names = nib.freesurfer.read_annot(annot_path)
     verts = np.arange(0, len(ids))
@@ -185,6 +186,7 @@ def test_label():
     brain = Brain(subject_id, hemi, surf)
     brain.add_label("BA1")
     brain.add_label("BA1", color="blue", scalar_thresh=.5)
+    subj_dir = utils._get_subjects_dir()
     label_file = pjoin(subj_dir, subject_id,
                        "label", "%s.MT.label" % hemi)
     brain.add_label(label_file)
@@ -355,6 +357,7 @@ def test_probabilistic_labels():
     brain.add_label("BA45", color="firebrick", borders=True)
     brain.add_label("BA45", color="salmon", borders=True, scalar_thresh=.5)
 
+    subj_dir = utils._get_subjects_dir()
     label_file = pjoin(subj_dir, "fsaverage", "label", "lh.BA6.label")
     prob_field = np.zeros_like(brain.geo['lh'].x)
     ids, probs = nib.freesurfer.read_label(label_file, read_scalars=True)
