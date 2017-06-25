@@ -76,6 +76,7 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
         import Image
     except (ValueError, ImportError):
         from PIL import Image
+    from scipy import ndimage
     # This line is only necessary to overcome a PIL bug, see:
     #     http://stackoverflow.com/questions/10854903/what-is-causing-
     #          dimension-dependent-attributeerror-in-pil-fromarray-function
