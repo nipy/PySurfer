@@ -21,3 +21,11 @@ build: false  # Not a C# project, build stuff at the test step instead.
 test_script:
   # Run the project tests
   - "nosetests --with-timer --timer-top-n=10"
+  - cd doc
+  # The Makefile doesn't work directly on Windows PowerShell because of
+  # slashes (but will work e.g. in Msys-git), so for now do these manually
+  # make html-noplot
+  - sphinx-build -D plot_gallery=0 -b html -d _build\doctrees . _build\html
+
+artifacts:
+  - path: doc\_build\html
