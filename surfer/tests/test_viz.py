@@ -37,7 +37,7 @@ requires_fs = np.testing.dec.skipif(not has_freesurfer(),
 @requires_fsaverage
 def test_offscreen():
     """Test offscreen rendering."""
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     brain = Brain(*std_args, offscreen=True)
     # Sometimes the first screenshot is rendered with a different
     # resolution on OS X
@@ -52,7 +52,7 @@ def test_image():
     """Test image saving."""
     tmp_name = mktemp() + '.png'
 
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     subject_id, _, surf = std_args
     brain = Brain(subject_id, 'both', surf=surf, size=100)
     brain.add_overlay(overlay_fname, hemi='lh', min=5, max=20, sign="pos")
@@ -114,7 +114,7 @@ def test_brains():
 @requires_fsaverage
 def test_annot():
     """Test plotting of annot."""
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     annots = ['aparc', 'aparc.a2005s']
     borders = [True, False, 2]
     alphas = [1, 0.5]
@@ -129,7 +129,7 @@ def test_annot():
 @requires_fsaverage
 def test_contour():
     """Test plotting of contour overlay."""
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     brain = Brain(*std_args)
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
     brain.add_contour_overlay(overlay_file)
@@ -144,7 +144,7 @@ def test_contour():
 @requires_fs
 def test_data():
     """Test plotting of data."""
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     brain = Brain(*std_args)
     mri_file = pjoin(data_dir, 'resting_corr.nii.gz')
     reg_file = pjoin(data_dir, 'register.dat')
@@ -179,7 +179,7 @@ def test_foci():
 @requires_fsaverage
 def test_label():
     """Test plotting of label."""
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     subject_id = "fsaverage"
     hemi = "lh"
     surf = "inflated"
@@ -211,7 +211,7 @@ def test_label():
 @requires_fsaverage
 def test_meg_inverse():
     """Test plotting of MEG inverse solution."""
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     brain = Brain(*std_args)
     stc_fname = os.path.join(data_dir, 'meg_source_estimate-lh.stc')
     stc = io.read_stc(stc_fname)
@@ -263,7 +263,7 @@ def test_meg_inverse():
 @requires_fsaverage
 def test_morphometry():
     """Test plotting of morphometry."""
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     brain = Brain(*std_args)
     brain.add_morphometry("curv")
     brain.add_morphometry("sulc", grayscale=True)
@@ -278,7 +278,7 @@ def test_movie():
     import imageio
 
     # create and setup the Brain instance
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     brain = Brain(*std_args)
     stc_fname = os.path.join(data_dir, 'meg_source_estimate-lh.stc')
     stc = io.read_stc(stc_fname)
@@ -311,7 +311,7 @@ def test_movie():
 @requires_fsaverage
 def test_overlay():
     """Test plotting of overlay."""
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     # basic overlay support
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
     brain = Brain(*std_args)
@@ -346,7 +346,7 @@ def test_overlay():
 @requires_fsaverage
 def test_probabilistic_labels():
     """Test plotting of probabilistic labels."""
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     brain = Brain("fsaverage", "lh", "inflated",
                   cortex="low_contrast")
 
@@ -382,7 +382,7 @@ def test_text():
 @requires_fsaverage
 def test_animate():
     """Test animation."""
-    mlab.options.backend = 'auto'
+    mlab.options.backend = 'test'
     brain = Brain(*std_args, size=100)
     brain.add_morphometry('curv')
     tmp_name = mktemp() + '.avi'
