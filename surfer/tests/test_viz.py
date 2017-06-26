@@ -39,16 +39,18 @@ requires_fs = np.testing.dec.skipif(not has_freesurfer(),
 def _set_backend(backend=None):
     """Use testing backend for Windows."""
     if backend is None:
-        mlab.options.backend = 'test' if sys.platform == 'win32' else 'auto'
+        backend = 'test' if sys.platform == 'win32' else 'auto'
     else:
         if backend != 'test' and sys.platform == 'win32':
             raise SkipTest('non-testing backend crashes on Windows')
-        mlab.options.backend = backend
+    mlab.options.backend = backend
 
 
 @requires_fsaverage
 def test_offscreen():
     """Test offscreen rendering."""
+    if sys.platform == 'darwin' and os.getenv('TRAVIS', 'false') == 'true':
+        raise SkipTest('Offscreen Travis tests fail on OSX')
     _set_backend()
     brain = Brain(*std_args, offscreen=True)
     # Sometimes the first screenshot is rendered with a different
@@ -170,7 +172,7 @@ def test_data():
 @requires_fsaverage
 def test_foci():
     """Test plotting of foci."""
-    _set_backend()
+    _set_backend('test')
     brain = Brain(*std_args)
     coords = [[-36, 18, -3],
               [-43, 25, 24],
@@ -385,7 +387,7 @@ def test_probabilistic_labels():
 @requires_fsaverage
 def test_text():
     """Test plotting of text."""
-    _set_backend()
+    _set_backend('test')
     brain = Brain(*std_args)
     brain.add_text(0.1, 0.1, 'Hello', 'blah')
     brain.close()
@@ -409,7 +411,7 @@ def test_animate():
 @requires_fsaverage
 def test_views():
     """Test showing different views."""
-    _set_backend()
+    _set_backend('test')
     brain = Brain(*std_args)
     brain.show_view('lateral')
     brain.show_view('m')
