@@ -2935,7 +2935,9 @@ class _Hemisphere(object):
         data = self.data[layer_id]
         self._mesh_dataset.point_data.get_array(
             data['array_id']).from_array(values)
-        data['mesh'].update()
+        # avoid "AttributeError: 'Scene' object has no attribute 'update'"
+        if mlab.options.backend != 'test':
+            data['mesh'].update()
 
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""

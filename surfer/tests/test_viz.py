@@ -36,9 +36,14 @@ requires_fs = np.testing.dec.skipif(not has_freesurfer(),
                                     'Requires FreeSurfer command line tools')
 
 
-def _set_backend():
+def _set_backend(backend=None):
     """Use testing backend for Windows."""
-    mlab.options.backend = 'test' if sys.platform == 'win32' else 'auto'
+    if backend is None:
+        mlab.options.backend = 'test' if sys.platform == 'win32' else 'auto'
+    else:
+        if backend != 'test' and sys.platform == 'win32':
+            raise SkipTest('non-testing backend crashes on Windows')
+        mlab.options.backend = backend
 
 
 @requires_fsaverage
@@ -80,9 +85,7 @@ def test_brains():
     """Test plotting of Brain with different arguments."""
     # testing backend breaks when passing in a figure, so we use 'auto' here
     # (shouldn't affect usability, but it makes testing more annoying)
-    mlab.options.backend = 'auto'
-    if sys.platform == 'win32':
-        raise SkipTest('auto backend crashes on Windows')
+    _set_backend('auto')
     with warnings.catch_warnings(record=True):  # traits for mlab.figure()
         mlab.figure(101)
     surfs = ['inflated', 'white', 'white', 'white', 'white', 'white', 'white']
@@ -391,7 +394,8 @@ def test_text():
 @requires_fsaverage
 def test_animate():
     """Test animation."""
-    _set_backend()
+    _set_backend('auto')
+    mlab.options.backend = 'auto'
     brain = Brain(*std_args, size=100)
     brain.add_morphometry('curv')
     tmp_name = mktemp() + '.avi'
