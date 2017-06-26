@@ -21,7 +21,7 @@ matrix:
         - os: linux
 
         # OSX (disabled because it's slow)
-        # - os: osx
+        - os: osx
 
 # Setup anaconda
 before_install:
