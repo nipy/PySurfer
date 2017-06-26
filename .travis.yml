@@ -1,4 +1,5 @@
 language: c
+dist: trusty
 sudo: false
 # This list of requirements is way overkill, but it helps ensure we
 # actually load a usable config (it works for MNE-Python)
