@@ -318,7 +318,9 @@ def test_movie():
         assert_equal(len(frames), 2)
     finally:
         # clean up
-        shutil.rmtree(tempdir)
+        if not (sys.platform == 'win32' and
+                os.getenv('APPVEYOR', 'False') == 'True'):  # cleanup problems
+            shutil.rmtree(tempdir)
     brain.close()
 
 
