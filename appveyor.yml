@@ -3,7 +3,7 @@ environment:
       PYTHON: "C:\\conda"
       MINICONDA_VERSION: "latest"
       CONDA_DEPENDENCIES: "numpy scipy mayavi matplotlib nose imaging sphinx"
-      PIP_DEPENDENCIES: "nose-timer nibabel imageio sphinx-gallery numpydoc coverage"
+      PIP_DEPENDENCIES: "nose-timer nibabel imageio sphinx-gallery numpydoc coverage sphinx_bootstrap_theme"
   matrix:
       - PYTHON_VERSION: "2.7"
         PYTHON_ARCH: "64"
