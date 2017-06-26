@@ -1,5 +1,4 @@
 language: c
-dist: trusty
 sudo: false
 # This list of requirements is way overkill, but it helps ensure we
 # actually load a usable config (it works for MNE-Python)
@@ -39,7 +38,7 @@ before_script:
     # Let's create a (fake) display on Travis, and let's use a funny resolution
     - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
         echo "Spinning up Xvfb...";
-        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset;
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render;
       fi;
     - cd ~
     - wget --quiet http://faculty.washington.edu/larsoner/fsaverage_min.zip
