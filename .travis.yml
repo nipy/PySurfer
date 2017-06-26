@@ -21,7 +21,7 @@ matrix:
         - os: linux
 
         # OSX (disabled because it's slow)
-        # - os: osx
+        - os: osx
 
 # Setup anaconda
 before_install:
@@ -35,7 +35,10 @@ install:
 
 before_script:
     # Let's create a (fake) display on Travis, and let's use a funny resolution
-    - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+        echo "Starting Xvfb...";
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render;
+      fi;
     - cd ~
     - wget --quiet http://faculty.washington.edu/larsoner/fsaverage_min.zip
     - mkdir subjects

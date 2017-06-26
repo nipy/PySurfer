@@ -77,7 +77,7 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
     """
     try:
         import Image
-    except ImportError:
+    except (ValueError, ImportError):
         from PIL import Image
     # This line is only necessary to overcome a PIL bug, see:
     #     http://stackoverflow.com/questions/10854903/what-is-causing-
@@ -2117,7 +2117,8 @@ class Brain(object):
             raise ValueError("Supported image types are %s"
                              % " ".join(good_ftypes))
         mlab.draw(brain._f)
-        mlab.savefig(filename, figure=brain._f)
+        if mlab.options.backend != 'test':
+            mlab.savefig(filename, figure=brain._f)
 
     def save_image(self, filename, mode='rgb', antialiased=False):
         """Save view from all panels to disk
@@ -2216,7 +2217,12 @@ class Brain(object):
         script plotting commands.
         """
         brain = self.brain_matrix[row, col]
-        return mlab.screenshot(brain._f, mode, antialiased)
+        if mlab.options.backend != 'test':
+            return mlab.screenshot(brain._f, mode, antialiased)
+        else:
+            out = np.ones(tuple(self._scene_size) + (3,), np.uint8)
+            out[0, 0, 0] = 0
+            return out
 
     def save_imageset(self, prefix, views, filetype='png', colorbar='auto',
                       row=-1, col=-1):
@@ -2407,8 +2413,9 @@ class Brain(object):
                            border_size)
 
         # get back original view and colorbars
-        with warnings.catch_warnings(record=True):  # traits focalpoint
-            mlab.view(*current_view, figure=brain._f)
+        if current_view is not None:  # can be None with test backend
+            with warnings.catch_warnings(record=True):  # traits focalpoint
+                mlab.view(*current_view, figure=brain._f)
         for cb in colorbars:
             if cb is not None:
                 cb.visible = colorbars_visibility[cb]
@@ -2928,7 +2935,9 @@ class _Hemisphere(object):
         data = self.data[layer_id]
         self._mesh_dataset.point_data.get_array(
             data['array_id']).from_array(values)
-        data['mesh'].update()
+        # avoid "AttributeError: 'Scene' object has no attribute 'update'"
+        if mlab.options.backend != 'test':
+            data['mesh'].update()
 
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""

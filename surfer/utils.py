@@ -661,14 +661,21 @@ def _get_subjects_dir(subjects_dir=None, raise_error=True):
     return subjects_dir
 
 
-def has_fsaverage(subjects_dir=None):
+def has_fsaverage(subjects_dir=None, raise_error=True, return_why=False):
     """Determine whether the user has a usable fsaverage"""
-    fs_dir = op.join(_get_subjects_dir(subjects_dir, False), 'fsaverage')
-    if not op.isdir(fs_dir):
-        return False
-    if not op.isdir(op.join(fs_dir, 'surf')):
-        return False
-    return True
+    subjects_dir = _get_subjects_dir(subjects_dir, raise_error=raise_error)
+    out = ''
+    if not op.isdir(subjects_dir):
+        out = 'SUBJECTS_DIR not found: %s' % (subjects_dir,)
+    else:
+        fs_dir = op.join(_get_subjects_dir(subjects_dir, False), 'fsaverage')
+        surf_dir = op.join(fs_dir, 'surf')
+        if not op.isdir(fs_dir):
+            out = 'fsaverage not found in SUBJECTS_DIR: %s' % (fs_dir,)
+        elif not op.isdir(surf_dir):
+            out = 'fsaverage has no "surf" directory: %s' % (surf_dir,)
+    out = (out == '', out) if return_why else (out == '')
+    return out
 
 
 def has_imageio():
@@ -680,8 +687,9 @@ def has_imageio():
         return True
 
 
-requires_fsaverage = np.testing.dec.skipif(not has_fsaverage(),
-                                           'Requires fsaverage subject data')
+_has, _why = has_fsaverage(raise_error=False, return_why=True)
+requires_fsaverage = np.testing.dec.skipif(
+    not _has, 'Requires fsaverage subject data (%s)' % _why)
 
 requires_imageio = np.testing.dec.skipif(not has_imageio(),
                                          "Requires imageio package")
