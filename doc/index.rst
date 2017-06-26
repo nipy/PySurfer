@@ -1,20 +1,33 @@
-.. container:: jumbotron
-
-  .. image:: _static/banner.png
-    :alt: PySurfer
-
-  Python library for visualizing cortical surface representations of
-  neuroimaging data.
-
 Introduction
 ============
 
-PySurfer is primarily intended for use with
+PySurfer is a Python library for visualizing cortical surface representations
+of neuroimaging data. The package is primarily intended for use with
 `Freesurfer <http://surfer.nmr.mgh.harvard.edu/>`_, but it can plot data that
 are drawn from a variety of sources. PySurfer extends `Mayavi's
 <http://github.enthought.com/mayavi/mayavi/index.html>`_ powerful rendering
 engine with a high-level interface for working with MRI and MEG data.
-For more information, see :ref:`intro`.
+
+More Information
+----------------
+
+.. toctree::
+    :maxdepth: 1
+
+    intro
+    install
+    auto_examples/index.rst
+    documentation/index.rst
+    python_reference.rst
+
+Authors
+-------
+
+- Michael Waskom, Stanford University
+- Alexandre Gramfort, Telecom ParisTech - CNRS, CEA - Neurospin
+- Scott Burns, Vanderbilt University
+- Martin Luessi, Harvard Medical School MGH Martinos Center
+- Eric Larson, University of Washington ILABS
 
 License
 -------

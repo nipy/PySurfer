@@ -16,6 +16,7 @@ from nibabel.freesurfer import read_label
 
 print(__doc__)
 
+environ['SUBJECTS_DIR'] = '/Applications/freesurfer/subjects'
 brain = Brain("fsaverage", "lh", "inflated")
 
 """
@@ -50,7 +51,7 @@ Finally, with a few tricks, you can display the whole probabilistic map.
 subjects_dir = environ["SUBJECTS_DIR"]
 label_file = join(subjects_dir, "fsaverage", "label", "lh.BA6.label")
 
-prob_field = np.zeros_like(brain._geo.x)
+prob_field = np.zeros_like(brain.geo['lh'].x)
 ids, probs = read_label(label_file, read_scalars=True)
 prob_field[ids] = probs
 brain.add_data(prob_field, thresh=1e-5, colormap="RdPu")

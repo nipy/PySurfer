@@ -2379,7 +2379,7 @@ class Brain(object):
         Returns
         -------
         out : array
-            The montage image, usable with :func:`matplotlib.imshow`.
+            The montage image, usable with :func:`matplotlib.pyplot.imshow`.
         """
         # find flat list of views and nested list of view indexes
         assert orientation in ['h', 'v']
