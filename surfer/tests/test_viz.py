@@ -397,7 +397,6 @@ def test_text():
 def test_animate():
     """Test animation."""
     _set_backend('auto')
-    mlab.options.backend = 'auto'
     brain = Brain(*std_args, size=100)
     brain.add_morphometry('curv')
     tmp_name = mktemp() + '.avi'
