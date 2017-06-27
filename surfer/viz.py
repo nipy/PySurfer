@@ -2780,7 +2780,6 @@ class _Hemisphere(object):
                     neg_thresh, colormap="PuBu", figure=self._f,
                     vmin=old.neg_lims[1], vmax=old.neg_lims[2])
                 neg_bar = mlab.scalarbar(neg, nb_labels=5)
-            neg_bar.reverse_lut = True
             neg_bar.scalar_bar_representation.position = (0.05, 0.01)
             neg_bar.scalar_bar_representation.position2 = (0.42, 0.09)
             self._format_cbar_text(neg_bar)

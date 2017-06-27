@@ -335,6 +335,15 @@ def test_overlay():
     sig1 = io.read_scalar_data(pjoin(data_dir, "lh.sig.nii.gz"))
     sig2 = io.read_scalar_data(pjoin(data_dir, "lh.alt_sig.nii.gz"))
 
+    # two-sided overlay
+    brain.add_overlay(sig1, 4, 30, name="two-sided")
+    overlay = brain.overlays_dict.pop('two-sided')[0]
+    assert_array_equal(overlay.pos_bar.data_range, [4, 30])
+    assert_array_equal(overlay.neg_bar.data_range, [-30, -4])
+    assert_equal(overlay.pos_bar.reverse_lut, True)
+    assert_equal(overlay.neg_bar.reverse_lut, False)
+    overlay.remove()
+
     thresh = 4
     sig1[sig1 < thresh] = 0
     sig2[sig2 < thresh] = 0
