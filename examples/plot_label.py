@@ -45,4 +45,4 @@ brain.show_view(dict(azimuth=-42, elevation=105, distance=225,
 # Use any valid matplotlib color.
 brain.add_label("V1_exvivo", color="steelblue", alpha=.6)
 brain.add_label("V2_exvivo", color="#FF6347", alpha=.6)
-brain.add_label("entorhinal", color=(.2, 1, .5), alpha=.6)
+brain.add_label("entorhinal_exvivo", color=(.2, 1, .5), alpha=.6)
