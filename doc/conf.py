@@ -17,7 +17,6 @@ from os.path import relpath, dirname
 import sys
 from datetime import date
 import sphinx_gallery  # noqa
-# import sphinx_bootstrap_theme
 from numpydoc import numpydoc, docscrape  # noqa
 import surfer
 
@@ -72,7 +71,6 @@ copyright = (u'2012-%s, Michael Waskom, Alexandre Gramfort, Scott Burns, '
 
 nitpicky = True
 needs_sphinx = '1.5'
-# suppress_warnings = ['image.nonlocal_uri']  # we intentionally link outside
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -129,31 +127,10 @@ modindex_common_prefix = ['surfer.']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 # html_theme = 'bootstrap'
-html_theme = 'sphinxdoc'
+html_theme = "sphinxdoc"
 html_style = 'navy.css'
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-
-# html_theme_options = {
-#     # 'navbar_title': ' ',
-#     'source_link_position': "nav",  # default
-#     'bootswatch_theme': "lumen",  # flatly yeti paper lumen
-#     'navbar_sidebarrel': False,  # Render the next/prev links in navbar?
-#     'navbar_pagenav': False,
-#     'navbar_class': "navbar",
-#     'bootstrap_version': "3",  # default
-#     'navbar_links': [
-#         ("Install", "install"),
-#         ("Documentation", "documentation/index"),
-#         ("API", "python_reference"),
-#         ("Examples", "auto_examples/index"),
-#     ],
-#     }
-
 # Add any paths that contain custom themes here, relative to this directory.
-# html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 html_theme_path = []
 
 # The name for this set of Sphinx documents.  If None, it defaults to
@@ -210,7 +187,7 @@ html_static_path = ['_static']
 html_show_sourcelink = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-# html_show_sphinx = False
+#html_show_sphinx = True
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
 #html_show_copyright = True
@@ -250,7 +227,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-# latex_logo = "_static/pysurfer_logo_small.png"
+#latex_logo = None
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.

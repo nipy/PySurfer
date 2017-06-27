@@ -1,5 +1,7 @@
 .. _command_line:
 
+.. currentmodule:: surfer
+
 The command-line interface
 ==========================
 
@@ -35,11 +37,11 @@ mouse and keyboard to interact with a Mayavi scence.
 When pysurfer finishes loading the visualization, it initializes an
 IPython session in terminal, which allows for a more comprehensive
 interaction with the scene. The IPython interactive namespace will
-include a ``brain`` variable, which is bound to the :class:`surfer.Brain`
+include a ``brain`` variable, which is bound to the :class:`Brain`
 object underlying the visualization. For convenience, the ``b`` variable
 is also mapped to this object. (As a reminder, you can always type
 ``whos`` in an IPython prompt to see the contents of the interactive
-namespace.) See the :class:`surfer.Brain` documentation for full information
+namespace.) See the :class:`Brain` documentation for full information
 about how to control the visualization in this way.
 
 Other command-line options

@@ -17,7 +17,7 @@ print(__doc__)
 define subject, surface and hemisphere(s) to plot
 """
 subject_id, surf = 'fsaverage', 'inflated'
-hemi = 'lh'  # 'split'
+hemi = 'lh'
 
 """
 create Brain object for visualization
