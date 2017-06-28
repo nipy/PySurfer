@@ -11,7 +11,14 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import inspect
+import os
+from os.path import relpath, dirname
+import sys
+from datetime import date
+import sphinx_gallery  # noqa
+from numpydoc import numpydoc, docscrape  # noqa
+import surfer
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -28,8 +35,21 @@ sys.path.append(os.path.abspath("sphinxext"))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.coverage',
-              'ipython_console_highlighting', 'gen_rst']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.coverage',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.linkcode',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.todo',
+    'sphinx_gallery.gen_gallery',
+    'numpydoc',
+]
+
+autosummary_generate = True
+autodoc_default_flags = ['inherited-members']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -45,18 +65,17 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'PySurfer'
-copyright = (u'2011-2014, Michael Waskom, Alexandre Gramfort, Scott Burns, '
-             'Martin Luessi, Eric Larson')
+td = date.today()
+copyright = (u'2012-%s, Michael Waskom, Alexandre Gramfort, Scott Burns, '
+             'Martin Luessi, Eric Larson' % (td.year,))
 
-# Generate the plots for the gallery
-plot_gallery = True
+nitpicky = True
+needs_sphinx = '1.5'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-sys.path.insert(0, os.path.abspath(os.path.pardir))
-import surfer
 # The short X.Y version.
 version = surfer.__version__
 # The full version, including alpha/beta/rc tags.
@@ -72,11 +91,16 @@ release = surfer.__version__
 # Else, today_fmt is used as the format for a strftime call.
 #today_fmt = '%B %d, %Y'
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+# List of documents that shouldn't be included in the build.
+unused_docs = []
 
-# The reST default role (used for this markup: `text`) to use for all documents.
+# List of directories, relative to source directory, that shouldn't be searched
+# for source files.
+exclude_trees = ['_build']
+exclude_patterns = ['source/generated']
+
+# The reST default role (used for this markup: `text`) to use for all
+# documents.
 #default_role = None
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
@@ -91,26 +115,23 @@ exclude_patterns = ['_build']
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'sphinx'  # friendly, manni, murphy, tango
 
 # A list of ignored prefixes for module index sorting.
-#modindex_common_prefix = []
+modindex_common_prefix = ['surfer.']
 
 
-# -- Options for HTML output ---------------------------------------------------
+
+# -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
+# html_theme = 'bootstrap'
 html_theme = "sphinxdoc"
 html_style = 'navy.css'
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#html_theme_options = {}
-
 # Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
+html_theme_path = []
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -133,6 +154,11 @@ html_favicon = "_static/favicon.ico"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# Add any extra paths that contain custom files (such as robots.txt or
+# .htaccess) here, relative to this directory. These files are copied
+# directly to the root of the documentation.
+#html_extra_path = []
+
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
 #html_last_updated_fmt = '%b %d, %Y'
@@ -149,10 +175,10 @@ html_static_path = ['_static']
 #html_additional_pages = {}
 
 # If false, no module index is generated.
-#html_domain_indices = True
+html_domain_indices = False
 
 # If false, no index is generated.
-html_use_index = False
+#html_use_index = True
 
 # If true, the index is split into individual pages for each letter.
 #html_split_index = False
@@ -171,6 +197,11 @@ html_show_sourcelink = False
 # base URL from which the finished HTML is served.
 #html_use_opensearch = ''
 
+# variables to pass to HTML templating engine
+build_dev_html = bool(int(os.environ.get('BUILD_DEV_HTML', False)))
+
+html_context = {'build_dev_html': build_dev_html}
+
 # This is the file name suffix for HTML files (e.g. ".xhtml").
 #html_file_suffix = None
 
@@ -178,16 +209,17 @@ html_show_sourcelink = False
 htmlhelp_basename = 'PySurferdoc'
 
 
-# -- Options for LaTeX output --------------------------------------------------
+# -- Options for LaTeX output ---------------------------------------------
 
 # The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
+# latex_paper_size = 'letter'
 
 # The font size ('10pt', '11pt' or '12pt').
-#latex_font_size = '10pt'
+# latex_font_size = '10pt'
 
 # Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title, author, documentclass [howto/manual]).
+# (source start file, target name, title, author, documentclass
+# [howto/manual]).
 latex_documents = [
   ('index', 'PySurfer.tex', u'PySurfer Documentation',
    u'Michael Waskom, Alexandre Gramfort, Scott Burns, Martin Luessi', 'manual'),
@@ -199,29 +231,115 @@ latex_documents = [
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
-#latex_use_parts = False
-
-# If true, show page references after internal links.
-#latex_show_pagerefs = False
-
-# If true, show URL addresses after external links.
-#latex_show_urls = False
+# latex_toplevel_sectioning = 'part'
 
 # Additional stuff for the LaTeX preamble.
-#latex_preamble = ''
+# latex_preamble = ''
 
 # Documents to append as an appendix to all manuals.
-#latex_appendices = []
+# latex_appendices = []
 
 # If false, no module index is generated.
-#latex_domain_indices = True
+# latex_domain_indices = True
 
+trim_doctests_flags = True
 
-# -- Options for manual page output --------------------------------------------
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {
+    # 'python': ('http://docs.python.org/', None),
+    # 'numpy': ('http://docs.scipy.org/doc/numpy-dev/', None),
+    # 'scipy': ('http://scipy.github.io/devdocs/', None),
+    'matplotlib': ('http://matplotlib.org', None),
+    'imageio': ('http://imageio.readthedocs.io/en/latest/', None),
+    'mayavi': ('http://docs.enthought.com/mayavi/mayavi/', None),
+}
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'pysurfer', u'PySurfer Documentation',
-     [u'Michael Waskom, Alexandre Gramfort, Scott Burns, Eric Larson'], 1)
+     [u'PySurfer Contributors'], 1)
 ]
+
+examples_dirs = ['../examples']
+gallery_dirs = ['auto_examples']
+
+try:
+    from mayavi import mlab
+    find_mayavi_figures = True
+    # Do not pop up any mayavi windows while running the
+    # examples. These are very annoying since they steal the focus.
+    mlab.options.offscreen = True
+except Exception:
+    find_mayavi_figures = False
+
+sphinx_gallery_conf = {
+    'doc_module': ('surfer',),
+    'reference_url': {
+        'surfer': None,
+        'matplotlib': 'http://matplotlib.org',
+        'numpy': 'http://docs.scipy.org/doc/numpy/reference',
+        'scipy': 'http://docs.scipy.org/doc/scipy/reference',
+        'mayavi': 'http://docs.enthought.com/mayavi/mayavi',
+        },
+    'examples_dirs': examples_dirs,
+    'gallery_dirs': gallery_dirs,
+    'find_mayavi_figures': find_mayavi_figures,
+    'default_thumb_file': os.path.join('_static', 'pysurfer_logo_small.png'),
+    'backreferences_dir': 'generated',
+    }
+
+numpydoc_class_members_toctree = False
+
+
+# -----------------------------------------------------------------------------
+# Source code links (adapted from SciPy (doc/source/conf.py))
+# -----------------------------------------------------------------------------
+
+def linkcode_resolve(domain, info):
+    """
+    Determine the URL corresponding to Python object
+    """
+    if domain != 'py':
+        return None
+
+    modname = info['module']
+    fullname = info['fullname']
+
+    submod = sys.modules.get(modname)
+    if submod is None:
+        return None
+
+    obj = submod
+    for part in fullname.split('.'):
+        try:
+            obj = getattr(obj, part)
+        except:
+            return None
+
+    try:
+        fn = inspect.getsourcefile(obj)
+    except:
+        fn = None
+    if not fn:
+        try:
+            fn = inspect.getsourcefile(sys.modules[obj.__module__])
+        except:
+            fn = None
+    if not fn:
+        return None
+
+    try:
+        source, lineno = inspect.getsourcelines(obj)
+    except:
+        lineno = None
+
+    if lineno:
+        linespec = "#L%d-L%d" % (lineno, lineno + len(source) - 1)
+    else:
+        linespec = ""
+
+    fn = relpath(fn, start=dirname(surfer.__file__))
+
+    return "http://github.com/nipy/PySurfer/blob/master/surfer/%s%s" % (  # noqa
+       fn, linespec)

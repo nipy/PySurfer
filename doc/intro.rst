@@ -1,3 +1,5 @@
+:orphan:
+
 .. _intro:
 
 What is PySurfer?

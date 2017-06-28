@@ -507,7 +507,7 @@ def generate_dir_rst(dir, fhindex, example_dir, root_dir, plot_gallery):
     """)  # clear at the end of the section
 
 # modules for which we embed links into example code
-DOCMODULES = ['mne', 'matplotlib', 'numpy', 'scipy', 'mayavi']
+DOCMODULES = ['surfer', 'matplotlib', 'numpy', 'scipy', 'mayavi']
 
 
 def make_thumbnail(in_fname, out_fname, width, height):
@@ -676,8 +676,8 @@ def embed_code_links(app, exception):
 
     # Add resolvers for the packages for which we want to show links
     doc_resolvers = {}
-    doc_resolvers['mne'] = SphinxDocLinkResolver(app.builder.outdir,
-                                                 relative=True)
+    doc_resolvers['surfer'] = SphinxDocLinkResolver(app.builder.outdir,
+                                                    relative=True)
 
     doc_resolvers['matplotlib'] = SphinxDocLinkResolver(
         'http://matplotlib.org')

@@ -5,9 +5,6 @@ import warnings
 from warnings import warn
 
 import numpy as np
-from scipy import stats, ndimage, misc
-from scipy.interpolate import interp1d
-from matplotlib.colors import colorConverter
 
 import nibabel as nib
 
@@ -79,6 +76,7 @@ def make_montage(filename, fnames, orientation='h', colorbar=None,
         import Image
     except (ValueError, ImportError):
         from PIL import Image
+    from scipy import ndimage
     # This line is only necessary to overcome a PIL bug, see:
     #     http://stackoverflow.com/questions/10854903/what-is-causing-
     #          dimension-dependent-attributeerror-in-pil-fromarray-function
@@ -364,9 +362,20 @@ class Brain(object):
 
     Attributes
     ----------
+    annot : list
+        List of annotations.
     brains : list
         List of the underlying brain instances.
-
+    contour : list
+        List of the contours.
+    foci : foci
+        The foci.
+    labels : dict
+        The labels.
+    overlays : dict
+        The overlays.
+    texts : dict
+        The text objects.
     """
     def __init__(self, subject_id, hemi, surf, title=None,
                  cortex="classic", alpha=1.0, size=800, background="black",
@@ -552,6 +561,7 @@ class Brain(object):
     def _set_window_properties(self, size, background, foreground):
         """Set window properties that are used elsewhere."""
         # old option "size" sets both width and height
+        from matplotlib.colors import colorConverter
         try:
             width, height = size
         except (TypeError, ValueError):
@@ -603,6 +613,7 @@ class Brain(object):
             curvature is displayed.
 
         """
+        from matplotlib.colors import colorConverter
         colormap_map = dict(classic=(dict(colormap="Greys",
                                           vmin=-1, vmax=2,
                                           opacity=alpha), False, True),
@@ -741,32 +752,26 @@ class Brain(object):
 
     @property
     def overlays(self):
-        """Wrap to overlays"""
         return self._get_one_brain(self.overlays_dict, 'overlays')
 
     @property
     def foci(self):
-        """Wrap to foci"""
         return self._get_one_brain(self.foci_dict, 'foci')
 
     @property
     def labels(self):
-        """Wrap to labels"""
         return self._get_one_brain(self.labels_dict, 'labels')
 
     @property
     def contour(self):
-        """Wrap to contour"""
         return self._get_one_brain(self.contour_list, 'contour')
 
     @property
     def annot(self):
-        """Wrap to annot"""
         return self._get_one_brain(self.annot_list, 'annot')
 
     @property
     def texts(self):
-        """Wrap to texts"""
         self._get_one_brain([[]], 'texts')
         out = dict()
         for key, val in self.texts_dict.iteritems():
@@ -775,7 +780,6 @@ class Brain(object):
 
     @property
     def data(self):
-        """Wrap to data"""
         self._get_one_brain([[]], 'data')
         if self.data_dict['lh'] is not None:
             data = self.data_dict['lh'].copy()
@@ -856,7 +860,6 @@ class Brain(object):
         return scalar_data, name
 
     def _get_display_range(self, scalar_data, min, max, sign):
-
         if scalar_data.min() >= 0:
             sign = "pos"
         elif scalar_data.max() <= 0:
@@ -874,7 +877,7 @@ class Brain(object):
         if min is None:
             min = "robust_min"
         if min == "robust_min":
-            min = stats.scoreatpercentile(range_data, 2)
+            min = np.percentile(range_data, 2)
         elif min == "actual_min":
             min = range_data.min()
 
@@ -882,7 +885,7 @@ class Brain(object):
         if max is None:
             max = "robust_max"
         if max == "robust_max":
-            max = stats.scoreatpercentile(scalar_data, 98)
+            max = np.percentile(scalar_data, 98)
         elif max == "actual_max":
             max = range_data.max()
 
@@ -1542,6 +1545,7 @@ class Brain(object):
             shown. If two hemispheres are being shown, an error will
             be thrown.
         """
+        from matplotlib.colors import colorConverter
         hemi = self._check_hemi(hemi)
 
         # Figure out how to interpret the first parameter
@@ -1702,7 +1706,7 @@ class Brain(object):
         view : str | dict
             brain surface to view (one of 'lateral', 'medial', 'rostral',
             'caudal', 'dorsal', 'ventral', 'frontal', 'parietal') or kwargs to
-            pass to mlab.view()
+            pass to :func:`mayavi.mlab.view()`.
 
         Returns
         -------
@@ -1876,6 +1880,7 @@ class Brain(object):
             'cubic', default 'quadratic'). Interpolation is only used for
             non-integer indexes.
         """
+        from scipy.interpolate import interp1d
         if self.n_times is None:
             raise RuntimeError('cannot set time index with no time data')
         if time_idx < 0 or time_idx >= self.n_times:
@@ -1965,13 +1970,13 @@ class Brain(object):
         self._toggle_render(True, views)
 
     def index_for_time(self, time, rounding='closest'):
-        """Find the data time index closest to a specific time point
+        """Find the data time index closest to a specific time point.
 
         Parameters
         ----------
         time : scalar
             Time.
-        rounding : 'closest' | 'up' | 'down
+        rounding : 'closest' | 'up' | 'down'
             How to round if the exact time point is not an index.
 
         Returns
@@ -2130,12 +2135,12 @@ class Brain(object):
         ----------
         filename: string
             path to new image file
-        mode: string
+        mode : string
             Either 'rgb' (default) to render solid background, or 'rgba' to
-            include alpha channel for transparent background
-        antialiased: bool
-            Antialias the image (see mlab.screenshot() for details; default
-            False)
+            include alpha channel for transparent background.
+        antialiased : bool
+            Antialias the image (see :func:`mayavi.mlab.screenshot`
+            for details; see default False).
 
         Notes
         -----
@@ -2146,29 +2151,30 @@ class Brain(object):
         a Mayavi figure to plot instead of TraitsUI) if you intend to
         script plotting commands.
         """
+        from scipy import misc
         misc.imsave(filename, self.screenshot(mode, antialiased))
 
     def screenshot(self, mode='rgb', antialiased=False):
-        """Generate a screenshot of current view
+        """Generate a screenshot of current view.
 
-        Wraps to mlab.screenshot for ease of use.
+        Wraps to :func:`mayavi.mlab.screenshot` for ease of use.
 
         Parameters
         ----------
-        mode: string
-            Either 'rgb' or 'rgba' for values to return
-        antialiased: bool
-            Antialias the image (see mlab.screenshot() for details; default
-            False)
+        mode : string
+            Either 'rgb' or 'rgba' for values to return.
+        antialiased : bool
+            Antialias the image (see :func:`mayavi.mlab.screenshot`
+            for details; default False).
 
         Returns
         -------
-        screenshot: array
-            Image pixel values
+        screenshot : array
+            Image pixel values.
 
         Notes
         -----
-        Due to limitations in TraitsUI, if multiple views or hemi='split'
+        Due to limitations in TraitsUI, if multiple views or ``hemi='split'``
         is used, there is no guarantee painting of the windows will
         complete before control is returned to the command line. Thus
         we strongly recommend using only one figure window (which uses
@@ -2187,16 +2193,17 @@ class Brain(object):
         return data
 
     def screenshot_single(self, mode='rgb', antialiased=False, row=-1, col=-1):
-        """Generate a screenshot of current view from a single panel
+        """Generate a screenshot of current view from a single panel.
 
-        Wraps to mlab.screenshot for ease of use.
+        Wraps to :func:`mayavi.mlab.screenshot` for ease of use.
 
         Parameters
         ----------
         mode: string
             Either 'rgb' or 'rgba' for values to return
         antialiased: bool
-            Antialias the image (see mlab.screenshot() for details)
+            Antialias the image (see :func:`mayavi.mlab.screenshot`
+            for details).
         row : int
             row index of the brain to use
         col : int
@@ -2351,9 +2358,10 @@ class Brain(object):
         filename: string | None
             path to final image. If None, the image will not be saved.
         order: list
-            list of views: order of views to build montage (default ['lat',
-            'ven', 'med']; nested list of views to specify views in a
-            2-dimensional grid (e.g, [['lat', 'ven'], ['med', 'fro']])
+            list of views: order of views to build montage (default
+            ``['lat', 'ven', 'med']``; nested list of views to specify
+            views in a 2-dimensional grid (e.g,
+            ``[['lat', 'ven'], ['med', 'fro']]``)
         orientation: {'h' | 'v'}
             montage image orientation (horizontal of vertical alignment; only
             applies if ``order`` is a flat list)
@@ -2371,7 +2379,7 @@ class Brain(object):
         Returns
         -------
         out : array
-            The montage image, useable with matplotlib.imshow().
+            The montage image, usable with :func:`matplotlib.pyplot.imshow`.
         """
         # find flat list of views and nested list of view indexes
         assert orientation in ['h', 'v']
@@ -2476,6 +2484,7 @@ class Brain(object):
                               "install/update PySurfer and imageio together, "
                               "run\n\n    $ pip install -U "
                               "pysurfer[save_movie]\n")
+        from scipy.interpolate import interp1d
 
         # find imageio FFMPEG parameters
         if 'fps' not in kwargs:
@@ -2534,7 +2543,7 @@ class Brain(object):
             If not None, it saves the animation as a movie.
             fname should end in '.avi' as only the AVI format is supported
         use_cache: bool
-            Use previously generated images in ./.tmp/
+            Use previously generated images in ``./.tmp/``
         row : int
             Row index of the brain to use
         col : int
@@ -2693,15 +2702,15 @@ class _Hemisphere(object):
 
         Parameters
         ----------
-        beg: string
-            origin anatomical view
-        end: string
-            destination anatomical view
+        beg : string
+            origin anatomical view.
+        end : string
+            destination anatomical view.
 
         Returns
         -------
-        diffs: tuple
-            (min view "distance", min roll "distance")
+        diffs : tuple
+            (min view "distance", min roll "distance").
 
         """
         beg = self._xfm_view(beg)
@@ -2851,6 +2860,7 @@ class _Hemisphere(object):
 
     def add_label(self, label, label_name, color, alpha):
         """Add an ROI label to the image"""
+        from matplotlib.colors import colorConverter
         array_id, pipe = self._add_scalar_data(label)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(pipe, name=label_name, figure=self._f)

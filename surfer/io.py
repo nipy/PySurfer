@@ -1,7 +1,9 @@
+import copy
 import os
+import sys
 from tempfile import mktemp
 
-from subprocess import Popen, PIPE, check_output
+from subprocess import Popen, PIPE
 import gzip
 import numpy as np
 import nibabel as nib
@@ -170,22 +172,30 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         If not None, override default verbose level (see surfer.verbose).
     """
 
-    env = os.environ
-    if 'FREESURFER_HOME' not in env:
+    fs_home = os.getenv('FREESURFER_HOME')
+    if fs_home is None:
         raise RuntimeError('FreeSurfer environment not defined. Define the '
                            'FREESURFER_HOME environment variable.')
     # Run FreeSurferEnv.sh if not most recent script to set PATH
-    if not env['PATH'].startswith(os.path.join(env['FREESURFER_HOME'], 'bin')):
-        cmd = ['bash', '-c', 'source {} && env'.format(
-               os.path.join(env['FREESURFER_HOME'], 'FreeSurferEnv.sh'))]
-        envout = check_output(cmd)
-        env = dict(line.split('=', 1)
-                   for line in envout.decode('utf-8').split('\n')
-                   if '=' in line)
+    bin_path = os.path.join(fs_home, 'bin')
+    if bin_path not in os.getenv('PATH', ''):
+        raise RuntimeError('Freesurfer bin path "%s" not found, be sure to '
+                           'source the Freesurfer setup script' % (bin_path))
+    if sys.platform == 'darwin':
+        # OSX does some ugly "protection" where it clears DYLD_LIBRARY_PATH
+        # for subprocesses
+        env = copy.deepcopy(os.environ)
+        ld_path = os.path.join(fs_home, 'lib', 'gcc', 'lib')
+        if 'DYLD_LIBRARY_PATH' not in env:
+            env['DYLD_LIBRARY_PATH'] = ld_path
+        else:
+            env['DYLD_LIBRARY_PATH'] = ld_path + ':' + env['DYLD_LIBRARY_PATH']
+    else:
+        env = os.environ
 
     # Set the basic commands
     cmd_list = ["mri_vol2surf",
-                "--mov", filepath,
+                "--mov", os.path.abspath(filepath),
                 "--hemi", hemi,
                 "--surf", surf]
 

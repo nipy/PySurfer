@@ -1,3 +1,5 @@
+:orphan:
+
 .. _install:
 
 Installing and Getting Started

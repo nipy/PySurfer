@@ -1,5 +1,7 @@
 .. _custom_viz:
 
+.. currentmodule:: surfer
+
 Customizing the Visualization
 =============================
 
@@ -25,9 +27,9 @@ should either be a single number to make a square window, or a pair of
 values, ``(width, height)``, to make a rectangular window.
 
 Changing the curvature color scheme
------------------------------------ 
+-----------------------------------
 
-By default, a new :class:`Brain` instance displays the binarized 
+By default, a new :class:`Brain` instance displays the binarized
 cortical curvature values, so you can see which patches of cortex
 are gyri and which are sulci (pass ``curv=False`` to the
 :class:`Brain` constructor, or use the ``-no-curv`` switch in the
@@ -45,7 +47,7 @@ a mayavi colormap or a colormap name along with the endpoints of the
 colormap and whether it should be reversed.
 
 Additionally, you can load a continuous curvature map with the
-:func:`add_morphometry` method.
+:meth:`Brain.add_morphometry` method.
 
 How to use these themes
 -----------------------
@@ -53,12 +55,14 @@ How to use these themes
 These options can be selected either as keyword arguments to the
 :class:`Brain` constructor,
 
-.. sourcecode:: ipython
-    
-    In [1]: from surfer import Brain
-    In [2]: b = Brain('fsaverage', 'lh', 'inflated', cortex='bone')
+.. code-block:: python
+
+    >>> from surfer import Brain
+    >>> b = Brain('fsaverage', 'lh', 'inflated', cortex='bone')
 
 or as options in the command-line interface::
 
-    pysurfer fsaverage lh inflated -background slategray -size 400
+.. code-block:: bash
+
+    $ pysurfer fsaverage lh inflated -background slategray -size 400
 
