@@ -491,24 +491,18 @@ def create_color_lut(cmap, n_colors=256):
 
             return lut
 
-    # Otherwise, we're going to try and use matplotlib to create it
-
-    if cmap in dir(cm):
-        # This is probably a matplotlib colormap, so build from that
-        # The matplotlib colormaps are a superset of the mayavi colormaps
-        # except for one or two cases (i.e. blue-red, which is a crappy
-        # rainbow colormap and shouldn't be used for anything, although in
-        # its defense it's better than "Jet")
-        cmap = getattr(cm, cmap)
-
-    elif np.iterable(cmap):
-        # This looks like a list of colors? Let's try that.
+    if isinstance(cmap, list):
         colors = list(map(mpl.colors.colorConverter.to_rgb, cmap))
-        cmap = mpl.colors.LinearSegmentedColormap.from_list("_", colors)
-
+        cmap = mpl.colors.ListedColormap(colors)
     else:
-        # If we get here, it's a bad input
-        raise ValueError("Input %s was not valid for making a lut" % cmap)
+        try:
+            # Try to get a named matplotlib colormap
+            # This will also pass Colormap object back out
+            cmap = mpl.cm.get_cmap(cmap)
+        except (TypeError, ValueError):
+            # If we get here, it's a bad input
+            # but don't raise the matplotlib error as it is less accurate
+            raise ValueError("Input %s was not valid for making a lut" % cmap)
 
     # Convert from a matplotlib colormap to a lut array
     lut = (cmap(np.linspace(0, 1, n_colors)) * 255).astype(np.int)
