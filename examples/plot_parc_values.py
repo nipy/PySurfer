@@ -25,12 +25,11 @@ Bring up the visualization.
 brain = Brain(subject_id, hemi, surf, background="white")
 
 """
-Read in the Buckner resting state network annotation. (This requires a
-relatively recent version of Freesurfer, or it can be downloaded separately).
+Read in the automatic parcellation of sulci and gyri.
 """
 aparc_file = os.path.join(os.environ["SUBJECTS_DIR"],
                           subject_id, "label",
-                          hemi + ".Yeo2011_17Networks_N1000.annot")
+                          hemi + ".aparc.a2009s.annot")
 labels, ctab, names = nib.freesurfer.read_annot(aparc_file)
 
 """
@@ -39,7 +38,7 @@ the parcellation.
 
 """
 rs = np.random.RandomState(4)
-roi_data = rs.uniform(.5, .75, size=len(names))
+roi_data = rs.uniform(.5, .8, size=len(names))
 
 """
 Make a vector containing the data point at each vertex.
@@ -51,4 +50,4 @@ Display these values on the brain. Use a sequential colormap (assuming
 these data move from low to high values), and add an alpha channel so the
 underlying anatomy is visible.
 """
-brain.add_data(vtx_data, .5, .75, colormap="GnBu", alpha=.8)
+brain.add_data(vtx_data, .5, .75, colormap="rocket", alpha=.8)

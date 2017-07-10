@@ -16,6 +16,7 @@ from scipy import sparse
 from scipy.spatial.distance import cdist
 import matplotlib as mpl
 from matplotlib import cm as mpl_cm
+from . import cm as surfer_cm
 
 logger = logging.getLogger('surfer')
 
@@ -491,9 +492,14 @@ def create_color_lut(cmap, n_colors=256):
 
             return lut
 
+    surfer_cmaps = ["rocket", "mako", "icefire", "vlag"]
+    surfer_cmaps += [name + "_r" for name in surfer_cmaps]
+
     if isinstance(cmap, list):
         colors = list(map(mpl.colors.colorConverter.to_rgb, cmap))
         cmap = mpl.colors.ListedColormap(colors)
+    elif cmap in surfer_cmaps:
+        cmap = getattr(surfer_cm, cmap)
     else:
         try:
             # Try to get a named matplotlib colormap

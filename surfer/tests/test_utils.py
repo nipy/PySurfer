@@ -79,6 +79,10 @@ def test_create_color_lut():
     cmap_out = utils.create_color_lut("BuGn_r")
     nt.assert_equal(cmap_out.shape, (256, 4))
 
+    # Test named pysurfer lut
+    cmap_out = utils.create_color_lut("icefire_r")
+    nt.assert_equal(cmap_out.shape, (256, 4))
+
     # Test matplotlib object lut
     cmap_in = mpl.colors.ListedColormap(["blue", "white", "red"])
     cmap_out = utils.create_color_lut(cmap_in)
