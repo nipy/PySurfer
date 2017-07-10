@@ -15,7 +15,7 @@ import nibabel as nib
 from scipy import sparse
 from scipy.spatial.distance import cdist
 import matplotlib as mpl
-from matplotlib import cm
+from matplotlib import cm as mpl_cm
 
 logger = logging.getLogger('surfer')
 
@@ -498,7 +498,7 @@ def create_color_lut(cmap, n_colors=256):
         try:
             # Try to get a named matplotlib colormap
             # This will also pass Colormap object back out
-            cmap = mpl.cm.get_cmap(cmap)
+            cmap = mpl_cm.get_cmap(cmap)
         except (TypeError, ValueError):
             # If we get here, it's a bad input
             # but don't raise the matplotlib error as it is less accurate
