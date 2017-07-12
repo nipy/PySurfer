@@ -50,9 +50,9 @@ from negative correlations to positive correlations.
 We'll also plot the map with some transparency so that we can see through to
 the underlying anatomy.
 """
-brain.add_data(surf_data_lh, -.7, .7, colormap="coolwarm", alpha=.75,
+brain.add_data(surf_data_lh, -.7, .7, colormap="vlag", alpha=.75,
                hemi='lh')
-brain.add_data(surf_data_rh, -.7, .7, colormap="coolwarm", alpha=.75,
+brain.add_data(surf_data_rh, -.7, .7, colormap="vlag", alpha=.75,
                hemi='rh')
 
 """

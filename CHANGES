@@ -6,6 +6,10 @@ Version 0.8
 
 - The surface geometry that is displayed can now be changed after initializing
   a ``Brain`` instance with e.g. ``brain.set_surf("smoothwm")``.
+- Allowed PySurfer to use custom matplotlib colormap objects or the names of
+  custom colormaps that have been registered with matplotlib.
+- Added four new colormaps from ``seaborn``: ``rocket``, ``mako``, ``icefire``,
+  and ``vlag``.
 
 Version 0.7
 -----------

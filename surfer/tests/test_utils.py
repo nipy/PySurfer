@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib as mpl
 import nose.tools as nt
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
@@ -74,9 +75,18 @@ def test_create_color_lut():
     assert_array_equal(cmap_in, cmap_out[:, :3])
     assert_array_equal(cmap_out[:, 3], np.ones(256, np.int) * 255)
 
-    # Test matplotlib lut
+    # Test named matplotlib lut
     cmap_out = utils.create_color_lut("BuGn_r")
     nt.assert_equal(cmap_out.shape, (256, 4))
+
+    # Test named pysurfer lut
+    cmap_out = utils.create_color_lut("icefire_r")
+    nt.assert_equal(cmap_out.shape, (256, 4))
+
+    # Test matplotlib object lut
+    cmap_in = mpl.colors.ListedColormap(["blue", "white", "red"])
+    cmap_out = utils.create_color_lut(cmap_in)
+    assert_array_equal(cmap_out, (cmap_in(np.linspace(0, 1, 256)) * 255))
 
     # Test list of colors lut
     cmap_out = utils.create_color_lut(["purple", "pink", "white"])
