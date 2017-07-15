@@ -137,6 +137,12 @@ def test_annot():
         brain.add_annotation(a, b, p)
     brain.set_surf('white')
     assert_raises(ValueError, brain.add_annotation, 'aparc', borders=-1)
+
+    subj_dir = utils._get_subjects_dir()
+    annot_path = pjoin(subj_dir, subject_id, 'label', 'lh.aparc.a2009s.annot')
+    labels, ctab, names = nib.freesurfer.read_annot(annot_path)
+    brain.add_annotation((labels, ctab))
+
     brain.close()
 
 
