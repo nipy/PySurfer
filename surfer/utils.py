@@ -509,7 +509,7 @@ def create_color_lut(cmap, n_colors=256):
         except (TypeError, ValueError):
             # If we get here, it's a bad input
             # but don't raise the matplotlib error as it is less accurate
-            raise ValueError("Input %s was not valid for making a lut" % cmap)
+            raise ValueError("Input %r was not valid for making a lut" % cmap)
 
     # Convert from a matplotlib colormap to a lut array
     lut = (cmap(np.linspace(0, 1, n_colors)) * 255).astype(np.int)
