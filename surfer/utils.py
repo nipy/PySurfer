@@ -497,7 +497,7 @@ def create_color_lut(cmap, n_colors=256):
     surfer_cmaps += [name + "_r" for name in surfer_cmaps]
 
     if not isinstance(cmap, string_types) and isinstance(cmap, Sequence):
-        colors = list(map(mpl.colors.colorConverter.to_rgb, cmap))
+        colors = list(map(mpl.colors.colorConverter.to_rgba, cmap))
         cmap = mpl.colors.ListedColormap(colors)
     elif cmap in surfer_cmaps:
         cmap = getattr(surfer_cm, cmap)
