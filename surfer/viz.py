@@ -1150,9 +1150,9 @@ class Brain(object):
         Parameters
         ----------
         annot : str | tuple
-            Either path to annotation file or annotation name. Alternatively, 
-            the annotation can be specified as a ``(labels, ctab)`` tuple per 
-            hemisphere, i.e. ``annot=(labels, ctab)`` for a single hemisphere 
+            Either path to annotation file or annotation name. Alternatively,
+            the annotation can be specified as a ``(labels, ctab)`` tuple per
+            hemisphere, i.e. ``annot=(labels, ctab)`` for a single hemisphere
             or ``annot=((lh_labels, lh_ctab), (rh_labels, rh_ctab))`` for both
             hemispheres. ``labels`` and ``ctab`` should be arrays as returned
             by :func:`nibabel.freesurfer.read_annot`.
