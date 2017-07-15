@@ -1,3 +1,4 @@
+from collections import Sequence
 from distutils.version import LooseVersion
 import logging
 import warnings
@@ -495,7 +496,7 @@ def create_color_lut(cmap, n_colors=256):
     surfer_cmaps = ["rocket", "mako", "icefire", "vlag"]
     surfer_cmaps += [name + "_r" for name in surfer_cmaps]
 
-    if isinstance(cmap, list):
+    if not isinstance(cmap, string_types) and isinstance(cmap, Sequence):
         colors = list(map(mpl.colors.colorConverter.to_rgb, cmap))
         cmap = mpl.colors.ListedColormap(colors)
     elif cmap in surfer_cmaps:
