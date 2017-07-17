@@ -1,3 +1,4 @@
+from collections import Sequence
 from distutils.version import LooseVersion
 import logging
 import warnings
@@ -495,8 +496,8 @@ def create_color_lut(cmap, n_colors=256):
     surfer_cmaps = ["rocket", "mako", "icefire", "vlag"]
     surfer_cmaps += [name + "_r" for name in surfer_cmaps]
 
-    if isinstance(cmap, list):
-        colors = list(map(mpl.colors.colorConverter.to_rgb, cmap))
+    if not isinstance(cmap, string_types) and isinstance(cmap, Sequence):
+        colors = list(map(mpl.colors.colorConverter.to_rgba, cmap))
         cmap = mpl.colors.ListedColormap(colors)
     elif cmap in surfer_cmaps:
         cmap = getattr(surfer_cm, cmap)
@@ -508,7 +509,7 @@ def create_color_lut(cmap, n_colors=256):
         except (TypeError, ValueError):
             # If we get here, it's a bad input
             # but don't raise the matplotlib error as it is less accurate
-            raise ValueError("Input %s was not valid for making a lut" % cmap)
+            raise ValueError("Input %r was not valid for making a lut" % cmap)
 
     # Convert from a matplotlib colormap to a lut array
     lut = (cmap(np.linspace(0, 1, n_colors)) * 255).astype(np.int)
