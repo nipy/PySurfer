@@ -235,17 +235,21 @@ def test_meg_inverse():
     brain = Brain(*std_args)
     stc_fname = os.path.join(data_dir, 'meg_source_estimate-lh.stc')
     stc = io.read_stc(stc_fname)
-    data = stc['data']
     vertices = stc['vertices']
+    colormap = 'hot'
+    data = stc['data']
+    data_full = (brain.geo['lh'].nn[vertices][..., np.newaxis] *
+                 data[:, np.newaxis])
     time = np.linspace(stc['tmin'], stc['tmin'] + data.shape[1] * stc['tstep'],
                        data.shape[1], endpoint=False)
-    colormap = 'hot'
 
     def time_label(t):
         return 'time=%0.2f ms' % (1e3 * t)
 
-    brain.add_data(data, colormap=colormap, vertices=vertices,
-                   smoothing_steps=10, time=time, time_label=time_label)
+    for use_data in (data, data_full):
+        brain.add_data(use_data, colormap=colormap, vertices=vertices,
+                       smoothing_steps=1, time=time, time_label=time_label)
+
     brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
     assert_equal(brain.data_dict['lh']['time_idx'], 0)
 
@@ -257,11 +261,11 @@ def test_meg_inverse():
     assert_raises(ValueError, brain.add_data, data, vertices=vertices,
                   time=time[:-1])
     brain.add_data(data, colormap=colormap, vertices=vertices,
-                   smoothing_steps=10, time=time, time_label=time_label,
+                   smoothing_steps=1, time=time, time_label=time_label,
                    initial_time=.09)
     assert_equal(brain.data_dict['lh']['time_idx'], 1)
     data_dicts = brain._data_dicts['lh']
-    assert_equal(len(data_dicts), 2)
+    assert_equal(len(data_dicts), 3)
     assert_equal(data_dicts[0]['time_idx'], 1)
     assert_equal(data_dicts[1]['time_idx'], 1)
 
@@ -269,11 +273,13 @@ def test_meg_inverse():
     brain.set_data_time_index(0)
     assert_equal(data_dicts[0]['time_idx'], 0)
     assert_equal(data_dicts[1]['time_idx'], 0)
+    brain.set_data_smoothing_steps(2)
 
     # add second data-layer without time axis
     brain.add_data(data[:, 1], colormap=colormap, vertices=vertices,
                    smoothing_steps=2)
     brain.set_data_time_index(2)
+    assert_equal(len(data_dicts), 4)
 
     # change surface
     brain.set_surf('white')

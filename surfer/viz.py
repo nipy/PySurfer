@@ -965,28 +965,26 @@ class Brain(object):
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d", colorbar=True,
                  hemi=None, remove_existing=False, time_label_size=14,
-                 initial_time=None):
+                 initial_time=None, scale_factor=None):
         """Display data from a numpy array on the surface.
 
-        This provides a similar interface to add_overlay, but it displays
+        This provides a similar interface to
+        :meth:`surfer.viz.Brain.add_overlay`, but it displays
         it with a single colormap. It offers more flexibility over the
-        colormap, and provides a way to display four dimensional data
-        (i.e. a timecourse).
+        colormap, and provides a way to display four-dimensional data
+        (i.e., a timecourse) or five-dimensional data (i.e., a
+        vector-valued timecourse).
 
-        Note that min sets the low end of the colormap, and is separate
-        from thresh (this is a different convention from add_overlay)
-
-        Note: If the data is defined for a subset of vertices (specified
-        by the "vertices" parameter), a smoothing method is used to interpolate
-        the data onto the high resolution surface. If the data is defined for
-        subsampled version of the surface, smoothing_steps can be set to None,
-        in which case only as many smoothing steps are applied until the whole
-        surface is filled with non-zeros.
+        .. note:: ``min`` sets the low end of the colormap, and is separate
+                  from thresh (this is a different convention from
+                  :meth:`surfer.viz.Brain.add_overlay`).
 
         Parameters
         ----------
-        array : numpy array
-            data array (nvtx vector)
+        array : numpy array, shape (n_vertices[, 3][, n_times])
+            Data array. For the data to be understood as vector-valued
+            (3 values per vertex), then ``array`` must be have all 3
+            dimensions.
         min : float
             min value in colormap (uses real min if None)
         max : float
@@ -998,7 +996,7 @@ class Brain(object):
             or a custom look up table (an n x 4 array coded with RBGA values
             between 0 and 255).
         alpha : float in [0, 1]
-            alpha level to control opacity
+            alpha level to control opacity of the surface.
         vertices : numpy array
             vertices for which the data is defined (needed if len(data) < nvtx)
         smoothing_steps : int or None
@@ -1023,6 +1021,18 @@ class Brain(object):
         initial_time : float | None
             Time initially shown in the plot. ``None`` to use the first time
             sample (default).
+        scale_factor : float | None (default)
+            The scale factor to use when displaying glyphs for vector-valued
+            data.
+
+        Notes
+        -----
+        If the data is defined for a subset of vertices (specified
+        by the "vertices" parameter), a smoothing method is used to interpolate
+        the data onto the high resolution surface. If the data is defined for
+        subsampled version of the surface, smoothing_steps can be set to None,
+        in which case only as many smoothing steps are applied until the whole
+        surface is filled with non-zeros.
         """
         hemi = self._check_hemi(hemi)
         array = np.asarray(array)
@@ -1031,6 +1041,7 @@ class Brain(object):
             min = array.min() if array.size > 0 else 0
         if max is None:
             max = array.max() if array.size > 0 else 0
+        mid = (min + max) / 2.
 
         # Create smoothing matrix if necessary
         if len(array) < self.geo[hemi].x.shape[0]:
@@ -1042,19 +1053,25 @@ class Brain(object):
         else:
             smooth_mat = None
 
-        # Calculate initial data to plot
-        if array.ndim == 1:
-            array_plot = array
-        elif array.ndim == 2:
-            array_plot = array[:, 0]
-        else:
-            raise ValueError("data has to be 1D or 2D")
-
-        if smooth_mat is not None:
-            array_plot = smooth_mat * array_plot
-
-        # Copy and byteswap to deal with Mayavi bug
-        mlab_plot = _prepare_data(array_plot)
+        magnitude = None
+        magnitude_max = None
+        if array.ndim == 3:
+            if array.shape[1] != 3:
+                raise ValueError('If array has 3 dimensions, array.shape[1] '
+                                 'must equal 3, got %s' % (array.shape[1],))
+            magnitude = np.linalg.norm(array, axis=1)
+            if scale_factor is None:
+                distance = np.sum([array[:, dim, :].ptp(axis=0).max() ** 2
+                                   for dim in range(3)])
+                if distance == 0:
+                    scale_factor = 1
+                else:
+                    scale_factor = (0.4 * distance /
+                                    (4 * array.shape[0] ** (0.33)))
+            magnitude_max = magnitude.max()
+        elif array.ndim not in (1, 2):
+            raise ValueError('array has must have 1, 2, or 3 dimensions, '
+                             'got (%s)' % (array.ndim,))
 
         # Process colormap argument into a lut
         lut = create_color_lut(colormap)
@@ -1068,26 +1085,28 @@ class Brain(object):
             layer_id = 0
 
         data = dict(array=array, smoothing_steps=smoothing_steps,
-                    fmin=min, fmid=(min + max) / 2, fmax=max,
+                    fmin=min, fmid=mid, fmax=max, scale_factor=scale_factor,
                     transparent=False, time=0, time_idx=0,
                     vertices=vertices, smooth_mat=smooth_mat,
-                    layer_id=layer_id)
+                    layer_id=layer_id, magnitude=magnitude)
 
         # clean up existing data
         if remove_existing:
             self.remove_data(hemi)
 
-        # Create time array and add label if 2D
-        if array.ndim == 2:
+        # Create time array and add label if > 1D
+        if array.ndim <= 1:
+            initial_time_index = None
+        else:
             # check time array
             if time is None:
-                time = np.arange(array.shape[1])
+                time = np.arange(array.shape[-1])
             else:
                 time = np.asarray(time)
-                if time.shape != (array.shape[1],):
+                if time.shape != (array.shape[-1],):
                     raise ValueError('time has shape %s, but need shape %s '
-                                     '(array.shape[1])' %
-                                     (time.shape, (array.shape[1],)))
+                                     '(array.shape[-1])' %
+                                     (time.shape, (array.shape[-1],)))
 
             if self.n_times is None:
                 self.n_times = len(time)
@@ -1115,20 +1134,21 @@ class Brain(object):
             data["time"] = time
             data["time_idx"] = 0
             y_txt = 0.05 + 0.05 * bool(colorbar)
-        else:
-            initial_time_index = None
 
         surfs = []
         bars = []
+        glyphs = []
         views = self._toggle_render(False)
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                s, ct, bar = brain['brain'].add_data(
-                    array, mlab_plot, min, max, thresh, lut, colormap, alpha,
-                    colorbar, layer_id)
+                s, ct, bar, gl = brain['brain'].add_data(
+                    array, min, mid, max, thresh, lut, colormap, alpha,
+                    colorbar, layer_id, smooth_mat, magnitude, magnitude_max,
+                    scale_factor, vertices)
                 surfs.append(s)
                 bars.append(bar)
-                if array.ndim == 2 and time_label is not None:
+                glyphs.append(gl)
+                if array.ndim >= 2 and time_label is not None:
                     self.add_text(0.95, y_txt, time_label(time[0]),
                                   name="time_label", row=brain['row'],
                                   col=brain['col'], font_size=time_label_size,
@@ -1136,6 +1156,7 @@ class Brain(object):
         data['surfaces'] = surfs
         data['colorbars'] = bars
         data['orig_ctable'] = ct
+        data['glyphs'] = glyphs
 
         self._data_dicts[hemi].append(data)
 
@@ -1818,50 +1839,13 @@ class Brain(object):
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
         """
-        if not (fmin < fmid) and (fmid < fmax):
-            raise ValueError("Invalid colormap, we need fmin<fmid<fmax")
-
-        # Cast inputs to float to prevent integer division
-        fmin = float(fmin)
-        fmid = float(fmid)
-        fmax = float(fmax)
-
-        logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
-                    "transparent=%d" % (fmin, fmid, fmax, transparent))
-
         # Get the original colormap
         for h in ['lh', 'rh']:
             data = self.data_dict[h]
             if data is not None:
                 table = data["orig_ctable"].copy()
 
-        # Add transparency if needed
-        if transparent:
-            n_colors = table.shape[0]
-            n_colors2 = int(n_colors / 2)
-            table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
-            table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
-
-        # Scale the colormap
-        table_new = table.copy()
-        n_colors = table.shape[0]
-        n_colors2 = int(n_colors / 2)
-
-        # Index of fmid in new colorbar
-        fmid_idx = int(np.round(n_colors * ((fmid - fmin) /
-                                            (fmax - fmin))) - 1)
-
-        # Go through channels
-        for i in range(4):
-            part1 = np.interp(np.linspace(0, n_colors2 - 1, fmid_idx + 1),
-                              np.arange(n_colors),
-                              table[:, i])
-            table_new[:fmid_idx + 1, i] = part1
-            part2 = np.interp(np.linspace(n_colors2, n_colors - 1,
-                                          n_colors - fmid_idx - 1),
-                              np.arange(n_colors),
-                              table[:, i])
-            table_new[fmid_idx + 1:, i] = part2
+        table_new = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent)
 
         views = self._toggle_render(False)
         # Use the new colormap
@@ -1874,8 +1858,14 @@ class Brain(object):
                     cmap.data_range = np.array([fmin, fmax])
 
                 # Update the data properties
-                data["fmin"], data['fmid'], data['fmax'] = fmin, fmid, fmax
-                data["transparent"] = transparent
+                data.update(fmin=fmin, fmid=fmid, fmax=fmax,
+                            transparent=transparent)
+                for glyph in data['glyphs']:
+                    if glyph is not None:
+                        lut_manager = glyph.parent.vector_lut_manager
+                        lut_manager.lut.trait_set(table=table_new)
+                        lut_manager.trait_set(
+                            data_range=np.array([fmin, fmax]))
         self._toggle_render(True, views)
 
     def set_data_time_index(self, time_idx, interpolation='quadratic'):
@@ -1905,19 +1895,34 @@ class Brain(object):
                     continue  # skip data without time axis
 
                 # interpolation
+                if data['array'].ndim == 2:
+                    scalar_data = data['array']
+                    vectors = None
+                else:
+                    scalar_data = data['magnitude']
+                    vectors = data['array']
                 if isinstance(time_idx, float):
                     times = np.arange(self.n_times)
-                    ifunc = interp1d(times, data['array'], interpolation, 1)
-                    plot_data = ifunc(time_idx)
+                    scalar_data = interp1d(
+                        times, scalar_data, interpolation, axis=1,
+                        assume_sorted=True)(time_idx)
+                    if vectors is not None:
+                        vectors = interp1d(
+                            times, vectors, interpolation, axis=2,
+                            assume_sorted=True)(time_idx)
                 else:
-                    plot_data = data["array"][:, time_idx]
+                    scalar_data = scalar_data[:, time_idx]
+                    if vectors is not None:
+                        vectors = vectors[:, :, time_idx]
 
-                if data["smooth_mat"] is not None:
-                    plot_data = data["smooth_mat"] * plot_data
-
+                vector_values = scalar_data.copy()
+                if data['smooth_mat'] is not None:
+                    scalar_data = data['smooth_mat'] * scalar_data
                 for brain in self.brains:
                     if brain.hemi == hemi:
-                        brain.set_data(data['layer_id'], plot_data)
+                        brain.set_data(data['layer_id'], scalar_data,
+                                       vectors, vector_values)
+                del brain
                 data["time_idx"] = time_idx
 
                 # Update time label
@@ -1928,6 +1933,7 @@ class Brain(object):
                     else:
                         time = data["time"][time_idx]
                     self.update_text(data["time_label"](time), "time_label")
+
         self._toggle_render(True, views)
 
     @property
@@ -1973,12 +1979,15 @@ class Brain(object):
                 # Redraw
                 if data["array"].ndim == 1:
                     plot_data = data["array"]
-                else:
+                elif data["array"].ndim == 2:
                     plot_data = data["array"][:, data["time_idx"]]
+                else:  # vector-valued
+                    plot_data = data["magnitude"][:, data["time_idx"]]
 
                 plot_data = data["smooth_mat"] * plot_data
-                for surf in data["surfaces"]:
-                    surf.mlab_source.scalars = plot_data
+                for brain in self.brains:
+                    if brain.hemi == hemi:
+                        brain.set_data(data['layer_id'], plot_data)
 
                 # Update data properties
                 data["smoothing_steps"] = smoothing_steps
@@ -2611,6 +2620,77 @@ class Brain(object):
                 print("\n\nError occured when exporting movie\n\n")
 
 
+@verbose
+def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
+                      verbose=None):
+    """Scale a mayavi colormap LUT to a given fmin, fmid and fmax.
+
+    This function operates on a Mayavi LUTManager. This manager can be obtained
+    through the traits interface of mayavi. For example:
+    ``x.module_manager.vector_lut_manager``.
+
+    Parameters
+    ----------
+    lut_orig : array
+        The original LUT.
+    fmin : float
+        minimum value of colormap.
+    fmid : float
+        value corresponding to color midpoint.
+    fmax : float
+        maximum value for colormap.
+    transparent : boolean
+        if True: use a linear transparency between fmin and fmid.
+    verbose : bool, str, int, or None
+        If not None, override default verbose level (see mne.verbose).
+
+    Returns
+    -------
+    lut_table_new : 2D array (n_colors, 4)
+        The re-scaled color lookup table
+    """
+    if not (fmin < fmid) and (fmid < fmax):
+        raise ValueError("Invalid colormap, we need fmin<fmid<fmax")
+
+    # Cast inputs to float to prevent integer division
+    fmin = float(fmin)
+    fmid = float(fmid)
+    fmax = float(fmax)
+
+    logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
+                "transparent=%d" % (fmin, fmid, fmax, transparent))
+
+    # Add transparency if needed
+    if transparent:
+        n_colors = lut_table.shape[0]
+        n_colors2 = int(n_colors / 2)
+        lut_table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
+        lut_table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
+
+    # Scale the colormap
+    lut_table_new = lut_table.copy()
+    n_colors = lut_table.shape[0]
+    n_colors2 = n_colors // 2
+
+    # Index of fmid in new colorbar
+    fmid_idx = int(np.round(n_colors * ((fmid - fmin) /
+                                        (fmax - fmin))) - 1)
+
+    # Go through channels
+    for i in range(4):
+        part1 = np.interp(np.linspace(0, n_colors2 - 1, fmid_idx + 1),
+                          np.arange(n_colors),
+                          lut_table[:, i])
+        lut_table_new[:fmid_idx + 1, i] = part1
+        part2 = np.interp(np.linspace(n_colors2, n_colors - 1,
+                                      n_colors - fmid_idx - 1),
+                          np.arange(n_colors),
+                          lut_table[:, i])
+        lut_table_new[fmid_idx + 1:, i] = part2
+
+    return lut_table_new
+
+
 class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
     def __init__(self, subject_id, hemi, figure, geo, geo_curv,
@@ -2638,6 +2718,8 @@ class _Hemisphere(object):
         # add surface normals
         self._geo_mesh.data.point_data.normals = geo.nn
         self._geo_mesh.data.cell_data.normals = None
+        if mlab.options.backend != 'test':
+            self._geo_mesh.update()
         if 'lut' in geo_kwargs:
             # create a new copy we can modify:
             geo_kwargs = dict(geo_kwargs)
@@ -2647,6 +2729,7 @@ class _Hemisphere(object):
         with warnings.catch_warnings(record=True):  # traits warnings
             self._geo_surf = mlab.pipeline.surface(
                self._geo_mesh, figure=self._f, reset_zoom=True, **geo_kwargs)
+        self._geo_surf.actor.property.backface_culling = True
         if lut is not None:
             lut_manager = self._geo_surf.module_manager.scalar_lut_manager
             lut_manager.load_lut_from_list(lut / 255.)
@@ -2779,6 +2862,36 @@ class _Hemisphere(object):
         self._mesh_clones.pop(array_id).remove()
         self._mesh_dataset.point_data.remove_array(array_id)
 
+    def _add_vector_data(self, vectors, vector_values, magnitude_max,
+                         fmin, fmid, fmax, scale_factor, vertices):
+        vertices = slice(None) if vertices is None else vertices
+        x, y, z = np.array(self._geo_mesh.data.points.data)[vertices].T
+        with warnings.catch_warnings(record=True):  # HasTraits
+            q = mlab.quiver3d(
+                x, y, z, vectors[:, 0], vectors[:, 1], vectors[:, 2],
+                scalars=vector_values, colormap='hot', vmin=fmin,
+                vmax=fmax, figure=self._f)
+
+        # Enable backface culling
+        q.actor.property.backface_culling = False
+
+        # Compute scaling for the glyphs
+        scale = vector_values.max() / magnitude_max
+        q.glyph.glyph.scale_factor = scale_factor * scale
+
+        # Scale colormap used for the glyphs
+        lut_table = _scale_mayavi_lut(
+            q.parent.vector_lut_manager.lut.table.to_array(),
+            fmin, fmid, fmax, True, verbose)
+        lut_manager = q.parent.vector_lut_manager
+        lut_manager.load_lut_from_list(lut_table / 255.)
+        lut_manager.data_range = np.array([fmin, fmax])
+        return q
+
+    def _remove_vector_data(self, glyphs):
+        if glyphs is not None:
+            glyphs.parent.parent.remove()
+
     def add_overlay(self, old):
         """Add an overlay to the overlay dict from a file or array"""
         array_id, mesh = self._add_scalar_data(old.mlab_data)
@@ -2789,6 +2902,7 @@ class _Hemisphere(object):
                 pos = mlab.pipeline.surface(
                     pos_thresh, colormap="YlOrRd", figure=self._f,
                     vmin=old.pos_lims[1], vmax=old.pos_lims[2])
+                pos.actor.property.backface_culling = False
                 pos_bar = mlab.scalarbar(pos, nb_labels=5)
             pos_bar.reverse_lut = True
             pos_bar.scalar_bar_representation.position = (0.53, 0.01)
@@ -2803,6 +2917,7 @@ class _Hemisphere(object):
                 neg = mlab.pipeline.surface(
                     neg_thresh, colormap="PuBu", figure=self._f,
                     vmin=old.neg_lims[1], vmax=old.neg_lims[2])
+                neg.actor.property.backface_culling = False
                 neg_bar = mlab.scalarbar(neg, nb_labels=5)
             neg_bar.scalar_bar_representation.position = (0.05, 0.01)
             neg_bar.scalar_bar_representation.position2 = (0.42, 0.09)
@@ -2813,18 +2928,37 @@ class _Hemisphere(object):
         return OverlayDisplay(self, array_id, pos, pos_bar, neg, neg_bar)
 
     @verbose
-    def add_data(self, array, mlab_plot, min, max, thresh, lut, colormap,
-                 alpha, colorbar, layer_id):
+    def add_data(self, array, fmin, fmid, fmax, thresh, lut, colormap, alpha,
+                 colorbar, layer_id, smooth_mat, magnitude, magnitude_max,
+                 scale_factor, vertices):
         """Add data to the brain"""
         # Calculate initial data to plot
         if array.ndim == 1:
             array_plot = array
         elif array.ndim == 2:
             array_plot = array[:, 0]
+        elif array.ndim == 3:
+            assert array.shape[1] == 3  # should always be true
+            assert magnitude is not None
+            assert scale_factor is not None
+            array_plot = magnitude[:, 0]
         else:
-            raise ValueError("data has to be 1D or 2D")
+            raise ValueError("data has to be 1D, 2D, or 3D")
+        vector_values = array_plot
+        if smooth_mat is not None:
+            array_plot = smooth_mat * array_plot
 
-        array_id, pipe = self._add_scalar_data(mlab_plot)
+        # Copy and byteswap to deal with Mayavi bug
+        array_plot = _prepare_data(array_plot)
+
+        array_id, pipe = self._add_scalar_data(array_plot)
+        if array.ndim == 3:
+            vectors = array[:, :, 0].copy()
+            glyphs = self._add_vector_data(
+                vectors, vector_values, magnitude_max, fmin, fmid, fmax,
+                scale_factor, vertices)
+        else:
+            glyphs = None
         mesh = pipe.parent
         if thresh is not None:
             if array_plot.min() >= thresh:
@@ -2834,8 +2968,9 @@ class _Hemisphere(object):
                     pipe = threshold_filter(pipe, low=thresh, figure=self._f)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(
-                pipe, colormap=colormap, vmin=min, vmax=max,
+                pipe, colormap=colormap, vmin=fmin, vmax=fmax,
                 opacity=float(alpha), figure=self._f)
+            surf.actor.property.backface_culling = False
 
         # apply look up table if given
         if lut is not None:
@@ -2854,9 +2989,11 @@ class _Hemisphere(object):
         else:
             bar = None
 
-        self.data[layer_id] = {'array_id': array_id, 'mesh': mesh}
-
-        return surf, orig_ctable, bar
+        self.data[layer_id] = dict(
+            array_id=array_id, mesh=mesh, glyphs=glyphs,
+            fmin=fmin, fmid=fmid, fmax=fmax, scale_factor=scale_factor,
+            magnitude_max=magnitude_max)
+        return surf, orig_ctable, bar, glyphs
 
     def add_annotation(self, annot, ids, cmap):
         """Add an annotation file"""
@@ -2864,6 +3001,7 @@ class _Hemisphere(object):
         array_id, pipe = self._add_scalar_data(ids)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(pipe, name=annot, figure=self._f)
+            surf.actor.property.backface_culling = False
 
         # Set the color table
         lut_manager = surf.module_manager.scalar_lut_manager
@@ -2879,6 +3017,7 @@ class _Hemisphere(object):
         array_id, pipe = self._add_scalar_data(label)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(pipe, name=label_name, figure=self._f)
+            surf.actor.property.backface_culling = False
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color])
         lut_manager = surf.module_manager.scalar_lut_manager
@@ -2950,18 +3089,35 @@ class _Hemisphere(object):
             return text
 
     def remove_data(self, layer_id):
-        "Remove data shown with .add_data()"
+        """Remove data shown with .add_data()"""
         data = self.data.pop(layer_id)
         self._remove_scalar_data(data['array_id'])
+        self._remove_vector_data(data['glyphs'])
 
-    def set_data(self, layer_id, values):
-        "Set displayed data"
+    def set_data(self, layer_id, values, vectors=None, vector_values=None):
+        """Set displayed data values and vectors."""
         data = self.data[layer_id]
         self._mesh_dataset.point_data.get_array(
             data['array_id']).from_array(values)
+        if vectors is not None:
+            q = data['glyphs']
+            # Update glyphs
+            q.mlab_source.trait_set(vectors=vectors, scalars=vector_values)
+
+            # Update color of the glyphs
+            lut_manager = q.parent.vector_lut_manager
+            lut_manager.trait_set(
+                data_range=np.array([data['fmin'], data['fmax']]))
+
+            # Update scaling of the glyphs
+            scale = values.max() / data['magnitude_max']
+            q.glyph.glyph.trait_set(scale_factor=data['scale_factor'] * scale)
+
         # avoid "AttributeError: 'Scene' object has no attribute 'update'"
         if mlab.options.backend != 'test':
             data['mesh'].update()
+            if vectors is not None:
+                q.mlab_source.update()
 
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
