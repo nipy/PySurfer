@@ -46,8 +46,13 @@ Make a vector containing the data point at each vertex.
 vtx_data = roi_data[labels]
 
 """
+Handle vertices that are not defined in the annotation.
+"""
+vtx_data[labels == -1] = -1
+
+"""
 Display these values on the brain. Use a sequential colormap (assuming
 these data move from low to high values), and add an alpha channel so the
 underlying anatomy is visible.
 """
-brain.add_data(vtx_data, .5, .75, colormap="rocket", alpha=.8)
+brain.add_data(vtx_data, .5, .75, thresh=0, colormap="rocket", alpha=.8)
