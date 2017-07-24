@@ -965,7 +965,7 @@ class Brain(object):
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d", colorbar=True,
                  hemi=None, remove_existing=False, time_label_size=14,
-                 initial_time=None, scale_factor=None):
+                 initial_time=None, scale_factor=None, vector_alpha=None):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to
@@ -1024,6 +1024,9 @@ class Brain(object):
         scale_factor : float | None (default)
             The scale factor to use when displaying glyphs for vector-valued
             data.
+        vector_alpha : float | None
+            alpha level to control opacity of the arrows. Only used for
+            vector-valued data. If None (default), ``alpha`` is used.
 
         Notes
         -----
@@ -1139,12 +1142,13 @@ class Brain(object):
         bars = []
         glyphs = []
         views = self._toggle_render(False)
+        vector_alpha = alpha if vector_alpha is None else vector_alpha
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
                 s, ct, bar, gl = brain['brain'].add_data(
                     array, min, mid, max, thresh, lut, colormap, alpha,
                     colorbar, layer_id, smooth_mat, magnitude, magnitude_max,
-                    scale_factor, vertices)
+                    scale_factor, vertices, vector_alpha)
                 surfs.append(s)
                 bars.append(bar)
                 glyphs.append(gl)
@@ -2863,14 +2867,14 @@ class _Hemisphere(object):
         self._mesh_dataset.point_data.remove_array(array_id)
 
     def _add_vector_data(self, vectors, vector_values, magnitude_max,
-                         fmin, fmid, fmax, scale_factor, vertices):
+                         fmin, fmid, fmax, scale_factor, vertices, alpha):
         vertices = slice(None) if vertices is None else vertices
         x, y, z = np.array(self._geo_mesh.data.points.data)[vertices].T
         with warnings.catch_warnings(record=True):  # HasTraits
             q = mlab.quiver3d(
                 x, y, z, vectors[:, 0], vectors[:, 1], vectors[:, 2],
                 scalars=vector_values, colormap='hot', vmin=fmin,
-                vmax=fmax, figure=self._f)
+                vmax=fmax, figure=self._f, opacity=alpha)
 
         # Enable backface culling
         q.actor.property.backface_culling = False
@@ -2930,7 +2934,7 @@ class _Hemisphere(object):
     @verbose
     def add_data(self, array, fmin, fmid, fmax, thresh, lut, colormap, alpha,
                  colorbar, layer_id, smooth_mat, magnitude, magnitude_max,
-                 scale_factor, vertices):
+                 scale_factor, vertices, vector_alpha):
         """Add data to the brain"""
         # Calculate initial data to plot
         if array.ndim == 1:
@@ -2956,7 +2960,7 @@ class _Hemisphere(object):
             vectors = array[:, :, 0].copy()
             glyphs = self._add_vector_data(
                 vectors, vector_values, magnitude_max, fmin, fmid, fmax,
-                scale_factor, vertices)
+                scale_factor, vertices, vector_alpha)
         else:
             glyphs = None
         mesh = pipe.parent

@@ -46,8 +46,9 @@ data_full = brain.geo['lh'].nn[vertices][..., np.newaxis] * data[:, np.newaxis]
 
 ###############################################################################
 # Now we add the data and set the initial time displayed to 100 ms:
-brain.add_data(data_full, colormap='hot', vertices=vertices, alpha=0.5,
-               smoothing_steps=5, time=time, hemi=hemi, initial_time=0.1)
+brain.add_data(data_full, colormap='hot', vertices=vertices, alpha=1.0,
+               smoothing_steps=5, time=time, hemi=hemi, initial_time=0.1,
+               vector_alpha=0.33)
 
 # scale colormap
 brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
