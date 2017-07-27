@@ -1036,6 +1036,9 @@ class Brain(object):
         subsampled version of the surface, smoothing_steps can be set to None,
         in which case only as many smoothing steps are applied until the whole
         surface is filled with non-zeros.
+
+        Due to a Mayavi (or VTK) alpha rendering bug, ``vector_alpha`` is
+        clamped to be strictly < 1.
         """
         hemi = self._check_hemi(hemi)
         array = np.asarray(array)
@@ -1848,8 +1851,9 @@ class Brain(object):
             data = self.data_dict[h]
             if data is not None:
                 table = data["orig_ctable"].copy()
+                break
 
-        table_new = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent)
+        lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent)
 
         views = self._toggle_render(False)
         # Use the new colormap
@@ -1858,18 +1862,18 @@ class Brain(object):
             if data is not None:
                 for surf in data['surfaces']:
                     cmap = surf.module_manager.scalar_lut_manager
-                    cmap.load_lut_from_list(table_new / 255.)
+                    cmap.load_lut_from_list(lut / 255.)
                     cmap.data_range = np.array([fmin, fmax])
 
                 # Update the data properties
                 data.update(fmin=fmin, fmid=fmid, fmax=fmax,
                             transparent=transparent)
+                # And the hemisphere properties to match
                 for glyph in data['glyphs']:
                     if glyph is not None:
-                        lut_manager = glyph.parent.vector_lut_manager
-                        lut_manager.lut.trait_set(table=table_new)
-                        lut_manager.trait_set(
-                            data_range=np.array([fmin, fmax]))
+                        l_m = glyph.parent.vector_lut_manager
+                        l_m.load_lut_from_list(lut / 255.)
+                        l_m.data_range = np.array([fmin, fmax])
         self._toggle_render(True, views)
 
     def set_data_time_index(self, time_idx, interpolation='quadratic'):
@@ -2866,31 +2870,31 @@ class _Hemisphere(object):
         self._mesh_clones.pop(array_id).remove()
         self._mesh_dataset.point_data.remove_array(array_id)
 
-    def _add_vector_data(self, vectors, vector_values, magnitude_max,
-                         fmin, fmid, fmax, scale_factor, vertices, alpha):
+    def _add_vector_data(self, vectors, vector_values, fmin, fmid, fmax,
+                         scale_factor_norm, vertices, vector_alpha, lut):
         vertices = slice(None) if vertices is None else vertices
         x, y, z = np.array(self._geo_mesh.data.points.data)[vertices].T
+        vector_alpha = min(vector_alpha, 0.9999999)
         with warnings.catch_warnings(record=True):  # HasTraits
-            q = mlab.quiver3d(
+            quiver = mlab.quiver3d(
                 x, y, z, vectors[:, 0], vectors[:, 1], vectors[:, 2],
                 scalars=vector_values, colormap='hot', vmin=fmin,
-                vmax=fmax, figure=self._f, opacity=alpha)
+                vmax=fmax, figure=self._f, opacity=vector_alpha)
 
         # Enable backface culling
-        q.actor.property.backface_culling = False
+        quiver.actor.property.backface_culling = False
+        if mlab.options.backend != 'test':
+            quiver.mlab_source.update()
 
         # Compute scaling for the glyphs
-        scale = vector_values.max() / magnitude_max
-        q.glyph.glyph.scale_factor = scale_factor * scale
+        quiver.glyph.glyph.scale_factor = (scale_factor_norm *
+                                           vector_values.max())
 
         # Scale colormap used for the glyphs
-        lut_table = _scale_mayavi_lut(
-            q.parent.vector_lut_manager.lut.table.to_array(),
-            fmin, fmid, fmax, True, verbose)
-        lut_manager = q.parent.vector_lut_manager
-        lut_manager.load_lut_from_list(lut_table / 255.)
-        lut_manager.data_range = np.array([fmin, fmax])
-        return q
+        l_m = quiver.parent.vector_lut_manager
+        l_m.load_lut_from_list(lut / 255.)
+        l_m.data_range = np.array([fmin, fmax])
+        return quiver
 
     def _remove_vector_data(self, glyphs):
         if glyphs is not None:
@@ -2956,13 +2960,16 @@ class _Hemisphere(object):
         array_plot = _prepare_data(array_plot)
 
         array_id, pipe = self._add_scalar_data(array_plot)
+        scale_factor_norm = None
         if array.ndim == 3:
+            scale_factor_norm = scale_factor / magnitude_max
             vectors = array[:, :, 0].copy()
             glyphs = self._add_vector_data(
-                vectors, vector_values, magnitude_max, fmin, fmid, fmax,
-                scale_factor, vertices, vector_alpha)
+                vectors, vector_values, fmin, fmid, fmax,
+                scale_factor_norm, vertices, vector_alpha, lut)
         else:
             glyphs = None
+        del scale_factor
         mesh = pipe.parent
         if thresh is not None:
             if array_plot.min() >= thresh:
@@ -2978,8 +2985,8 @@ class _Hemisphere(object):
 
         # apply look up table if given
         if lut is not None:
-            lut_manager = surf.module_manager.scalar_lut_manager
-            lut_manager.load_lut_from_list(lut / 255.)
+            l_m = surf.module_manager.scalar_lut_manager
+            l_m.load_lut_from_list(lut / 255.)
 
         # Get the original colormap table
         orig_ctable = \
@@ -2995,8 +3002,7 @@ class _Hemisphere(object):
 
         self.data[layer_id] = dict(
             array_id=array_id, mesh=mesh, glyphs=glyphs,
-            fmin=fmin, fmid=fmid, fmax=fmax, scale_factor=scale_factor,
-            magnitude_max=magnitude_max)
+            scale_factor_norm=scale_factor_norm)
         return surf, orig_ctable, bar, glyphs
 
     def add_annotation(self, annot, ids, cmap):
@@ -3008,8 +3014,8 @@ class _Hemisphere(object):
             surf.actor.property.backface_culling = False
 
         # Set the color table
-        lut_manager = surf.module_manager.scalar_lut_manager
-        lut_manager.load_lut_from_list(cmap / 255.)
+        l_m = surf.module_manager.scalar_lut_manager
+        l_m.load_lut_from_list(cmap / 255.)
 
         # Set the brain attributes
         return dict(surface=surf, name=annot, colormap=cmap, brain=self,
@@ -3024,8 +3030,8 @@ class _Hemisphere(object):
             surf.actor.property.backface_culling = False
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color])
-        lut_manager = surf.module_manager.scalar_lut_manager
-        lut_manager.load_lut_from_list(cmap)
+        l_m = surf.module_manager.scalar_lut_manager
+        l_m.load_lut_from_list(cmap)
         return array_id, surf
 
     def add_morphometry(self, morph_data, colormap, measure,
@@ -3069,8 +3075,8 @@ class _Hemisphere(object):
             surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
                                                  line_width=line_width)
         if lut is not None:
-            lut_manager = surf.module_manager.scalar_lut_manager
-            lut_manager.load_lut_from_list(lut / 255.)
+            l_m = surf.module_manager.scalar_lut_manager
+            l_m.load_lut_from_list(lut / 255.)
 
         # Set the colorbar and range correctly
         with warnings.catch_warnings(record=True):  # traits
@@ -3103,25 +3109,28 @@ class _Hemisphere(object):
         data = self.data[layer_id]
         self._mesh_dataset.point_data.get_array(
             data['array_id']).from_array(values)
-        if vectors is not None:
-            q = data['glyphs']
-            # Update glyphs
-            q.mlab_source.trait_set(vectors=vectors, scalars=vector_values)
-
-            # Update color of the glyphs
-            lut_manager = q.parent.vector_lut_manager
-            lut_manager.trait_set(
-                data_range=np.array([data['fmin'], data['fmax']]))
-
-            # Update scaling of the glyphs
-            scale = values.max() / data['magnitude_max']
-            q.glyph.glyph.trait_set(scale_factor=data['scale_factor'] * scale)
-
         # avoid "AttributeError: 'Scene' object has no attribute 'update'"
         if mlab.options.backend != 'test':
             data['mesh'].update()
-            if vectors is not None:
+        if vectors is not None:
+            q = data['glyphs']
+
+            # extract params that will change after calling .update()
+            l_m = q.parent.vector_lut_manager
+            data_range = np.array(l_m.data_range)
+            lut = l_m.lut.table.to_array().copy()
+
+            # Update glyphs
+            q.mlab_source.vectors = vectors
+            q.mlab_source.scalars = vector_values
+            if mlab.options.backend != 'test':
                 q.mlab_source.update()
+
+            # Update changed parameters, and glyph scaling
+            q.glyph.glyph.scale_factor = (data['scale_factor_norm'] *
+                                          values.max())
+            l_m.load_lut_from_list(lut / 255.)
+            l_m.data_range = data_range
 
     def _orient_lights(self):
         """Set lights to come from same direction relative to brain."""
