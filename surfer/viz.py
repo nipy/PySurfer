@@ -996,7 +996,7 @@ class Brain(object):
             or a custom look up table (an n x 4 array coded with RBGA values
             between 0 and 255).
         alpha : float in [0, 1]
-            alpha level to control opacity of the surface.
+            alpha level to control opacity of the overlay.
         vertices : numpy array
             vertices for which the data is defined (needed if len(data) < nvtx)
         smoothing_steps : int or None
