@@ -983,8 +983,11 @@ class Brain(object):
         ----------
         array : numpy array, shape (n_vertices[, 3][, n_times])
             Data array. For the data to be understood as vector-valued
-            (3 values per vertex), then ``array`` must be have all 3
-            dimensions.
+            (3 values per vertex corresponding to X/Y/Z surface RAS),
+            then ``array`` must be have all 3 dimensions.
+            If vectors with no time dimension are desired, consider using a
+            singleton (e.g., ``np.newaxis``) to create a "time" dimension
+            and pass ``time_label=None``.
         min : float
             min value in colormap (uses real min if None)
         max : float
@@ -1003,7 +1006,7 @@ class Brain(object):
             number of smoothing steps (smoothing is used if len(data) < nvtx)
             Default : 20
         time : numpy array
-            time points in the data array (if data is 2D)
+            time points in the data array (if data is 2D or 3D)
         time_label : str | callable | None
             format of the time label (a format string, a function that maps
             floating point time values to strings, or None for no label)
