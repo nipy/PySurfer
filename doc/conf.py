@@ -17,6 +17,7 @@ from os.path import relpath, dirname
 import sys
 from datetime import date
 import sphinx_gallery  # noqa
+from sphinx_gallery.sorting import FileNameSortKey
 from numpydoc import numpydoc, docscrape  # noqa
 import surfer
 
@@ -250,8 +251,9 @@ intersphinx_mapping = {
     # 'numpy': ('http://docs.scipy.org/doc/numpy-dev/', None),
     # 'scipy': ('http://scipy.github.io/devdocs/', None),
     'matplotlib': ('http://matplotlib.org', None),
-    'imageio': ('http://imageio.readthedocs.io/en/latest/', None),
-    'mayavi': ('http://docs.enthought.com/mayavi/mayavi/', None),
+    'imageio': ('http://imageio.readthedocs.io/en/latest', None),
+    'mayavi': ('http://docs.enthought.com/mayavi/mayavi', None),
+    'nibabel': ('http://nipy.org/nibabel', None),
 }
 
 # One entry per manual page. List of tuples
@@ -284,9 +286,12 @@ sphinx_gallery_conf = {
         },
     'examples_dirs': examples_dirs,
     'gallery_dirs': gallery_dirs,
+    'within_subsection_order': FileNameSortKey,
     'find_mayavi_figures': find_mayavi_figures,
     'default_thumb_file': os.path.join('_static', 'pysurfer_logo_small.png'),
     'backreferences_dir': 'generated',
+    'download_section_examples': False,
+    'thumbnail_size': (250, 250),
     }
 
 numpydoc_class_members_toctree = False
