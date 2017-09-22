@@ -2723,9 +2723,10 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
                 "transparent=%d divergent=%d" % (fmin, fmid, fmax, transparent,
                                                  divergent))
 
+    n_colors = lut_table.shape[0]
+
     # Add transparency if needed
     if transparent:
-        n_colors = lut_table.shape[0]
         if divergent:
             N4 = np.full(4, n_colors / 4, dtype=int)
             N4[:np.mod(n_colors, 4)] += 1
