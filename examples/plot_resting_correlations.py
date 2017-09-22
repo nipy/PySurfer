@@ -60,6 +60,13 @@ third determines the left and right edges of the new colormap.
 brain.scale_data_colormap(0, .35, .7, transparent=True, divergent=True)
 
 """
+You can also set the overall opacity of the displayed data while maintaining
+the transparency of the small values.
+"""
+brain.scale_data_colormap(0, .35, .7, transparent=True, divergent=True, 
+                          alpha=0.75)
+
+"""
 This overlay represents resting-state correlations with a
 seed in left angular gyrus. Let's plot that seed.
 """
