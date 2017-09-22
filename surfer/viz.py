@@ -1838,7 +1838,7 @@ class Brain(object):
 
     @verbose
     def scale_data_colormap(self, fmin, fmid, fmax, transparent, 
-                            divergent=False, verbose=None):
+                            divergent=False, alpha=1.0, verbose=None):
         """Scale the data colormap.
 
         Parameters
@@ -1856,6 +1856,8 @@ class Brain(object):
             edges are fmax-fmin to the left and right of fmin, same for fmid; 
             if transparency is on, the center of the colormap will be 
             transparent
+        alpha : float
+            sets the overall opacity of colors, maintains transparent regions
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
         """
@@ -1867,7 +1869,7 @@ class Brain(object):
                 break
 
         lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent, 
-                                divergent)
+                                divergent, alpha)
 
         views = self._toggle_render(False)
         # Use the new colormap
@@ -2680,7 +2682,7 @@ def _scale_sequential_lut(lut_table, fmin, fmid, fmax):
 
 @verbose
 def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
-                      divergent=False, verbose=None):
+                      divergent=False, alpha=1.0, verbose=None):
     """Scale a mayavi colormap LUT to a given fmin, fmid and fmax.
 
     This function operates on a Mayavi LUTManager. This manager can be obtained
@@ -2703,6 +2705,8 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
         if True: fmin becomes the center value of the colormap and its edges
         are fmax-fmin to the left and right of fmin, same for fmid; if 
         transparency is on, the center of the colormap will be transparent
+    alpha : float
+        sets the overall opacity of colors, maintains transparent regions
     verbose : bool, str, int, or None
         If not None, override default verbose level (see mne.verbose).
 
@@ -2713,6 +2717,8 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
     """
     if not (fmin < fmid) and (fmid < fmax):
         raise ValueError("Invalid colormap, we need fmin<fmid<fmax")
+    if not (alpha >= 0) and (alpha <= 1):
+        raise ValueError("Invalid alpha: it needs to be within [0, 1]")
 
     # Cast inputs to float to prevent integer division
     fmin = float(fmin)
@@ -2739,6 +2745,10 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
             n_colors2 = int(n_colors / 2)
             lut_table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
             lut_table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
+
+    alpha = float(alpha)
+    if alpha < 1.0:
+        lut_table[:, -1] = lut_table[:, -1] * alpha
 
     if divergent:
         return np.r_[
