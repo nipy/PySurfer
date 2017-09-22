@@ -1837,7 +1837,8 @@ class Brain(object):
                 brain._f.scene.reset_zoom()
 
     @verbose
-    def scale_data_colormap(self, fmin, fmid, fmax, transparent, verbose=None):
+    def scale_data_colormap(self, fmin, fmid, fmax, transparent, 
+                            divergent=False, verbose=None):
         """Scale the data colormap.
 
         Parameters
@@ -1850,6 +1851,11 @@ class Brain(object):
             maximum value for colormap
         transparent : boolean
             if True: use a linear transparency between fmin and fmid
+        divergent : boolean
+            if True: fmin becomes the center value of the colormap and its 
+            edges are fmax-fmin to the left and right of fmin, same for fmid; 
+            if transparency is on, the center of the colormap will be 
+            transparent
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
         """
@@ -1860,7 +1866,8 @@ class Brain(object):
                 table = data["orig_ctable"].copy()
                 break
 
-        lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent)
+        lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent, 
+                                divergent)
 
         views = self._toggle_render(False)
         # Use the new colormap
@@ -1870,7 +1877,10 @@ class Brain(object):
                 for surf in data['surfaces']:
                     cmap = surf.module_manager.scalar_lut_manager
                     cmap.load_lut_from_list(lut / 255.)
-                    cmap.data_range = np.array([fmin, fmax])
+                    if divergent:
+                        cmap.data_range = np.array([2*fmin-fmax, fmax])
+                    else:
+                        cmap.data_range = np.array([fmin, fmax])
 
                 # Update the data properties
                 data.update(fmin=fmin, fmid=fmid, fmax=fmax,
@@ -1880,7 +1890,10 @@ class Brain(object):
                     if glyph is not None:
                         l_m = glyph.parent.vector_lut_manager
                         l_m.load_lut_from_list(lut / 255.)
-                        l_m.data_range = np.array([fmin, fmax])
+                        if divergent:
+                            l_m.data_range = np.array([2*fmin-fmax, fmax])
+                        else:
+                            l_m.data_range = np.array([fmin, fmax])
         self._toggle_render(True, views)
 
     def set_data_time_index(self, time_idx, interpolation='quadratic'):
@@ -2635,9 +2648,39 @@ class Brain(object):
                 print("\n\nError occured when exporting movie\n\n")
 
 
+def _scale_sequential_lut(lut_table, fmin, fmid, fmax):
+    """Scale a sequential colormap."""
+    
+    lut_table_new = lut_table.copy()
+    n_colors = lut_table.shape[0]
+    n_colors2 = n_colors // 2
+
+    # Index of fmid in new colorbar (which position along the N colors would
+    # fmid take, if fmin is first and fmax is last?)
+    fmid_idx = int(np.round(n_colors * ((fmid - fmin) /
+                                        (fmax - fmin))) - 1)
+
+    # morph each color channel so that fmid gets assigned the middle color of
+    # the original table and the number of colors to the left and right are 
+    # stretched or squeezed such that they correspond to the distance of fmid 
+    # to fmin and fmax, respectively
+    for i in range(4):
+        part1 = np.interp(np.linspace(0, n_colors2 - 1, fmid_idx + 1),
+                          np.arange(n_colors),
+                          lut_table[:, i])
+        lut_table_new[:fmid_idx + 1, i] = part1
+        part2 = np.interp(np.linspace(n_colors2, n_colors - 1,
+                                      n_colors - fmid_idx - 1),
+                          np.arange(n_colors),
+                          lut_table[:, i])
+        lut_table_new[fmid_idx + 1:, i] = part2
+
+    return lut_table_new
+
+
 @verbose
 def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
-                      verbose=None):
+                      divergent=False, verbose=None):
     """Scale a mayavi colormap LUT to a given fmin, fmid and fmax.
 
     This function operates on a Mayavi LUTManager. This manager can be obtained
@@ -2656,6 +2699,10 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
         maximum value for colormap.
     transparent : boolean
         if True: use a linear transparency between fmin and fmid.
+    divergent : boolean
+        if True: fmin becomes the center value of the colormap and its edges
+        are fmax-fmin to the left and right of fmin, same for fmid; if 
+        transparency is on, the center of the colormap will be transparent
     verbose : bool, str, int, or None
         If not None, override default verbose level (see mne.verbose).
 
@@ -2673,37 +2720,33 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
     fmax = float(fmax)
 
     logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
-                "transparent=%d" % (fmin, fmid, fmax, transparent))
+                "transparent=%d divergent=%d" % (fmin, fmid, fmax, transparent,
+                                                 divergent))
 
     # Add transparency if needed
     if transparent:
         n_colors = lut_table.shape[0]
-        n_colors2 = int(n_colors / 2)
-        lut_table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
-        lut_table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
+        if divergent:
+            N4 = np.full(4, n_colors / 4, dtype=int)
+            N4[:np.mod(n_colors, 4)] += 1
+            assert N4.sum() == n_colors
+            lut_table[:, -1] = np.r_[255 * np.ones(N4[0]), 
+                                     np.linspace(255, 0, N4[2]),
+                                     np.linspace(0, 255, N4[3]), 
+                                     255 * np.ones(N4[1])]
+        else:
+            n_colors2 = int(n_colors / 2)
+            lut_table[:n_colors2, -1] = np.linspace(0, 255, n_colors2)
+            lut_table[n_colors2:, -1] = 255 * np.ones(n_colors - n_colors2)
 
-    # Scale the colormap
-    lut_table_new = lut_table.copy()
-    n_colors = lut_table.shape[0]
-    n_colors2 = n_colors // 2
-
-    # Index of fmid in new colorbar
-    fmid_idx = int(np.round(n_colors * ((fmid - fmin) /
-                                        (fmax - fmin))) - 1)
-
-    # Go through channels
-    for i in range(4):
-        part1 = np.interp(np.linspace(0, n_colors2 - 1, fmid_idx + 1),
-                          np.arange(n_colors),
-                          lut_table[:, i])
-        lut_table_new[:fmid_idx + 1, i] = part1
-        part2 = np.interp(np.linspace(n_colors2, n_colors - 1,
-                                      n_colors - fmid_idx - 1),
-                          np.arange(n_colors),
-                          lut_table[:, i])
-        lut_table_new[fmid_idx + 1:, i] = part2
-
-    return lut_table_new
+    if divergent:
+        return np.r_[
+                _scale_sequential_lut(lut_table[:int(n_colors/2), :], 
+                                      2*fmin-fmax, 2*fmin-fmid, fmin), 
+                _scale_sequential_lut(lut_table[int(n_colors/2):, :], 
+                                      fmin, fmid, fmax)]
+    else:
+        return _scale_sequential_lut(lut_table, fmin, fmid, fmax)
 
 
 class _Hemisphere(object):

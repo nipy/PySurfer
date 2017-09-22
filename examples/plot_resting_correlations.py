@@ -46,14 +46,18 @@ for overlay in brain.overlays_dict["ang_corr_rh"]:
 We want to use an appropriate color map for these data: a divergent map that
 is centered on 0, which is a meaningful transition-point as it marks the change
 from negative correlations to positive correlations.
-
-We'll also plot the map with some transparency so that we can see through to
-the underlying anatomy.
 """
-brain.add_data(surf_data_lh, -.7, .7, colormap="vlag", alpha=.75,
-               hemi='lh')
-brain.add_data(surf_data_rh, -.7, .7, colormap="vlag", alpha=.75,
-               hemi='rh')
+brain.add_data(surf_data_lh, -.7, .7, colormap="vlag", hemi='lh')
+brain.add_data(surf_data_rh, -.7, .7, colormap="vlag", hemi='rh')
+
+"""
+You can make the small correlations transparent by re-scaling the colormap with
+transparency and letting the rescaler know that this is a divergent color map.
+In this case the first number gives the value that should be in the center of
+the colormap, the second determines which values will be transparent and the 
+third determines the left and right edges of the new colormap.
+"""
+brain.scale_data_colormap(0, .35, .7, transparent=True, divergent=True)
 
 """
 This overlay represents resting-state correlations with a
