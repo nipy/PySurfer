@@ -960,12 +960,14 @@ class Brain(object):
         self.overlays_dict[name] = ol
         self._toggle_render(True, views)
 
+    @verbose
     def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="RdBu_r", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d", colorbar=True,
                  hemi=None, remove_existing=False, time_label_size=14,
-                 initial_time=None, scale_factor=None, vector_alpha=None):
+                 initial_time=None, scale_factor=None, vector_alpha=None,
+                 verbose=None):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to
@@ -1030,6 +1032,8 @@ class Brain(object):
         vector_alpha : float | None
             alpha level to control opacity of the arrows. Only used for
             vector-valued data. If None (default), ``alpha`` is used.
+        verbose : bool, str, int, or None
+            If not None, override default verbose level (see surfer.verbose).
 
         Notes
         -----
