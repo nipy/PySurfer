@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# with '#' will be ignored, and an empty message aborts the commit.
 #
 # PySurfer documentation build configuration file, created by
 # sphinx-quickstart on Thu May 12 12:45:43 2011.
@@ -280,7 +281,7 @@ sphinx_gallery_conf = {
     'reference_url': {
         'surfer': None,
         'matplotlib': 'http://matplotlib.org',
-        'numpy': 'http://docs.scipy.org/doc/numpy/reference',
+        'numpy': 'http://docs.scipy.org/doc/numpy',
         'scipy': 'http://docs.scipy.org/doc/scipy/reference',
         'mayavi': 'http://docs.enthought.com/mayavi/mayavi',
         },

@@ -10,6 +10,10 @@ Version 0.8
   custom colormaps that have been registered with matplotlib.
 - Added four new colormaps from ``seaborn``: ``rocket``, ``mako``, ``icefire``,
   and ``vlag``.
+- Terrain interaction is now possible via the ``interaction`` keyword argument.
+- An API reference page is now available.
+- Support is now provided for visualizing vector-valued (3 values per vertex)
+  data.
 
 Version 0.7
 -----------
@@ -73,7 +77,7 @@ Version 0.5
 - Made colormap specification in Brain.add_data and Brain.add_contour_overlay
   more flexible, with better defaults.
 - Brain.save_montage() can now produce 2d grids of views in addition to
-  horizontal and vertical arrangements. 
+  horizontal and vertical arrangements.
 - Fixed some installation issues and added explicit checks for dependencies
   on install.
 - Updated the installation docs with information about getting PySurfer
