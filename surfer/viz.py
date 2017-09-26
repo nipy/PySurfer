@@ -971,7 +971,7 @@ class Brain(object):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to
-        :meth:`surfer.viz.Brain.add_overlay`, but it displays
+        :meth:`surfer.Brain.add_overlay`, but it displays
         it with a single colormap. It offers more flexibility over the
         colormap, and provides a way to display four-dimensional data
         (i.e., a timecourse) or five-dimensional data (i.e., a
@@ -979,7 +979,7 @@ class Brain(object):
 
         .. note:: ``min`` sets the low end of the colormap, and is separate
                   from thresh (this is a different convention from
-                  :meth:`surfer.viz.Brain.add_overlay`).
+                  :meth:`surfer.Brain.add_overlay`).
 
         Parameters
         ----------
@@ -1190,7 +1190,7 @@ class Brain(object):
             hemisphere, i.e. ``annot=(labels, ctab)`` for a single hemisphere
             or ``annot=((lh_labels, lh_ctab), (rh_labels, rh_ctab))`` for both
             hemispheres. ``labels`` and ``ctab`` should be arrays as returned
-            by :func:`nibabel.freesurfer.read_annot`.
+            by :func:`nibabel.freesurfer.io.read_annot`.
         borders : bool | int
             Show only label borders. If int, specify the number of steps
             (away from the true border) along the cortical mesh to include

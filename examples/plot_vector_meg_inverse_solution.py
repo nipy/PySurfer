@@ -13,7 +13,6 @@ from surfer.io import read_stc
 
 print(__doc__)
 
-###############################################################################
 # Do some basic things: define subject, surface and hemisphere(s) to plot,
 # and create the :class:`surfer.viz.Brain` object.
 
@@ -22,8 +21,6 @@ hemi = 'lh'
 brain = Brain(subject_id, hemi, surf, size=(800, 800), interaction='terrain',
               cortex='0.5', alpha=0.5, show_toolbar=True)
 
-
-###############################################################################
 # Read the MNE dSPM inverse solution
 
 hemi = 'lh'
@@ -37,14 +34,12 @@ vertices = stc['vertices']
 time = np.linspace(stc['tmin'], stc['tmin'] + data.shape[1] * stc['tstep'],
                    data.shape[1], endpoint=False)
 
-###############################################################################
 # MNE will soon add the option for a "full" inverse to be computed and stored.
 # In the meantime, we can get the equivalent for our data based on the
 # surface normals:
 
 data_full = brain.geo['lh'].nn[vertices][..., np.newaxis] * data[:, np.newaxis]
 
-###############################################################################
 # Now we add the data and set the initial time displayed to 100 ms:
 brain.add_data(data_full, colormap='hot', vertices=vertices, alpha=0.5,
                smoothing_steps=5, time=time, hemi=hemi, initial_time=0.1,
