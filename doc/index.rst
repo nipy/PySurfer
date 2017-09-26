@@ -23,8 +23,8 @@ More Information
 Authors
 -------
 
-- Michael Waskom, Stanford University
-- Alexandre Gramfort, Telecom ParisTech - CNRS, CEA - Neurospin
+- Michael Waskom, New-York University (NYU)
+- Alexandre Gramfort, Inria, CEA - Neurospin
 - Scott Burns, Vanderbilt University
 - Martin Luessi, Harvard Medical School MGH Martinos Center
 - Eric Larson, University of Washington ILABS
