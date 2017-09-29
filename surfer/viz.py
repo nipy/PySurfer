@@ -2813,14 +2813,33 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
         n_fill = int(round(fmin * n_colors2 / (fmax-fmin))) * 2
         fillcol = lut_table[n_colors2, :].copy()
         fillcol[-1] = 0
-        return np.r_[
+        lut_table = np.r_[
                 _scale_sequential_lut(lut_table[:n_colors2, :], 
                                       center-fmax, center-fmid, center-fmin), 
                 np.tile(fillcol, (n_fill, 1)),
                 _scale_sequential_lut(lut_table[n_colors2:, :], 
                                       center+fmin, center+fmid, center+fmax)]
     else:
-        return _scale_sequential_lut(lut_table, fmin, fmid, fmax)
+        lut_table = _scale_sequential_lut(lut_table, fmin, fmid, fmax)
+        
+    # rescale to 256 colors; this is necessary, because Mayavi/VTK does not 
+    # handle a change in the number of colors well: when you change from a long
+    # table to a short table, values beyond the table value range get somehow
+    # not mapped to the colors defined by the table edges; it may be that this
+    # is due to improper setting of the number of table values / colors in the
+    # underlying VTK lookup table, or mapper, but I couldn't figure out where
+    # exactly the fault lies, so simply stick with the constant table size
+    n_colors = lut_table.shape[0]
+    if n_colors != 256:
+        lut = np.zeros((256, 4))
+        x = np.linspace(1, n_colors, 256)
+        for chan in range(4):
+            lut[:, chan] = np.interp(x, 
+                                     np.arange(1, n_colors+1),
+                                     lut_table[:, chan])
+        lut_table = lut
+        
+    return lut_table
 
 
 class _Hemisphere(object):
