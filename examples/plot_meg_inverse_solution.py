@@ -64,12 +64,13 @@ for hemi in ['lh']:  # , 'rh']:
     """
     brain.add_data(data, colormap=colormap, vertices=vertices,
                    smoothing_steps=5, time=time, time_label=time_label,
-                   hemi=hemi, initial_time=0.1)
+                   hemi=hemi, initial_time=0.1, verbose=False)
 
 """
 scale colormap
 """
-brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
+brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True,
+                          verbose=False)
 
 """
 To change the time displayed to 80 ms uncomment this line

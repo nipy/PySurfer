@@ -43,9 +43,10 @@ data_full = brain.geo['lh'].nn[vertices][..., np.newaxis] * data[:, np.newaxis]
 # Now we add the data and set the initial time displayed to 100 ms:
 brain.add_data(data_full, colormap='hot', vertices=vertices, alpha=0.5,
                smoothing_steps=5, time=time, hemi=hemi, initial_time=0.1,
-               vector_alpha=0.5)
+               vector_alpha=0.5, verbose=False)
 
 # scale colormap
-brain.scale_data_colormap(fmin=7, fmid=14, fmax=21, transparent=True)
+brain.scale_data_colormap(fmin=7, fmid=14, fmax=21, transparent=True,
+                          verbose=False)
 
 # viewer = TimeViewer(brain)
