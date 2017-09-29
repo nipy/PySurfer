@@ -43,7 +43,7 @@ dependencies:
       else
         echo "Conda env already set up.";
       fi;
-    - conda install -n circleenv --yes numpy scipy matplotlib sphinx pillow six mayavi;
+    - conda install -n circleenv --yes numpy scipy matplotlib sphinx pillow six mayavi vtk;
     - ls -al /home/ubuntu/miniconda;
     - ls -al /home/ubuntu/miniconda/bin;
     - echo $PATH;
@@ -51,7 +51,7 @@ dependencies:
     - which python;
     - which pip;
     - cat /home/ubuntu/miniconda/envs/circleenv/lib/python2.7/site.py | grep "ENABLE_USER_SITE"
-    - pip install --upgrade pyface git+https://github.com/sphinx-gallery/sphinx-gallery.git sphinx_bootstrap_theme numpydoc;
+    - pip install --upgrade pyface git+https://github.com/sphinx-gallery/sphinx-gallery.git sphinx_bootstrap_theme numpydoc nibabel;
 
   override:
     - cd /home/ubuntu/PySurfer && python setup.py develop;
