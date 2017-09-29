@@ -45,25 +45,26 @@ for overlay in brain.overlays_dict["ang_corr_rh"]:
 """
 We want to use an appropriate color map for these data: a divergent map that
 is centered on 0, which is a meaningful transition-point as it marks the change
-from negative correlations to positive correlations.
+from negative correlations to positive correlations. By providing the 'center'
+argument the add_data function automatically chooses a divergent colormap.
 """
-brain.add_data(surf_data_lh, -.7, .7, colormap="vlag", hemi='lh')
-brain.add_data(surf_data_rh, -.7, .7, colormap="vlag", hemi='rh')
+brain.add_data(surf_data_lh, 0, .7, center=0, hemi='lh')
+brain.add_data(surf_data_rh, 0, .7, center=0, hemi='rh')
 
 """
-You can make the small correlations transparent by re-scaling the colormap with
-transparency and letting the rescaler know that this is a divergent color map.
-In this case the first number gives the value that should be in the center of
-the colormap, the second determines which values will be transparent and the 
-third determines the left and right edges of the new colormap.
+You can tune the data display by shifting the colormap around interesting
+regions. For example, you can ignore small correlation up to a magnitude of 0.2
+and let colors become gradually less transparent from 0.2 to 0.5 by re-scaling
+the colormap as follows. For more information see the help string of this 
+function.
 """
-brain.scale_data_colormap(0, .35, .7, transparent=True, divergent=True)
+brain.scale_data_colormap(.2, .5, .7, transparent=True, center=0)
 
 """
 You can also set the overall opacity of the displayed data while maintaining
 the transparency of the small values.
 """
-brain.scale_data_colormap(0, .35, .7, transparent=True, divergent=True, 
+brain.scale_data_colormap(0, .35, .7, transparent=True, center=0, 
                           alpha=0.75)
 
 """
