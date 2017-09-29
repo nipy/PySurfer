@@ -959,9 +959,10 @@ class Brain(object):
         self.overlays_dict[name] = ol
         self._toggle_render(True, views)
 
-    @verbose
-    def add_data(self, array, min=None, max=None, thresh=None,
-                 colormap="RdBu_r", alpha=1,
+    	@verbose
+		def add_data(self, array, min=None, max=None, mid=None, 
+                 thresh=None, center=None, transparent=False, 
+                 colormap="auto", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d", colorbar=True,
                  hemi=None, remove_existing=False, time_label_size=14,
@@ -993,12 +994,22 @@ class Brain(object):
             min value in colormap (uses real min if None)
         max : float
             max value in colormap (uses real max if None)
+        mid : float
+            intermediate value in colormap (middle between min and max if None)
         thresh : None or float
             if not None, values below thresh will not be visible
+        center : float or None
+            if not None, center of a divergent colormap, changes the meaning of
+            min, max and mid, see ``scale_data_colormap`` for further info
+        transparent : bool
+            whether colors from mid to min should become increasingly 
+            transparent
         colormap : string, list of colors, or array
             name of matplotlib colormap to use, a list of matplotlib colors,
             or a custom look up table (an n x 4 array coded with RBGA values
-            between 0 and 255).
+            between 0 and 255), the default "auto" chooses a default divergent 
+            colormap, if "center" is given, otherwise a default sequential 
+            colormap.
         alpha : float in [0, 1]
             alpha level to control opacity of the overlay.
         vertices : numpy array
@@ -1049,11 +1060,18 @@ class Brain(object):
         hemi = self._check_hemi(hemi)
         array = np.asarray(array)
 
-        if min is None:
-            min = array.min() if array.size > 0 else 0
-        if max is None:
-            max = array.max() if array.size > 0 else 0
-        mid = (min + max) / 2.
+        if center is None:
+            if min is None:
+                min = array.min() if array.size > 0 else 0
+            if max is None:
+                max = array.max() if array.size > 0 else 0
+        else:
+            if min is None:
+                min = 0
+            if max is None:
+                max = np.abs(center - array).max() if array.size > 0 else 0
+        if mid is None:
+            mid = (min + max) / 2.
 
         # Create smoothing matrix if necessary
         if len(array) < self.geo[hemi].x.shape[0]:
@@ -1086,7 +1104,7 @@ class Brain(object):
                              'got (%s)' % (array.ndim,))
 
         # Process colormap argument into a lut
-        lut = create_color_lut(colormap)
+        lut = create_color_lut(colormap, center=center)
         colormap = "Greys"
 
         # determine unique data layer ID
@@ -1097,7 +1115,8 @@ class Brain(object):
             layer_id = 0
 
         data = dict(array=array, smoothing_steps=smoothing_steps,
-                    fmin=min, fmid=mid, fmax=max, scale_factor=scale_factor,
+                    fmin=min, fmid=mid, fmax=max, center=center, 
+                    scale_factor=scale_factor,
                     transparent=False, time=0, time_idx=0,
                     vertices=vertices, smooth_mat=smooth_mat,
                     layer_id=layer_id, magnitude=magnitude)
@@ -1170,8 +1189,10 @@ class Brain(object):
         data['colorbars'] = bars
         data['orig_ctable'] = ct
         data['glyphs'] = glyphs
-
+        
         self._data_dicts[hemi].append(data)
+
+        self.scale_data_colormap(min, mid, max, transparent, center, alpha)
 
         if initial_time_index is not None:
             self.set_data_time_index(initial_time_index)
@@ -1189,7 +1210,7 @@ class Brain(object):
             hemisphere, i.e. ``annot=(labels, ctab)`` for a single hemisphere
             or ``annot=((lh_labels, lh_ctab), (rh_labels, rh_ctab))`` for both
             hemispheres. ``labels`` and ``ctab`` should be arrays as returned
-            by :func:`nibabel.freesurfer.io.read_annot`.
+            by :func:`nibabel.freesurfer.read_annot`.
         borders : bool | int
             Show only label borders. If int, specify the number of steps
             (away from the true border) along the cortical mesh to include
@@ -1838,29 +1859,49 @@ class Brain(object):
 
     @verbose
     def scale_data_colormap(self, fmin, fmid, fmax, transparent, 
-                            divergent=False, alpha=1.0, verbose=None):
+                            center=None, alpha=1.0, verbose=None):
         """Scale the data colormap.
+        
+        The colormap may be sequential or divergent. When the colormap is 
+        divergent indicate this by providing a value for 'center'. The 
+        meanings of fmin, fmid and fmax are different for sequential and 
+        divergent colormaps. For sequential colormaps the colormap is 
+        characterised by:
+            
+            [fmin, fmid, fmax]
+        
+        where fmin and fmax define the edges of the colormap and fmid will be
+        the value mapped to the center of the originally chosen colormap. For
+        divergent colormaps the colormap is characterised by
+            
+            [center-fmax, center-fmid, center-fmin, center, 
+             center+fmin, center+fmid, center+fmax]
+        
+        i.e., values between center-fmin and center+fmin will not be shown 
+        while center-fmid will map to the middle of the first half of the 
+        original colormap and center-fmid to the middle of the second half.
 
         Parameters
         ----------
         fmin : float
-            minimum value of colormap
+            minimum value for colormap
         fmid : float
             value corresponding to color midpoint
         fmax : float
             maximum value for colormap
         transparent : boolean
-            if True: use a linear transparency between fmin and fmid
-        divergent : boolean
-            if True: fmin becomes the center value of the colormap and its 
-            edges are fmax-fmin to the left and right of fmin, same for fmid; 
-            if transparency is on, the center of the colormap will be 
-            transparent
+            if True: use a linear transparency between fmin and fmid, or 
+            between center-fmin to center-fmid and center+fmin to center+fmid
+        center : float
+            if not None, gives the data value that should be mapped to the 
+            center of the (divergent) colormap
         alpha : float
             sets the overall opacity of colors, maintains transparent regions
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
         """
+        divergent = center is not None
+
         # Get the original colormap
         for h in ['lh', 'rh']:
             data = self.data_dict[h]
@@ -1869,7 +1910,7 @@ class Brain(object):
                 break
 
         lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent, 
-                                divergent, alpha)
+                                center, alpha)
 
         views = self._toggle_render(False)
         # Use the new colormap
@@ -1880,12 +1921,12 @@ class Brain(object):
                     cmap = surf.module_manager.scalar_lut_manager
                     cmap.load_lut_from_list(lut / 255.)
                     if divergent:
-                        cmap.data_range = np.array([2*fmin-fmax, fmax])
+                        cmap.data_range = np.array([center-fmax, center+fmax])
                     else:
                         cmap.data_range = np.array([fmin, fmax])
 
                 # Update the data properties
-                data.update(fmin=fmin, fmid=fmid, fmax=fmax,
+                data.update(fmin=fmin, fmid=fmid, fmax=fmax, center=center,
                             transparent=transparent)
                 # And the hemisphere properties to match
                 for glyph in data['glyphs']:
@@ -1893,7 +1934,8 @@ class Brain(object):
                         l_m = glyph.parent.vector_lut_manager
                         l_m.load_lut_from_list(lut / 255.)
                         if divergent:
-                            l_m.data_range = np.array([2*fmin-fmax, fmax])
+                            l_m.data_range = np.array(
+                                    [center-fmax, center+fmax])
                         else:
                             l_m.data_range = np.array([fmin, fmax])
         self._toggle_render(True, views)
@@ -2682,12 +2724,15 @@ def _scale_sequential_lut(lut_table, fmin, fmid, fmax):
 
 @verbose
 def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
-                      divergent=False, alpha=1.0, verbose=None):
+                      center=None, alpha=1.0, verbose=None):
     """Scale a mayavi colormap LUT to a given fmin, fmid and fmax.
 
     This function operates on a Mayavi LUTManager. This manager can be obtained
     through the traits interface of mayavi. For example:
     ``x.module_manager.vector_lut_manager``.
+    
+    Divergent colormaps are respected, if ``center`` is given, see 
+    ``Brain.scale_data_colormap`` for more info.
 
     Parameters
     ----------
@@ -2701,10 +2746,9 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
         maximum value for colormap.
     transparent : boolean
         if True: use a linear transparency between fmin and fmid.
-    divergent : boolean
-        if True: fmin becomes the center value of the colormap and its edges
-        are fmax-fmin to the left and right of fmin, same for fmid; if 
-        transparency is on, the center of the colormap will be transparent
+    center : float
+        gives the data value that should be mapped to the center of the 
+        (divergent) colormap
     alpha : float
         sets the overall opacity of colors, maintains transparent regions
     verbose : bool, str, int, or None
@@ -2725,9 +2769,16 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
     fmid = float(fmid)
     fmax = float(fmax)
 
-    logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
-                "transparent=%d divergent=%d" % (fmin, fmid, fmax, transparent,
-                                                 divergent))
+    divergent = center is not None
+
+    if divergent:
+        logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
+                    "transparent=%d center=%d" % (fmin, fmid, fmax, transparent,
+                                                  center))
+    else:
+        logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
+                    "transparent=%d center=None" % (fmin, fmid, fmax, 
+                                                    transparent))
 
     n_colors = lut_table.shape[0]
 
@@ -2751,11 +2802,23 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
         lut_table[:, -1] = lut_table[:, -1] * alpha
 
     if divergent:
+        # the colormap should consist of 3 parts: a left part for the negative
+        # data, a right part for the positive data and a middle, fill part
+        # representing the values in [center-fmin, center+fmin], we 
+        # introduce this middle part by extending the number of 'colors' of the 
+        # original colormap because the Mayavi lut manager scales linearly
+        # between colors and we don't want to reduce the color resolution in 
+        # the interesting regions of data space
+        n_colors2 = int(n_colors / 2)
+        n_fill = int(round(fmin * n_colors2 / (fmax-fmin))) * 2
+        fillcol = lut_table[n_colors2, :].copy()
+        fillcol[-1] = 0
         return np.r_[
-                _scale_sequential_lut(lut_table[:int(n_colors/2), :], 
-                                      2*fmin-fmax, 2*fmin-fmid, fmin), 
-                _scale_sequential_lut(lut_table[int(n_colors/2):, :], 
-                                      fmin, fmid, fmax)]
+                _scale_sequential_lut(lut_table[:n_colors2, :], 
+                                      center-fmax, center-fmid, center-fmin), 
+                np.tile(fillcol, (n_fill, 1)),
+                _scale_sequential_lut(lut_table[n_colors2:, :], 
+                                      center+fmin, center+fmid, center+fmax)]
     else:
         return _scale_sequential_lut(lut_table, fmin, fmid, fmax)
 
@@ -3329,6 +3392,7 @@ class TimeViewer(HasTraits):
         self.fmid = props["fmid"]
         self.fmax = props["fmax"]
         self.transparent = props["transparent"]
+        self.center = props["center"]
         if props["smoothing_steps"] is None:
             self.smoothing_steps = -1
         else:
@@ -3388,4 +3452,4 @@ class TimeViewer(HasTraits):
 
         for brain in self.brains:
             brain.scale_data_colormap(self.fmin, self.fmid, self.fmax,
-                                      self.transparent)
+                                      self.transparent, self.center)
