@@ -500,6 +500,8 @@ def create_color_lut(cmap, n_colors=256, center=None):
 
             return lut
 
+    # choose default colormaps (REMEMBER to change doc, e.g., in 
+    # Brain.add_data, when changing these defaults)
     if isinstance(cmap, string_types) and cmap == "auto":
         if center is None:
             cmap = "rocket"

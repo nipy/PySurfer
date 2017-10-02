@@ -959,15 +959,14 @@ class Brain(object):
         self.overlays_dict[name] = ol
         self._toggle_render(True, views)
 
-    	@verbose
-		def add_data(self, array, min=None, max=None, mid=None, 
-                 thresh=None, center=None, transparent=False, 
+    @verbose
+	def add_data(self, array, min=None, max=None, thresh=None, 
                  colormap="auto", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d", colorbar=True,
                  hemi=None, remove_existing=False, time_label_size=14,
-                 initial_time=None, scale_factor=None, vector_alpha=None,
-                 verbose=None):
+                 initial_time=None, scale_factor=None, vector_alpha=None, 
+                 mid=None, center=None, transparent=False, verbose=None):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to
@@ -992,10 +991,10 @@ class Brain(object):
             and pass ``time_label=None``.
         min : float
             min value in colormap (uses real min if None)
-        max : float
-            max value in colormap (uses real max if None)
         mid : float
             intermediate value in colormap (middle between min and max if None)
+        max : float
+            max value in colormap (uses real max if None)
         thresh : None or float
             if not None, values below thresh will not be visible
         center : float or None
@@ -1008,8 +1007,8 @@ class Brain(object):
             name of matplotlib colormap to use, a list of matplotlib colors,
             or a custom look up table (an n x 4 array coded with RBGA values
             between 0 and 255), the default "auto" chooses a default divergent 
-            colormap, if "center" is given, otherwise a default sequential 
-            colormap.
+            colormap, if "center" is given (currently "icefire"), otherwise a 
+            default sequential colormap (currently "rocket").
         alpha : float in [0, 1]
             alpha level to control opacity of the overlay.
         vertices : numpy array
@@ -1042,8 +1041,6 @@ class Brain(object):
         vector_alpha : float | None
             alpha level to control opacity of the arrows. Only used for
             vector-valued data. If None (default), ``alpha`` is used.
-        verbose : bool, str, int, or None
-            If not None, override default verbose level (see surfer.verbose).
 
         Notes
         -----
@@ -1866,13 +1863,13 @@ class Brain(object):
         divergent indicate this by providing a value for 'center'. The 
         meanings of fmin, fmid and fmax are different for sequential and 
         divergent colormaps. For sequential colormaps the colormap is 
-        characterised by:
+        characterised by::
             
             [fmin, fmid, fmax]
         
         where fmin and fmax define the edges of the colormap and fmid will be
         the value mapped to the center of the originally chosen colormap. For
-        divergent colormaps the colormap is characterised by
+        divergent colormaps the colormap is characterised by::
             
             [center-fmax, center-fmid, center-fmin, center, 
              center+fmin, center+fmid, center+fmax]
@@ -1890,8 +1887,8 @@ class Brain(object):
         fmax : float
             maximum value for colormap
         transparent : boolean
-            if True: use a linear transparency between fmin and fmid, or 
-            between center-fmin to center-fmid and center+fmin to center+fmid
+            if True: use a linear transparency between fmin and fmid
+            (symmetrically for divergent colormaps)
         center : float
             if not None, gives the data value that should be mapped to the 
             center of the (divergent) colormap
@@ -2761,7 +2758,7 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
     """
     if not (fmin < fmid) and (fmid < fmax):
         raise ValueError("Invalid colormap, we need fmin<fmid<fmax")
-    if not (alpha >= 0) and (alpha <= 1):
+    if not 0 <= alpha <= 1:
         raise ValueError("Invalid alpha: it needs to be within [0, 1]")
 
     # Cast inputs to float to prevent integer division
