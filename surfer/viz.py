@@ -960,7 +960,7 @@ class Brain(object):
         self._toggle_render(True, views)
 
     @verbose
-	def add_data(self, array, min=None, max=None, thresh=None, 
+    def add_data(self, array, min=None, max=None, thresh=None, 
                  colormap="auto", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d", colorbar=True,
