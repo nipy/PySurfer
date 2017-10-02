@@ -1,0 +1,76 @@
+machine:
+  environment:
+    # We need to set this variable to let Anaconda take precedence
+    PATH: "/home/ubuntu/miniconda/envs/circleenv/bin:/home/ubuntu/miniconda/bin:$PATH"
+    DISPLAY: ":99.0"
+    SUBJECTS_DIR: "/home/ubuntu/subjects"
+
+# We should really build merged versions like on Travis, not the individual branches
+# Adapted from:
+# https://gist.github.com/amacneil/f14db753919e0af2d7d2f5a8da7fce65
+checkout:
+  post:
+    - echo $(git log -1 --pretty=%B) > gitlog.txt
+    - echo ${CI_PULL_REQUEST//*pull\//} > merge.txt
+    - if [[ $(cat merge.txt) != "" ]]; then
+        echo "Merging $(cat merge.txt)";
+        git pull --ff-only origin "refs/pull/$(cat merge.txt)/merge";
+      fi
+
+dependencies:
+  cache_directories:
+    - "~/miniconda"
+    - "~/subjects"
+  # Various dependencies
+  pre:
+    # Get a running Python
+    - cd ~;
+    # Disable pyenv (no cleaner way provided by CircleCI as it prepends pyenv version to PATH)
+    - rm -rf ~/.pyenv;
+    - rm -rf ~/virtualenvs;
+    # Get Anaconda and conda-based requirements
+    - >
+      if [ ! -d "/home/ubuntu/miniconda" ]; then
+        echo "Setting up conda";
+        wget -q http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O ~/miniconda.sh;
+        chmod +x ~/miniconda.sh;
+        ~/miniconda.sh -b -p /home/ubuntu/miniconda;
+        conda update --yes --quiet conda;
+      else
+        echo "Conda already set up.";
+      fi
+    - if ! conda env list | grep circleenv; then
+        conda create -n circleenv --yes pip python=2.7 pip;
+        sed -i "s/ENABLE_USER_SITE = .*/ENABLE_USER_SITE = False/g" /home/ubuntu/miniconda/envs/circleenv/lib/python2.7/site.py;
+      else
+        echo "Conda env already set up.";
+      fi;
+    - conda install -n circleenv --yes numpy scipy matplotlib sphinx pillow six mayavi=4.4 vtk;
+    - ls -al /home/ubuntu/miniconda;
+    - ls -al /home/ubuntu/miniconda/bin;
+    - echo $PATH;
+    - echo $CIRCLE_BRANCH
+    - which python;
+    - which pip;
+    - cat /home/ubuntu/miniconda/envs/circleenv/lib/python2.7/site.py | grep "ENABLE_USER_SITE"
+    - pip install --upgrade pyface git+https://github.com/sphinx-gallery/sphinx-gallery.git sphinx_bootstrap_theme numpydoc nibabel;
+    - if [ ! -d $SUBJECTS_DIR ]; then
+        mkdir $SUBJECTS_DIR;
+        cd $SUBJECTS_DIR;
+        wget http://faculty.washington.edu/larsoner/fsaverage_min.zip;
+        unzip fsaverage_min.zip;
+        rm fsaverage_min.zip;
+      fi
+    - ls -al $SUBJECTS_DIR
+
+  override:
+    - cd /home/ubuntu/PySurfer && python setup.py develop;
+    - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset;
+
+test:
+  override:
+    # eventually this exclude list could be made *much* shorter by providing
+    # a more complete fsaverage
+    - cd doc && sphinx-build -D plot_gallery=1 -D sphinx_gallery_conf.filename_pattern=^\(\(?\!plot_fmri_activation_volume\|plot_morphometry\|plot_label\|plot_probabilistic_label\|plot_resting_correlations\|plot_transparent_brain\|rotate_animation\|save_movie\|save_views\).\)*\$ -b html -d _build/doctrees . _build/html
+  post:
+    - cp -a doc/_build/html $CIRCLE_ARTIFACTS/
