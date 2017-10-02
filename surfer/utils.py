@@ -482,6 +482,7 @@ def create_color_lut(cmap, n_colors=256, center=None):
     center : double, optional
         indicates whether desired colormap should be for divergent values, 
         currently only used to select default colormap for cmap='auto'
+        
     Returns
     -------
     lut : n_colors x 4 integer array
@@ -499,7 +500,7 @@ def create_color_lut(cmap, n_colors=256, center=None):
 
             return lut
 
-    if isinstance(cmap, string_types) and cmap=="auto":
+    if isinstance(cmap, string_types) and cmap == "auto":
         if center is None:
             cmap = "rocket"
         else:
