@@ -1,3 +1,4 @@
+import logging
 from math import floor
 import os
 from os.path import join as pjoin
@@ -17,13 +18,13 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 from traits.api import (HasTraits, Range, Int, Float,
                         Bool, Enum, on_trait_change, Instance)
 from tvtk.api import tvtk
+from pyface.api import GUI
 
 from . import utils, io
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
                     string_types, threshold_filter)
 
 
-import logging
 logger = logging.getLogger('surfer')
 
 
@@ -170,7 +171,7 @@ def _prepare_data(data):
     return data
 
 
-def _force_render(figures, backend):
+def _force_render(figures):
     """Ensure plots are updated before properties are used"""
     if not isinstance(figures, list):
         figures = [[figures]]
@@ -178,14 +179,12 @@ def _force_render(figures, backend):
         for f in ff:
             f.render()
             mlab.draw(figure=f)
-    if backend == 'TraitsUI':
-        from pyface.api import GUI
-        _gui = GUI()
-        orig_val = _gui.busy
-        _gui.set_busy(busy=True)
-        _gui.process_events()
-        _gui.set_busy(busy=orig_val)
-        _gui.process_events()
+    _gui = GUI()
+    orig_val = _gui.busy
+    _gui.set_busy(busy=True)
+    _gui.process_events()
+    _gui.set_busy(busy=orig_val)
+    _gui.process_events()
 
 
 def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
@@ -469,9 +468,9 @@ class Brain(object):
                     f.scene.foreground = self._fg_color
 
         # force rendering so scene.lights exists
-        _force_render(self._figures, self._window_backend)
+        _force_render(self._figures)
         self.toggle_toolbars(show_toolbar)
-        _force_render(self._figures, self._window_backend)
+        _force_render(self._figures)
         self._toggle_render(False)
 
         # fill figures with brains
@@ -555,7 +554,7 @@ class Brain(object):
                 _f.scene.camera.parallel_scale = view[1]
         # let's do the ugly force draw
         if state is True:
-            _force_render(self._figures, self._window_backend)
+            _force_render(self._figures)
         return views
 
     def _set_window_properties(self, size, background, foreground):
@@ -2612,7 +2611,7 @@ class Brain(object):
                     brain._f.scene.camera.azimuth(dv[0])
                     brain._f.scene.camera.elevation(dv[1])
                     brain._f.scene.renderer.reset_camera_clipping_range()
-                    _force_render([[brain._f]], self._window_backend)
+                    _force_render([[brain._f]])
                     if fname is not None:
                         if not (os.path.isfile(tmp_fname % i) and use_cache):
                             self.save_single_image(tmp_fname % i, row, col)
@@ -2764,7 +2763,7 @@ class _Hemisphere(object):
                 print(v)
                 raise
 
-        _force_render(self._f, self._backend)
+        _force_render(self._f)
         if view is not None:
             view['reset_roll'] = True
             view['figure'] = self._f
@@ -2774,7 +2773,7 @@ class _Hemisphere(object):
             mlab.view(**view)
         if roll is not None:
             mlab.roll(roll=roll, figure=self._f)
-        _force_render(self._f, self._backend)
+        _force_render(self._f)
 
         view = mlab.view(figure=self._f)
         roll = mlab.roll(figure=self._f)
