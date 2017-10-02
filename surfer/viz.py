@@ -2719,6 +2719,31 @@ def _scale_sequential_lut(lut_table, fmin, fmid, fmax):
     return lut_table_new
 
 
+def _choose_fill_color(cols):
+    """Chooses middle fill color for divergent colormaps.
+    
+    Tries to figure out whether there is a smooth transition in the center of
+    the colormap. If yes, it chooses the color in the center, else returns a
+    neutral color (middle gray).
+    """
+    steps = np.linalg.norm(np.diff(cols[:, :3].astype(float), axis=0), axis=1)
+    
+    # if there is a jump in the middle of the colors
+    # (define a jump as a step in 3D colorspace whose size is 3-times larger 
+    # than the mean step size between the first and last steps of the given
+    # colors - I verified that no such jumps exist in the divergent colormaps
+    # of matplotlib 2.0 which all have a smooth transition in the middle)
+    if np.any(steps[1:-1] > steps[[0, -1]].mean() * 3):
+        # choose a neutral gray
+        fillcol = np.r_[127, 127, 127, 0]
+    else:
+        # choose a color from the middle of the colormap
+        fillcol = cols[int(cols.shape[0] / 2), :].copy()
+        fillcol[-1] = 0
+        
+    return fillcol
+
+
 @verbose
 def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
                       center=None, alpha=1.0, verbose=None):
@@ -2808,12 +2833,12 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
         # the interesting regions of data space
         n_colors2 = int(n_colors / 2)
         n_fill = int(round(fmin * n_colors2 / (fmax-fmin))) * 2
-        fillcol = lut_table[n_colors2, :].copy()
-        fillcol[-1] = 0
         lut_table = np.r_[
                 _scale_sequential_lut(lut_table[:n_colors2, :], 
                                       center-fmax, center-fmid, center-fmin), 
-                np.tile(fillcol, (n_fill, 1)),
+                np.tile(_choose_fill_color(
+                        lut_table[n_colors2 - 3 : n_colors2 + 3, :]), 
+                        (n_fill, 1)),
                 _scale_sequential_lut(lut_table[n_colors2:, :], 
                                       center+fmin, center+fmid, center+fmax)]
     else:
