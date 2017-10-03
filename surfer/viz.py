@@ -1264,8 +1264,9 @@ class Brain(object):
                 cmap = np.vstack((cmap, np.zeros(5, int)))
 
             # Set label ids sensibly
-            ord = np.argsort(cmap[:, -1])
-            ids = ord[np.searchsorted(cmap[ord, -1], labels)]
+            order = np.argsort(cmap[:, -1])
+            cmap = cmap[order]
+            ids = np.searchsorted(cmap[:, -1], labels)
             cmap = cmap[:, :4]
 
             #  Set the alpha level
