@@ -1264,8 +1264,9 @@ class Brain(object):
                 cmap = np.vstack((cmap, np.zeros(5, int)))
 
             # Set label ids sensibly
-            ord = np.argsort(cmap[:, -1])
-            ids = ord[np.searchsorted(cmap[ord, -1], labels)]
+            order = np.argsort(cmap[:, -1])
+            cmap = cmap[order]
+            ids = np.searchsorted(cmap[:, -1], labels)
             cmap = cmap[:, :4]
 
             #  Set the alpha level
@@ -3014,6 +3015,7 @@ class _Hemisphere(object):
     def add_annotation(self, annot, ids, cmap):
         """Add an annotation file"""
         # Add scalar values to dataset
+        print(ids)
         array_id, pipe = self._add_scalar_data(ids)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(pipe, name=annot, figure=self._f)
