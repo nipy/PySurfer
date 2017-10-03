@@ -3015,7 +3015,6 @@ class _Hemisphere(object):
     def add_annotation(self, annot, ids, cmap):
         """Add an annotation file"""
         # Add scalar values to dataset
-        print(ids)
         array_id, pipe = self._add_scalar_data(ids)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(pipe, name=annot, figure=self._f)
