@@ -36,9 +36,8 @@ VERSION = version
 
 
 def check_dependencies():
-    needed_deps = ["numpy", "scipy", "matplotlib",
-                   "mayavi",
-                   ]
+    # nibabel and mayavi are in install_requires
+    needed_deps = ["numpy", "scipy", "matplotlib"]
     missing_deps = []
     for dep in needed_deps:
         try:
@@ -92,6 +91,6 @@ if __name__ == "__main__":
           platforms='any',
           packages=['surfer', 'surfer.tests'],
           scripts=['bin/pysurfer'],
-          install_requires=['nibabel >= 1.2'],
+          install_requires=['nibabel >= 1.2', 'mayavi'],
           extras_require={'save_movie': ['imageio >= 1.5']},
           )
