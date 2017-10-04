@@ -36,9 +36,8 @@ VERSION = version
 
 
 def check_dependencies():
-    needed_deps = ["numpy", "scipy", "matplotlib",
-                   "mayavi",
-                   ]
+    # nibabel and mayavi are in install_requires
+    needed_deps = ["numpy", "scipy", "matplotlib"]
     missing_deps = []
     for dep in needed_deps:
         try:
