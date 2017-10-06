@@ -2807,14 +2807,13 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
 
     divergent = center is not None
 
+    trstr = ['(opaque)', '(transparent)']
     if divergent:
-        logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
-                    "transparent=%d center=%d" % (fmin, fmid, fmax, transparent,
-                                                  center))
+        logger.info("colormap divergent: center=%0.2e, [%0.2e, %0.2e, %0.2e] %s"
+                    % (center, fmin, fmid, fmax, trstr[transparent]))
     else:
-        logger.info("colormap: fmin=%0.2e fmid=%0.2e fmax=%0.2e "
-                    "transparent=%d center=None" % (fmin, fmid, fmax, 
-                                                    transparent))
+        logger.info("colormap sequential: [%0.2e, %0.2e, %0.2e] %s" 
+                    % (fmin, fmid, fmax, trstr[transparent]))
 
     n_colors = lut_table.shape[0]
 
