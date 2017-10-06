@@ -1945,14 +1945,15 @@ class Brain(object):
                             l_m.data_range = np.array([fmin, fmax])
 
                 # Update the colorbar to deal with transparency
+                bgcolor = np.mean(self._brain_list[0]['brain']._geo_surf
+                                  .module_manager.scalar_lut_manager
+                                  .lut.table.to_array(), axis=0)
                 cbar_lut = tvtk.LookupTable()
                 cbar_lut.deep_copy(surf.module_manager.scalar_lut_manager.lut)
-                vals = lut / 255.
-                alphas = vals[:, -1][:, np.newaxis]
-                vals = (vals * alphas) + 0.5 * (1 - alphas)
-                vals[:, -1] = 1.
-                for ii in range(256):
-                    cbar_lut.set_table_value(ii, vals[ii])
+                alphas = lut[:, -1][:, np.newaxis] / 255.
+                vals = (lut * alphas) + bgcolor * (1 - alphas)
+                vals[:, -1] = 255.
+                cbar_lut.table.from_array(vals)
                 surf.module_manager.scalar_lut_manager.scalar_bar.lookup_table = cbar_lut  # noqa: E501
 
         self._toggle_render(True, views)
