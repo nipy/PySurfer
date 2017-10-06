@@ -960,12 +960,12 @@ class Brain(object):
         self._toggle_render(True, views)
 
     @verbose
-    def add_data(self, array, min=None, max=None, thresh=None, 
+    def add_data(self, array, min=None, max=None, thresh=None,
                  colormap="auto", alpha=1,
                  vertices=None, smoothing_steps=20, time=None,
                  time_label="time index=%d", colorbar=True,
                  hemi=None, remove_existing=False, time_label_size=14,
-                 initial_time=None, scale_factor=None, vector_alpha=None, 
+                 initial_time=None, scale_factor=None, vector_alpha=None,
                  mid=None, center=None, transparent=False, verbose=None):
         """Display data from a numpy array on the surface.
 
@@ -1002,13 +1002,13 @@ class Brain(object):
             min, max and mid, see :meth:`scale_data_colormap` for further info.
         transparent : bool
             if True: use a linear transparency between fmin and fmid and make
-            values below fmin fully transparent (symmetrically for divergent 
+            values below fmin fully transparent (symmetrically for divergent
             colormaps)
         colormap : string, list of colors, or array
             name of matplotlib colormap to use, a list of matplotlib colors,
             or a custom look up table (an n x 4 array coded with RBGA values
-            between 0 and 255), the default "auto" chooses a default divergent 
-            colormap, if "center" is given (currently "icefire"), otherwise a 
+            between 0 and 255), the default "auto" chooses a default divergent
+            colormap, if "center" is given (currently "icefire"), otherwise a
             default sequential colormap (currently "rocket").
         alpha : float in [0, 1]
             alpha level to control opacity of the overlay.
@@ -1113,7 +1113,7 @@ class Brain(object):
             layer_id = 0
 
         data = dict(array=array, smoothing_steps=smoothing_steps,
-                    fmin=min, fmid=mid, fmax=max, center=center, 
+                    fmin=min, fmid=mid, fmax=max, center=center,
                     scale_factor=scale_factor,
                     transparent=False, time=0, time_idx=0,
                     vertices=vertices, smooth_mat=smooth_mat,
@@ -1187,7 +1187,7 @@ class Brain(object):
         data['colorbars'] = bars
         data['orig_ctable'] = ct
         data['glyphs'] = glyphs
-        
+
         self._data_dicts[hemi].append(data)
 
         self.scale_data_colormap(min, mid, max, transparent, center, alpha)
@@ -1856,27 +1856,27 @@ class Brain(object):
                 brain._f.scene.reset_zoom()
 
     @verbose
-    def scale_data_colormap(self, fmin, fmid, fmax, transparent, 
+    def scale_data_colormap(self, fmin, fmid, fmax, transparent,
                             center=None, alpha=1.0, verbose=None):
         """Scale the data colormap.
-        
-        The colormap may be sequential or divergent. When the colormap is 
-        divergent indicate this by providing a value for 'center'. The 
-        meanings of fmin, fmid and fmax are different for sequential and 
-        divergent colormaps. For sequential colormaps the colormap is 
+
+        The colormap may be sequential or divergent. When the colormap is
+        divergent indicate this by providing a value for 'center'. The
+        meanings of fmin, fmid and fmax are different for sequential and
+        divergent colormaps. For sequential colormaps the colormap is
         characterised by::
-            
+
             [fmin, fmid, fmax]
-        
+
         where fmin and fmax define the edges of the colormap and fmid will be
         the value mapped to the center of the originally chosen colormap. For
         divergent colormaps the colormap is characterised by::
-            
-            [center-fmax, center-fmid, center-fmin, center, 
+
+            [center-fmax, center-fmid, center-fmin, center,
              center+fmin, center+fmid, center+fmax]
-        
-        i.e., values between center-fmin and center+fmin will not be shown 
-        while center-fmid will map to the middle of the first half of the 
+
+        i.e., values between center-fmin and center+fmin will not be shown
+        while center-fmid will map to the middle of the first half of the
         original colormap and center-fmid to the middle of the second half.
 
         Parameters
@@ -1889,10 +1889,10 @@ class Brain(object):
             maximum value for colormap
         transparent : boolean
             if True: use a linear transparency between fmin and fmid and make
-            values below fmin fully transparent (symmetrically for divergent 
+            values below fmin fully transparent (symmetrically for divergent
             colormaps)
         center : float
-            if not None, gives the data value that should be mapped to the 
+            if not None, gives the data value that should be mapped to the
             center of the (divergent) colormap
         alpha : float
             sets the overall opacity of colors, maintains transparent regions
@@ -1908,7 +1908,7 @@ class Brain(object):
                 table = data["orig_ctable"].copy()
                 break
 
-        lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent, 
+        lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent,
                                 center, alpha)
 
         views = self._toggle_render(False)
@@ -1923,7 +1923,7 @@ class Brain(object):
                         cmap.data_range = np.array([center-fmax, center+fmax])
                     else:
                         cmap.data_range = np.array([fmin, fmax])
-                        
+
                     # handle transparency of colorbar
                     if transparent:
                         cmap.scalar_bar.use_opacity = 1
@@ -1943,7 +1943,7 @@ class Brain(object):
                                     [center-fmax, center+fmax])
                         else:
                             l_m.data_range = np.array([fmin, fmax])
-                
+
                 # Update the colorbar to deal with transparency
                 cbar_lut = tvtk.LookupTable()
                 cbar_lut.deep_copy(surf.module_manager.scalar_lut_manager.lut)
@@ -1953,7 +1953,7 @@ class Brain(object):
                 vals[:, -1] = 1.
                 for ii in range(256):
                     cbar_lut.set_table_value(ii, vals[ii])
-                surf.module_manager.scalar_lut_manager.scalar_bar.lookup_table = cbar_lut  # noqa
+                surf.module_manager.scalar_lut_manager.scalar_bar.lookup_table = cbar_lut  # noqa: E501
 
         self._toggle_render(True, views)
 
@@ -2711,7 +2711,7 @@ class Brain(object):
 
 def _scale_sequential_lut(lut_table, fmin, fmid, fmax):
     """Scale a sequential colormap."""
-    
+
     lut_table_new = lut_table.copy()
     n_colors = lut_table.shape[0]
     n_colors2 = n_colors // 2
@@ -2722,8 +2722,8 @@ def _scale_sequential_lut(lut_table, fmin, fmid, fmax):
                                         (fmax - fmin))) - 1)
 
     # morph each color channel so that fmid gets assigned the middle color of
-    # the original table and the number of colors to the left and right are 
-    # stretched or squeezed such that they correspond to the distance of fmid 
+    # the original table and the number of colors to the left and right are
+    # stretched or squeezed such that they correspond to the distance of fmid
     # to fmin and fmax, respectively
     for i in range(4):
         part1 = np.interp(np.linspace(0, n_colors2 - 1, fmid_idx + 1),
@@ -2741,16 +2741,16 @@ def _scale_sequential_lut(lut_table, fmin, fmid, fmax):
 
 def _get_fill_colors(cols, n_fill):
     """Get the fill colors for the middle of divergent colormaps.
-    
+
     Tries to figure out whether there is a smooth transition in the center of
-    the original colormap. If yes, it chooses the color in the center as the 
+    the original colormap. If yes, it chooses the color in the center as the
     only fill color, else it chooses the two colors between which there is
     a large step in color space to fill up the middle of the new colormap.
     """
     steps = np.linalg.norm(np.diff(cols[:, :3].astype(float), axis=0), axis=1)
-    
+
     # if there is a jump in the middle of the colors
-    # (define a jump as a step in 3D colorspace whose size is 3-times larger 
+    # (define a jump as a step in 3D colorspace whose size is 3-times larger
     # than the mean step size between the first and last steps of the given
     # colors - I verified that no such jumps exist in the divergent colormaps
     # of matplotlib 2.0 which all have a smooth transition in the middle)
@@ -2763,7 +2763,7 @@ def _get_fill_colors(cols, n_fill):
     else:
         # choose a color from the middle of the colormap
         fillcols = np.tile(cols[int(cols.shape[0] / 2), :], (n_fill, 1))
-        
+
     return fillcols
 
 
@@ -2775,8 +2775,8 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
     This function operates on a Mayavi LUTManager. This manager can be obtained
     through the traits interface of mayavi. For example:
     ``x.module_manager.vector_lut_manager``.
-    
-    Divergent colormaps are respected, if ``center`` is given, see 
+
+    Divergent colormaps are respected, if ``center`` is given, see
     ``Brain.scale_data_colormap`` for more info.
 
     Parameters
@@ -2791,10 +2791,10 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
         maximum value for colormap.
     transparent : boolean
         if True: use a linear transparency between fmin and fmid and make
-        values below fmin fully transparent (symmetrically for divergent 
+        values below fmin fully transparent (symmetrically for divergent
         colormaps)
     center : float
-        gives the data value that should be mapped to the center of the 
+        gives the data value that should be mapped to the center of the
         (divergent) colormap
     alpha : float
         sets the overall opacity of colors, maintains transparent regions
@@ -2820,10 +2820,11 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
 
     trstr = ['(opaque)', '(transparent)']
     if divergent:
-        logger.info("colormap divergent: center=%0.2e, [%0.2e, %0.2e, %0.2e] %s"
-                    % (center, fmin, fmid, fmax, trstr[transparent]))
+        logger.info(
+            "colormap divergent: center=%0.2e, [%0.2e, %0.2e, %0.2e] %s"
+            % (center, fmin, fmid, fmax, trstr[transparent]))
     else:
-        logger.info("colormap sequential: [%0.2e, %0.2e, %0.2e] %s" 
+        logger.info("colormap sequential: [%0.2e, %0.2e, %0.2e] %s"
                     % (fmin, fmid, fmax, trstr[transparent]))
 
     n_colors = lut_table.shape[0]
@@ -2834,9 +2835,9 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
             N4 = np.full(4, n_colors / 4, dtype=int)
             N4[:np.mod(n_colors, 4)] += 1
             assert N4.sum() == n_colors
-            lut_table[:, -1] = np.r_[255 * np.ones(N4[0]), 
+            lut_table[:, -1] = np.r_[255 * np.ones(N4[0]),
                                      np.linspace(255, 0, N4[2]),
-                                     np.linspace(0, 255, N4[3]), 
+                                     np.linspace(0, 255, N4[3]),
                                      255 * np.ones(N4[1])]
         else:
             n_colors2 = int(n_colors / 2)
@@ -2850,24 +2851,24 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
     if divergent:
         # the colormap should consist of 3 parts: a left part for the negative
         # data, a right part for the positive data and a middle, fill part
-        # representing the values in [center-fmin, center+fmin], we 
-        # introduce this middle part by extending the number of 'colors' of the 
+        # representing the values in [center-fmin, center+fmin], we
+        # introduce this middle part by extending the number of 'colors' of the
         # original colormap because the Mayavi lut manager scales linearly
-        # between colors and we don't want to reduce the color resolution in 
+        # between colors and we don't want to reduce the color resolution in
         # the interesting regions of data space
         n_colors2 = int(n_colors / 2)
         n_fill = int(round(fmin * n_colors2 / (fmax-fmin))) * 2
         lut_table = np.r_[
-                _scale_sequential_lut(lut_table[:n_colors2, :], 
-                                      center-fmax, center-fmid, center-fmin), 
+                _scale_sequential_lut(lut_table[:n_colors2, :],
+                                      center-fmax, center-fmid, center-fmin),
                 _get_fill_colors(
-                        lut_table[n_colors2 - 3 : n_colors2 + 3, :], n_fill),
-                _scale_sequential_lut(lut_table[n_colors2:, :], 
+                    lut_table[n_colors2 - 3:n_colors2 + 3, :], n_fill),
+                _scale_sequential_lut(lut_table[n_colors2:, :],
                                       center+fmin, center+fmid, center+fmax)]
     else:
         lut_table = _scale_sequential_lut(lut_table, fmin, fmid, fmax)
-        
-    # rescale to 256 colors; this is necessary, because Mayavi/VTK does not 
+
+    # rescale to 256 colors; this is necessary, because Mayavi/VTK does not
     # handle a change in the number of colors well: when you change from a long
     # table to a short table, values beyond the table value range get somehow
     # not mapped to the colors defined by the table edges; it may be that this
@@ -2879,11 +2880,11 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
         lut = np.zeros((256, 4))
         x = np.linspace(1, n_colors, 256)
         for chan in range(4):
-            lut[:, chan] = np.interp(x, 
+            lut[:, chan] = np.interp(x,
                                      np.arange(1, n_colors+1),
                                      lut_table[:, chan])
         lut_table = lut
-        
+
     return lut_table
 
 

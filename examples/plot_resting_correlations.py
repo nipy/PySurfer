@@ -55,7 +55,7 @@ brain.add_data(surf_data_rh, 0, .7, center=0, hemi='rh')
 You can tune the data display by shifting the colormap around interesting
 regions. For example, you can ignore small correlation up to a magnitude of 0.2
 and let colors become gradually less transparent from 0.2 to 0.5 by re-scaling
-the colormap as follows. For more information see the help string of this 
+the colormap as follows. For more information see the help string of this
 function.
 """
 brain.scale_data_colormap(.2, .5, .7, transparent=True, center=0)
@@ -64,7 +64,7 @@ brain.scale_data_colormap(.2, .5, .7, transparent=True, center=0)
 You can also set the overall opacity of the displayed data while maintaining
 the transparency of the small values.
 """
-brain.scale_data_colormap(0, .35, .7, transparent=True, center=0, 
+brain.scale_data_colormap(0, .35, .7, transparent=True, center=0,
                           alpha=0.75)
 
 """
