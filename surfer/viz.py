@@ -1001,8 +1001,9 @@ class Brain(object):
             if not None, center of a divergent colormap, changes the meaning of
             min, max and mid, see ``scale_data_colormap`` for further info
         transparent : bool
-            whether colors from mid to min should become increasingly 
-            transparent
+            if True: use a linear transparency between fmin and fmid and make
+            values below fmin fully transparent (symmetrically for divergent 
+            colormaps)
         colormap : string, list of colors, or array
             name of matplotlib colormap to use, a list of matplotlib colors,
             or a custom look up table (an n x 4 array coded with RBGA values
@@ -1887,8 +1888,9 @@ class Brain(object):
         fmax : float
             maximum value for colormap
         transparent : boolean
-            if True: use a linear transparency between fmin and fmid
-            (symmetrically for divergent colormaps)
+            if True: use a linear transparency between fmin and fmid and make
+            values below fmin fully transparent (symmetrically for divergent 
+            colormaps)
         center : float
             if not None, gives the data value that should be mapped to the 
             center of the (divergent) colormap
@@ -1921,6 +1923,12 @@ class Brain(object):
                         cmap.data_range = np.array([center-fmax, center+fmax])
                     else:
                         cmap.data_range = np.array([fmin, fmax])
+                        
+                    # handle transparency of colorbar
+                    if transparent:
+                        cmap.scalar_bar.use_opacity = 1
+                    else:
+                        cmap.scalar_bar.use_opacity = 0
 
                 # Update the data properties
                 data.update(fmin=fmin, fmid=fmid, fmax=fmax, center=center,
@@ -1935,6 +1943,7 @@ class Brain(object):
                                     [center-fmax, center+fmax])
                         else:
                             l_m.data_range = np.array([fmin, fmax])
+                
         self._toggle_render(True, views)
 
     def set_data_time_index(self, time_idx, interpolation='quadratic'):
@@ -2719,12 +2728,13 @@ def _scale_sequential_lut(lut_table, fmin, fmid, fmax):
     return lut_table_new
 
 
-def _choose_fill_color(cols):
-    """Chooses middle fill color for divergent colormaps.
+def _get_fill_colors(cols, n_fill):
+    """Get the fill colors for the middle of divergent colormaps.
     
     Tries to figure out whether there is a smooth transition in the center of
-    the colormap. If yes, it chooses the color in the center, else returns a
-    neutral color (middle gray).
+    the original colormap. If yes, it chooses the color in the center as the 
+    only fill color, else it chooses the two colors between which there is
+    a large step in color space to fill up the middle of the new colormap.
     """
     steps = np.linalg.norm(np.diff(cols[:, :3].astype(float), axis=0), axis=1)
     
@@ -2733,15 +2743,17 @@ def _choose_fill_color(cols):
     # than the mean step size between the first and last steps of the given
     # colors - I verified that no such jumps exist in the divergent colormaps
     # of matplotlib 2.0 which all have a smooth transition in the middle)
-    if np.any(steps[1:-1] > steps[[0, -1]].mean() * 3):
-        # choose a neutral gray
-        fillcol = np.r_[127, 127, 127, 0]
+    ind = np.flatnonzero(steps[1:-1] > steps[[0, -1]].mean() * 3)
+    if ind.size > 0:
+        # choose the two colors between which there is the large step
+        ind = ind[0] + 1
+        fillcols = np.r_[np.tile(cols[ind, :], (n_fill / 2, 1)),
+                         np.tile(cols[ind + 1, :], (n_fill - n_fill / 2, 1))]
     else:
         # choose a color from the middle of the colormap
-        fillcol = cols[int(cols.shape[0] / 2), :].copy()
-        fillcol[-1] = 0
+        fillcols = np.tile(cols[int(cols.shape[0] / 2), :], (n_fill, 1))
         
-    return fillcol
+    return fillcols
 
 
 @verbose
@@ -2767,7 +2779,9 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
     fmax : float
         maximum value for colormap.
     transparent : boolean
-        if True: use a linear transparency between fmin and fmid.
+        if True: use a linear transparency between fmin and fmid and make
+        values below fmin fully transparent (symmetrically for divergent 
+        colormaps)
     center : float
         gives the data value that should be mapped to the center of the 
         (divergent) colormap
@@ -2836,9 +2850,8 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
         lut_table = np.r_[
                 _scale_sequential_lut(lut_table[:n_colors2, :], 
                                       center-fmax, center-fmid, center-fmin), 
-                np.tile(_choose_fill_color(
-                        lut_table[n_colors2 - 3 : n_colors2 + 3, :]), 
-                        (n_fill, 1)),
+                _get_fill_colors(
+                        lut_table[n_colors2 - 3 : n_colors2 + 3, :], n_fill),
                 _scale_sequential_lut(lut_table[n_colors2:, :], 
                                       center+fmin, center+fmid, center+fmax)]
     else:
