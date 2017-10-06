@@ -23,7 +23,7 @@ hemi = 'lh'
 create Brain object for visualization
 """
 brain = Brain(subject_id, hemi, surf, size=(400, 400),
-              interaction='terrain')
+              interaction='terrain', cortex='bone')
 
 """
 label for time annotation in milliseconds
