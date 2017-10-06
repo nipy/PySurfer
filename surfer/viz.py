@@ -999,7 +999,7 @@ class Brain(object):
             if not None, values below thresh will not be visible
         center : float or None
             if not None, center of a divergent colormap, changes the meaning of
-            min, max and mid, see ``scale_data_colormap`` for further info
+            min, max and mid, see :meth:`scale_data_colormap` for further info.
         transparent : bool
             if True: use a linear transparency between fmin and fmid and make
             values below fmin fully transparent (symmetrically for divergent 
@@ -1944,6 +1944,17 @@ class Brain(object):
                         else:
                             l_m.data_range = np.array([fmin, fmax])
                 
+                # Update the colorbar to deal with transparency
+                cbar_lut = tvtk.LookupTable()
+                cbar_lut.deep_copy(surf.module_manager.scalar_lut_manager.lut)
+                vals = lut / 255.
+                alphas = vals[:, -1][:, np.newaxis]
+                vals = (vals * alphas) + 0.5 * (1 - alphas)
+                vals[:, -1] = 1.
+                for ii in range(256):
+                    cbar_lut.set_table_value(ii, vals[ii])
+                surf.module_manager.scalar_lut_manager.scalar_bar.lookup_table = cbar_lut  # noqa
+
         self._toggle_render(True, views)
 
     def set_data_time_index(self, time_idx, interpolation='quadratic'):
