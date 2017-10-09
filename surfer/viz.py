@@ -1911,6 +1911,11 @@ class Brain(object):
         lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent,
                                 center, alpha)
 
+        # brain background color for handling of transparency in colorbar
+        bgcolor = np.mean(self._brain_list[0]['brain']._geo_surf
+                          .module_manager.scalar_lut_manager
+                          .lut.table.to_array(), axis=0)
+
         views = self._toggle_render(False)
         # Use the new colormap
         for hemi in ['lh', 'rh']:
@@ -1924,11 +1929,17 @@ class Brain(object):
                     else:
                         cmap.data_range = np.array([fmin, fmax])
 
-                    # handle transparency of colorbar
-                    if transparent:
-                        cmap.scalar_bar.use_opacity = 1
-                    else:
-                        cmap.scalar_bar.use_opacity = 0
+                    # if there is any transparent color in the lut
+                    if np.any(lut[:, -1] < 255):
+                        # Update the colorbar to deal with transparency
+                        cbar_lut = tvtk.LookupTable()
+                        cbar_lut.deep_copy(surf.module_manager
+                                           .scalar_lut_manager.lut)
+                        alphas = lut[:, -1][:, np.newaxis] / 255.
+                        vals = (lut * alphas) + bgcolor * (1 - alphas)
+                        vals[:, -1] = 255.
+                        cbar_lut.table.from_array(vals)
+                        cmap.scalar_bar.lookup_table = cbar_lut
 
                 # Update the data properties
                 data.update(fmin=fmin, fmid=fmid, fmax=fmax, center=center,
@@ -1943,18 +1954,6 @@ class Brain(object):
                                     [center-fmax, center+fmax])
                         else:
                             l_m.data_range = np.array([fmin, fmax])
-
-                # Update the colorbar to deal with transparency
-                bgcolor = np.mean(self._brain_list[0]['brain']._geo_surf
-                                  .module_manager.scalar_lut_manager
-                                  .lut.table.to_array(), axis=0)
-                cbar_lut = tvtk.LookupTable()
-                cbar_lut.deep_copy(surf.module_manager.scalar_lut_manager.lut)
-                alphas = lut[:, -1][:, np.newaxis] / 255.
-                vals = (lut * alphas) + bgcolor * (1 - alphas)
-                vals[:, -1] = 255.
-                cbar_lut.table.from_array(vals)
-                surf.module_manager.scalar_lut_manager.scalar_bar.lookup_table = cbar_lut  # noqa: E501
 
         self._toggle_render(True, views)
 
