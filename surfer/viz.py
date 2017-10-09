@@ -1042,6 +1042,8 @@ class Brain(object):
         vector_alpha : float | None
             alpha level to control opacity of the arrows. Only used for
             vector-valued data. If None (default), ``alpha`` is used.
+        verbose : bool, str, int, or None
+            If not None, override default verbose level (see surfer.verbose).
 
         Notes
         -----
@@ -1208,7 +1210,7 @@ class Brain(object):
             hemisphere, i.e. ``annot=(labels, ctab)`` for a single hemisphere
             or ``annot=((lh_labels, lh_ctab), (rh_labels, rh_ctab))`` for both
             hemispheres. ``labels`` and ``ctab`` should be arrays as returned
-            by :func:`nibabel.freesurfer.read_annot`.
+            by :func:`nibabel.freesurfer.io.read_annot`.
         borders : bool | int
             Show only label borders. If int, specify the number of steps
             (away from the true border) along the cortical mesh to include
