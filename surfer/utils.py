@@ -473,16 +473,16 @@ def create_color_lut(cmap, n_colors=256, center=None):
         Input colormap definition. This can be the name of a matplotlib
         colormap, a list of valid matplotlib colors, or a suitable
         mayavi LUT (possibly missing the alpha channel).
-        
-        if value is "auto", a default sequential or divergent colormap is 
+
+        if value is "auto", a default sequential or divergent colormap is
         returned
     n_colors : int, optional
         Number of colors in the resulting LUT. This is ignored if cmap
         is a 2d array.
     center : double, optional
-        indicates whether desired colormap should be for divergent values, 
+        indicates whether desired colormap should be for divergent values,
         currently only used to select default colormap for cmap='auto'
-        
+
     Returns
     -------
     lut : n_colors x 4 integer array
@@ -500,7 +500,7 @@ def create_color_lut(cmap, n_colors=256, center=None):
 
             return lut
 
-    # choose default colormaps (REMEMBER to change doc, e.g., in 
+    # choose default colormaps (REMEMBER to change doc, e.g., in
     # Brain.add_data, when changing these defaults)
     if isinstance(cmap, string_types) and cmap == "auto":
         if center is None:
