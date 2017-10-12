@@ -1913,10 +1913,18 @@ class Brain(object):
         lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent,
                                 center, alpha)
 
-        # brain background color for handling of transparency in colorbar
-        bgcolor = np.mean(self._brain_list[0]['brain']._geo_surf
-                          .module_manager.scalar_lut_manager
-                          .lut.table.to_array(), axis=0)
+        # Get the effective background color as 255-based 4-element array
+        geo_actor = self._brain_list[0]['brain']._geo_surf.actor
+        if self._brain_list[0]['brain']._using_lut:
+            bgcolor = np.mean(
+                self._brain_list[0]['brain']._geo_surf.module_manager
+                .scalar_lut_manager.lut.table.to_array(), axis=0)
+        else:
+            bgcolor = geo_actor.property.color
+            if len(bgcolor) == 3:
+                bgcolor = bgcolor + (1,)
+            bgcolor = 255 * np.array(bgcolor)
+        bgcolor[-1] *= geo_actor.property.opacity
 
         views = self._toggle_render(False)
         # Use the new colormap
@@ -1938,10 +1946,12 @@ class Brain(object):
                         cbar_lut.deep_copy(surf.module_manager
                                            .scalar_lut_manager.lut)
                         alphas = lut[:, -1][:, np.newaxis] / 255.
-                        vals = (lut * alphas) + bgcolor * (1 - alphas)
-                        vals[:, -1] = 255.
+                        use_lut = lut.copy()
+                        use_lut[:, -1] = 255.
+                        vals = (use_lut * alphas) + bgcolor * (1 - alphas)
                         cbar_lut.table.from_array(vals)
                         cmap.scalar_bar.lookup_table = cbar_lut
+                        cmap.scalar_bar.use_opacity = 1
 
                 # Update the data properties
                 data.update(fmin=fmin, fmid=fmid, fmax=fmax, center=center,
@@ -2925,6 +2935,7 @@ class _Hemisphere(object):
             lut = geo_kwargs.pop('lut')
         else:
             lut = None
+        self._using_lut = bool(geo_curv)
         with warnings.catch_warnings(record=True):  # traits warnings
             self._geo_surf = mlab.pipeline.surface(
                self._geo_mesh, figure=self._f, reset_zoom=True, **geo_kwargs)
