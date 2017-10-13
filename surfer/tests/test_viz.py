@@ -46,20 +46,9 @@ def _set_backend(backend=None):
     mlab.options.backend = backend
 
 
-def _broken_system(linux_python_versions='3'):
-    if os.getenv('TRAVIS', 'false') == 'true' and \
-            (sys.platform == 'darwin' or
-             sys.version[0] in linux_python_versions):
-        return True
-    else:
-        return False
-
-
 @requires_fsaverage
 def test_offscreen():
     """Test offscreen rendering."""
-    if _broken_system():
-        raise SkipTest('Offscreen Travis tests fail on Linux Py3k and OSX')
     _set_backend()
     brain = Brain(*std_args, offscreen=True)
     # Sometimes the first screenshot is rendered with a different
@@ -80,16 +69,15 @@ def test_image():
     brain = Brain(subject_id, 'both', surf=surf, size=100)
     brain.add_overlay(overlay_fname, hemi='lh', min=5, max=20, sign="pos")
     brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
+    brain.close()
 
     brain = Brain(*std_args, size=100)
     brain.save_image(tmp_name)
     brain.save_image(tmp_name, 'rgba', True)
     brain.screenshot()
-    if not _broken_system(linux_python_versions='23'):
-        # for some reason these fail on Travis sometimes
-        brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
-        brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
-        brain.save_montage(tmp_name, [['l', 'v'], ['m', 'f']])
+    brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
+    brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
+    brain.save_montage(tmp_name, [['l', 'v'], ['m', 'f']])
     brain.close()
 
 
