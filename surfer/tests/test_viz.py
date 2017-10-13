@@ -51,6 +51,10 @@ def test_offscreen():
     """Test offscreen rendering."""
     if sys.platform == 'darwin' and os.getenv('TRAVIS', 'false') == 'true':
         raise SkipTest('Offscreen Travis tests fail on OSX')
+    if sys.platform.startswith('linux') and \
+            os.getenv('TRAVIS', 'false') == 'true' and \
+            sys.version[0] == '3':
+        raise SkipTest('Offscreen Travis tests fail on Linux Py3k')
     _set_backend()
     brain = Brain(*std_args, offscreen=True)
     # Sometimes the first screenshot is rendered with a different
