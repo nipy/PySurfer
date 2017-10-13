@@ -13,6 +13,7 @@ dependencies:
 - nose
 - pytest
 - pytest-cov
+- pygments
 - flake8
 - pip:
   - "git+https://github.com/enthought/traits.git@a7a83182048c08923953e302658b51b68c802132"
