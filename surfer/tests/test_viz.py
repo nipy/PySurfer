@@ -46,15 +46,21 @@ def _set_backend(backend=None):
     mlab.options.backend = backend
 
 
-@requires_fsaverage
-def test_offscreen():
-    """Test offscreen rendering."""
+def _broken_system():
     if sys.platform == 'darwin' and os.getenv('TRAVIS', 'false') == 'true':
-        raise SkipTest('Offscreen Travis tests fail on OSX')
+        return True
     if sys.platform.startswith('linux') and \
             os.getenv('TRAVIS', 'false') == 'true' and \
             sys.version[0] == '3':
-        raise SkipTest('Offscreen Travis tests fail on Linux Py3k')
+        return True
+    return False
+
+
+@requires_fsaverage
+def test_offscreen():
+    """Test offscreen rendering."""
+    if _broken_system():
+        raise SkipTest('Offscreen Travis tests fail on Linux Py3k and OSX')
     _set_backend()
     brain = Brain(*std_args, offscreen=True)
     # Sometimes the first screenshot is rendered with a different
@@ -80,8 +86,7 @@ def test_image():
     brain.save_image(tmp_name)
     brain.save_image(tmp_name, 'rgba', True)
     brain.screenshot()
-    if not sys.platform.startswith('linux') or \
-            os.getenv('TRAVIS', 'false') != 'true':
+    if not _broken_system():
         # for some reason these fail on Travis sometimes
         brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
         brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
