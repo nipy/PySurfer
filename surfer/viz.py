@@ -175,14 +175,14 @@ def _force_render(figures):
     """Ensure plots are updated before properties are used"""
     if not isinstance(figures, list):
         figures = [[figures]]
-    for ff in figures:
-        for f in ff:
-            f.render()
-            mlab.draw(figure=f)
     _gui = GUI()
     orig_val = _gui.busy
     _gui.set_busy(busy=True)
     _gui.process_events()
+    for ff in figures:
+        for f in ff:
+            f.render()
+            mlab.draw(figure=f)
     _gui.set_busy(busy=orig_val)
     _gui.process_events()
 
