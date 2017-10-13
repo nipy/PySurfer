@@ -2218,7 +2218,6 @@ class Brain(object):
             self._v = None
 
     def __del__(self):
-        self.close()
         if hasattr(self, '_v') and self._v is not None:
             self._v.dispose()
             self._v = None
