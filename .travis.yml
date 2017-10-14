@@ -17,17 +17,6 @@ matrix:
               packages:
                 - mencoder
 
-        # Full (Linux, 3.6)
-        - os: linux
-          addons:
-            apt:
-              packages:
-                - mencoder
-          env:
-            CONDA_ENVIRONMENT="environment.yml"
-            CONDA_DEPENDENCIES=""
-            PIP_DEPENDENCIES=""
-
         # Minimal (no mencoder)
         - os: linux
 
