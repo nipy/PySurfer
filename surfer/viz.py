@@ -3354,9 +3354,10 @@ class _Hemisphere(object):
 
     def update_surf(self):
         "Update surface mesh after mesh coordinates change"
-        self._geo_mesh.update()
-        for mesh in self._mesh_clones.values():
-            mesh.update()
+        with warnings.catch_warnings(record=True):  # traits
+            self._geo_mesh.update()
+            for mesh in self._mesh_clones.values():
+                mesh.update()
 
 
 class OverlayData(object):
