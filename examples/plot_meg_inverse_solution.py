@@ -22,7 +22,7 @@ hemi = 'lh'
 """
 create Brain object for visualization
 """
-brain = Brain(subject_id, hemi, surf, size=(400, 400),
+brain = Brain(subject_id, hemi, surf, size=(400, 400), background='w',
               interaction='terrain', cortex='bone')
 
 """

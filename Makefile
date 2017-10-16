@@ -34,8 +34,8 @@ inplace:
 
 nosetests:
 	rm -f .coverage
-	$(NOSETESTS) surfer
+	pytest surfer
 
-test: clean nosetests flake
+test: clean pytest flake
 
 

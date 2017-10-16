@@ -175,14 +175,14 @@ def _force_render(figures):
     """Ensure plots are updated before properties are used"""
     if not isinstance(figures, list):
         figures = [[figures]]
-    for ff in figures:
-        for f in ff:
-            f.render()
-            mlab.draw(figure=f)
     _gui = GUI()
     orig_val = _gui.busy
     _gui.set_busy(busy=True)
     _gui.process_events()
+    for ff in figures:
+        for f in ff:
+            f.render()
+            mlab.draw(figure=f)
     _gui.set_busy(busy=orig_val)
     _gui.process_events()
 
@@ -334,8 +334,12 @@ class Brain(object):
     size : float or pair of floats
         the size of the window, in pixels. can be one number to specify
         a square window, or the (width, height) of a rectangular window.
-    background, foreground : matplotlib colors
-        color of the background and foreground of the display window
+    background : matplotlib color
+        Color of the background.
+    foreground : matplotlib color
+        Color of the foreground (will be used for colorbars and text).
+        None (default) will use black or white depending on the value
+        of ``background``.
     figure : list of mayavi.core.scene.Scene | None | int
         If None (default), a new window will be created with the appropriate
         views. For single view plots, the figure can be specified as int to
@@ -378,7 +382,7 @@ class Brain(object):
     """
     def __init__(self, subject_id, hemi, surf, title=None,
                  cortex="classic", alpha=1.0, size=800, background="black",
-                 foreground="white", figure=None, subjects_dir=None,
+                 foreground=None, figure=None, subjects_dir=None,
                  views=['lat'], offset=True, show_toolbar=False,
                  offscreen=False, interaction='trackball',
                  config_opts=None, curv=None):
@@ -455,6 +459,7 @@ class Brain(object):
 
         # deal with making figures
         self._set_window_properties(size, background, foreground)
+        del background, foreground
         figures, _v = _make_viewer(figure, n_row, n_col, title,
                                    self._scene_size, offscreen,
                                    interaction)
@@ -476,7 +481,7 @@ class Brain(object):
         # fill figures with brains
         kwargs = dict(geo_curv=geo_curv, geo_kwargs=geo_kwargs,
                       geo_reverse=geo_reverse, subjects_dir=subjects_dir,
-                      bg_color=self._bg_color)
+                      bg_color=self._bg_color, fg_color=self._fg_color)
         brains = []
         brain_matrix = []
         for ri, view in enumerate(views):
@@ -566,12 +571,10 @@ class Brain(object):
         except (TypeError, ValueError):
             width, height = size, size
         self._scene_size = height, width
-
-        bg_color_rgb = colorConverter.to_rgb(background)
-        self._bg_color = bg_color_rgb
-
-        fg_color_rgb = colorConverter.to_rgb(foreground)
-        self._fg_color = fg_color_rgb
+        self._bg_color = colorConverter.to_rgb(background)
+        if foreground is None:
+            foreground = 'w' if sum(self._bg_color) < 2 else 'k'
+        self._fg_color = colorConverter.to_rgb(foreground)
 
     def _get_geo_params(self, cortex, alpha=1.0):
         """Return keyword arguments and other parameters for surface
@@ -1480,7 +1483,8 @@ class Brain(object):
                  "and will be removed in PySurfer 0.9", DeprecationWarning)
 
         if labels is None:
-            labels_ = self._label_dicts.keys()
+            # make list before iterating (Py3k)
+            labels_ = list(self._label_dicts.keys())
         else:
             labels_ = [labels] if isinstance(labels, str) else labels
             missing = [key for key in labels_ if key not in self._label_dicts]
@@ -1725,7 +1729,9 @@ class Brain(object):
         name : str
             Name of the text (text label can be updated using update_text())
         color : Tuple
-            Color of the text. Default: (1, 1, 1)
+            Color of the text. Default is the foreground color set during
+            initialization (default is black or white depending on the
+            background color).
         opacity : Float
             Opacity of the text. Default: 1.0
         row : int
@@ -2204,6 +2210,7 @@ class Brain(object):
                 if f is not None:
                     mlab.close(f)
                     self._figures[ri][ci] = None
+        _force_render([])
 
         # should we tear down other variables?
         if self._v is not None:
@@ -2903,7 +2910,8 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
 class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
     def __init__(self, subject_id, hemi, figure, geo, geo_curv,
-                 geo_kwargs, geo_reverse, subjects_dir, bg_color, backend):
+                 geo_kwargs, geo_reverse, subjects_dir, bg_color, backend,
+                 fg_color):
         if hemi not in ['lh', 'rh']:
             raise ValueError('hemi must be either "lh" or "rh"')
         # Set the identifying info
@@ -2913,6 +2921,7 @@ class _Hemisphere(object):
         self.viewdict = viewdicts[hemi]
         self._f = figure
         self._bg_color = bg_color
+        self._fg_color = fg_color
         self._backend = backend
         self.data = {}
         self._mesh_clones = {}  # surface mesh data-sources
@@ -3117,7 +3126,7 @@ class _Hemisphere(object):
             pos_bar.reverse_lut = True
             pos_bar.scalar_bar_representation.position = (0.53, 0.01)
             pos_bar.scalar_bar_representation.position2 = (0.42, 0.09)
-            self._format_cbar_text(pos_bar)
+            pos_bar.label_text_property.color = self._fg_color
         else:
             pos = pos_bar = None
 
@@ -3131,7 +3140,7 @@ class _Hemisphere(object):
                 neg_bar = mlab.scalarbar(neg, nb_labels=5)
             neg_bar.scalar_bar_representation.position = (0.05, 0.01)
             neg_bar.scalar_bar_representation.position2 = (0.42, 0.09)
-            self._format_cbar_text(neg_bar)
+            neg_bar.label_text_property.color = self._fg_color
         else:
             neg = neg_bar = None
 
@@ -3197,7 +3206,7 @@ class _Hemisphere(object):
         # Get the colorbar
         if colorbar:
             bar = mlab.scalarbar(surf)
-            self._format_cbar_text(bar)
+            bar.label_text_property.color = self._fg_color
             bar.scalar_bar_representation.position2 = .8, 0.09
         else:
             bar = None
@@ -3248,7 +3257,7 @@ class _Hemisphere(object):
         # Get the colorbar
         if colorbar:
             bar = mlab.scalarbar(surf)
-            self._format_cbar_text(bar)
+            bar.label_text_property.color = self._fg_color
             bar.scalar_bar_representation.position2 = .8, 0.09
         else:
             bar = None
@@ -3285,7 +3294,7 @@ class _Hemisphere(object):
             bar = mlab.scalarbar(surf, nb_colors=n_contours,
                                  nb_labels=n_contours + 1)
         bar.data_range = min, max
-        self._format_cbar_text(bar)
+        bar.label_text_property.color = self._fg_color
         bar.scalar_bar_representation.position2 = .8, 0.09
         if not colorbar:
             bar.visible = False
@@ -3295,6 +3304,7 @@ class _Hemisphere(object):
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0):
         """ Add a text to the visualization"""
+        color = self._fg_color if color is None else color
         with warnings.catch_warnings(record=True):
             text = mlab.text(x, y, text, name=name, color=color,
                              opacity=opacity, figure=self._f)
@@ -3342,19 +3352,12 @@ class _Hemisphere(object):
                 for light in self._f.scene.light_manager.lights:
                     light.azimuth *= -1
 
-    def _format_cbar_text(self, cbar):
-        bg_color = self._bg_color
-        if bg_color is None or sum(bg_color) < 2:
-            text_color = (1., 1., 1.)
-        else:
-            text_color = (0., 0., 0.)
-        cbar.label_text_property.color = text_color
-
     def update_surf(self):
         "Update surface mesh after mesh coordinates change"
-        self._geo_mesh.update()
-        for mesh in self._mesh_clones.values():
-            mesh.update()
+        with warnings.catch_warnings(record=True):  # traits
+            self._geo_mesh.update()
+            for mesh in self._mesh_clones.values():
+                mesh.update()
 
 
 class OverlayData(object):

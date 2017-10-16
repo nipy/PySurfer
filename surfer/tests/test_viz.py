@@ -71,13 +71,14 @@ def test_image():
     brain = Brain(subject_id, 'both', surf=surf, size=100)
     brain.add_overlay(overlay_fname, hemi='lh', min=5, max=20, sign="pos")
     brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
+    brain.close()
 
     brain = Brain(*std_args, size=100)
     brain.save_image(tmp_name)
     brain.save_image(tmp_name, 'rgba', True)
     brain.screenshot()
-    if not sys.platform.startswith('linux') or \
-            os.getenv('TRAVIS', 'false') != 'true':
+    if not (sys.platform.startswith('linux') and
+            os.getenv('TRAVIS', 'false') == 'true'):
         # for some reason these fail on Travis sometimes
         brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
         brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')

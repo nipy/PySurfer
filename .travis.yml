@@ -5,8 +5,8 @@ sudo: false
 env:
     global: PYTHON_VERSION=2.7
             DISPLAY=:99.0
-            CONDA_DEPENDENCIES="numpy scipy matplotlib pandas scikit-learn h5py pillow statsmodels mayavi"
-            PIP_DEPENDENCIES="coverage coveralls nose-timer nibabel flake8 imageio"
+            CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov nose"
+            PIP_DEPENDENCIES="coverage coveralls nibabel imageio"
 
 matrix:
     include:
@@ -20,11 +20,15 @@ matrix:
         # Minimal (no mencoder)
         - os: linux
 
-        # OSX (disabled because it's slow)
+        # OSX
         - os: osx
 
 # Setup anaconda
 before_install:
+    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+        echo "Starting Xvfb...";
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render;
+      fi;
     - git clone https://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda.sh
 
@@ -35,10 +39,6 @@ install:
 
 before_script:
     # Let's create a (fake) display on Travis, and let's use a funny resolution
-    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-        echo "Starting Xvfb...";
-        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render;
-      fi;
     - cd ~
     - wget --quiet http://faculty.washington.edu/larsoner/fsaverage_min.zip
     - mkdir subjects
@@ -50,7 +50,7 @@ before_script:
 
 script:
     - cd ${SRC_DIR}
-    - nosetests --with-timer --timer-top-n 10
+    - pytest surfer
     - make flake
 
 after_success:
