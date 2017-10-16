@@ -2,8 +2,8 @@ environment:
   global:
       PYTHON: "C:\\conda"
       MINICONDA_VERSION: "latest"
-      CONDA_DEPENDENCIES: "numpy scipy mayavi matplotlib nose imaging sphinx pytest pytest-cov"
-      PIP_DEPENDENCIES: "nibabel imageio git+git://github.com/sphinx-gallery/sphinx-gallery.git numpydoc coverage"
+      CONDA_DEPENDENCIES: "numpy scipy mayavi matplotlib nose imaging sphinx pytest pytest-cov coverage"
+      PIP_DEPENDENCIES: "nibabel imageio git+git://github.com/sphinx-gallery/sphinx-gallery.git numpydoc codecov"
   matrix:
       - PYTHON_VERSION: "2.7"
         PYTHON_ARCH: "64"
@@ -29,6 +29,11 @@ test_script:
   # slashes (but will work e.g. in Msys-git), so for now do these manually
   # make html-noplot
   - sphinx-build -D plot_gallery=0 -b html -d _build\doctrees . _build\html
+  - cd ..
+
+
+on_success:
+  - "codecov"
 
 artifacts:
   - path: doc\_build\html

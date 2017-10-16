@@ -1067,19 +1067,22 @@ class Brain(object):
             if min is None:
                 min = array.min() if array.size > 0 else 0
             if max is None:
-                max = array.max() if array.size > 0 else 0
+                max = array.max() if array.size > 0 else 1
         else:
             if min is None:
                 min = 0
             if max is None:
-                max = np.abs(center - array).max() if array.size > 0 else 0
+                max = np.abs(center - array).max() if array.size > 0 else 1
         if mid is None:
             mid = (min + max) / 2.
+        _check_limits(min, mid, max, extra='')
 
         # Create smoothing matrix if necessary
         if len(array) < self.geo[hemi].x.shape[0]:
             if vertices is None:
-                raise ValueError("len(data) < nvtx: need vertices")
+                raise ValueError("len(data) < nvtx (%s < %s): the vertices "
+                                 "parameter must not be None"
+                                 % (len(array), self.geo[hemi].x.shape[0]))
             adj_mat = utils.mesh_edges(self.geo[hemi].faces)
             smooth_mat = utils.smoothing_matrix(vertices, adj_mat,
                                                 smoothing_steps)
@@ -2758,6 +2761,16 @@ def _scale_sequential_lut(lut_table, fmin, fmid, fmax):
     return lut_table_new
 
 
+def _check_limits(fmin, fmid, fmax, extra='f'):
+    """Check for monotonicity."""
+    if fmin >= fmid:
+        raise ValueError('%smin must be < %smid, got %0.4g >= %0.4g'
+                         % (extra, extra, fmin, fmid))
+    if fmid >= fmax:
+        raise ValueError('%smid must be < %smax, got %0.4g >= %0.4g'
+                         % (extra, extra, fmid, fmax))
+
+
 def _get_fill_colors(cols, n_fill):
     """Get the fill colors for the middle of divergent colormaps.
 
@@ -2834,6 +2847,7 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
     fmin = float(fmin)
     fmid = float(fmid)
     fmax = float(fmax)
+    _check_limits(fmin, fmid, fmax)
 
     divergent = center is not None
 

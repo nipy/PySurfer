@@ -180,6 +180,17 @@ def test_data():
 
 
 @requires_fsaverage
+def test_data_limits():
+    """Test handling of data limits."""
+    _set_backend()
+    brain = Brain(*std_args)
+    surf_data = np.zeros(163842)
+    assert_raises(ValueError, brain.add_data, surf_data, 0, 0)
+    brain.add_data(surf_data, 0, 1)
+    brain.close()
+
+
+@requires_fsaverage
 def test_foci():
     """Test plotting of foci."""
     _set_backend('test')
