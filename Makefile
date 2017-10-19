@@ -32,7 +32,7 @@ in: inplace # just a shortcut
 inplace:
 	$(PYTHON) setup.py build_ext -i
 
-nosetests:
+pytest:
 	rm -f .coverage
 	pytest surfer
 
