@@ -5,8 +5,8 @@ sudo: false
 env:
     global: PYTHON_VERSION=2.7
             DISPLAY=:99.0
-            CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov nose"
-            PIP_DEPENDENCIES="coverage coveralls nibabel imageio"
+            CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov nose coverage"
+            PIP_DEPENDENCIES="codecov nibabel imageio"
 
 matrix:
     include:
@@ -54,5 +54,4 @@ script:
     - make flake
 
 after_success:
-    # Need to run from source dir to exectue "git" commands
-    - coveralls
+    - codecov
