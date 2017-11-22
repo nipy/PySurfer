@@ -691,7 +691,7 @@ class Brain(object):
         """
         props = dict()
         keys = ['fmin', 'fmid', 'fmax', 'transparent', 'time', 'time_idx',
-                'smoothing_steps']
+                'smoothing_steps', 'center']
         try:
             if self.data_dict['lh'] is not None:
                 hemi = 'lh'
