@@ -49,8 +49,11 @@ def _set_backend(backend=None):
 @requires_fsaverage
 def test_offscreen():
     """Test offscreen rendering."""
-    if sys.platform == 'darwin' and os.getenv('TRAVIS', 'false') == 'true':
-        raise SkipTest('Offscreen Travis tests fail on OSX')
+    if os.getenv('TRAVIS', 'false') == 'true':
+        if sys.platform == 'darwin':
+            raise SkipTest('Offscreen Travis tests fail on OSX')
+        if sys.version[0] == '3':
+            raise SkipTest('Offscrees Travis tests fail on Py3k')
     _set_backend()
     brain = Brain(*std_args, offscreen=True)
     # Sometimes the first screenshot is rendered with a different
