@@ -2652,7 +2652,7 @@ class Brain(object):
             raise ValueError("tmax=%r is greater than the latest time point "
                              "(%r)" % (tmax, self._times[-1]))
         n_frames = floor((tmax - tmin) * time_dilation * framerate)
-        times = np.arange(n_frames).astype(float)
+        times = np.arange(n_frames, dtype=float)
         times /= framerate * time_dilation
         times += tmin
         interp_func = interp1d(self._times, np.arange(self.n_times))
