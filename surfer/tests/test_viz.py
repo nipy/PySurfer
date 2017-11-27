@@ -39,7 +39,12 @@ requires_fs = np.testing.dec.skipif(not has_freesurfer(),
 def _set_backend(backend=None):
     """Use testing backend for Windows."""
     if backend is None:
-        backend = 'test' if sys.platform == 'win32' else 'auto'
+        if sys.platform == 'win32':
+            backend = 'test'
+        elif os.getenv('TRAVIS', 'false') == 'true' and sys.version[0] == '3':
+            backend = 'test'
+        else:
+            backend = 'auto'
     else:
         if backend != 'test' and sys.platform == 'win32':
             raise SkipTest('non-testing backend crashes on Windows')
