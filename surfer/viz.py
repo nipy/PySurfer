@@ -2260,6 +2260,16 @@ class Brain(object):
         if mlab.options.backend != 'test':
             mlab.savefig(filename, figure=brain._f)
 
+    def _screenshot_figure(self, mode='rgb', antialiased=False, dpi=100):
+        """Create a matplolib figure from the current screenshot."""
+        # adapted from matplotlib.image.imsave
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
+        from matplotlib.figure import Figure
+        fig = Figure(dpi=dpi, frameon=False)  # DPI only used for metadata
+        FigureCanvasAgg(fig)
+        fig.figimage(self.screenshot(mode, antialiased), resize=True)
+        return fig
+
     def save_image(self, filename, mode='rgb', antialiased=False):
         """Save view from all panels to disk
 
@@ -2286,8 +2296,7 @@ class Brain(object):
         a Mayavi figure to plot instead of TraitsUI) if you intend to
         script plotting commands.
         """
-        from scipy import misc
-        misc.imsave(filename, self.screenshot(mode, antialiased))
+        self._screenshot_figure(mode, antialiased).savefig(filename)
 
     def screenshot(self, mode='rgb', antialiased=False):
         """Generate a screenshot of current view.
