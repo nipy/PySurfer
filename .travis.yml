@@ -1,17 +1,24 @@
 language: c
 sudo: false
-# This list of requirements is way overkill, but it helps ensure we
-# actually load a usable config (it works for MNE-Python)
+
 env:
     global: PYTHON_VERSION=2.7
             DISPLAY=:99.0
-            CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov nose coverage"
-            PIP_DEPENDENCIES="codecov nibabel imageio"
 
 matrix:
     include:
+        # Full (Linux, 3.6)
+        - os: linux
+          env: CONDA_ENVIRONMENT="environment.yml"
+          addons:
+            apt:
+              packages:
+                - mencoder
+
         # Full (Linux, 2.7)
         - os: linux
+          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov nose coverage"
+               PIP_DEPENDENCIES="codecov nibabel imageio"
           addons:
             apt:
               packages:
@@ -19,9 +26,13 @@ matrix:
 
         # Minimal (no mencoder)
         - os: linux
+          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov nose coverage"
+               PIP_DEPENDENCIES="codecov nibabel"
 
         # OSX
         - os: osx
+          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov nose coverage"
+               PIP_DEPENDENCIES="codecov nibabel imageio"
 
 # Setup anaconda
 before_install:
@@ -46,7 +57,9 @@ before_script:
     - unzip ../fsaverage_min.zip
     - cd ..
     - export SUBJECTS_DIR="${PWD}/subjects"
-    - python -c "import imageio; imageio.plugins.ffmpeg.download()"
+    - if [[ $PIP_DEPENDENCIES == *"imageio"* ]] || [ ! -z "$CONDA_ENVIRONMENT" ]; then
+        python -c "import imageio; imageio.plugins.ffmpeg.download()";
+      fi
 
 script:
     - cd ${SRC_DIR}

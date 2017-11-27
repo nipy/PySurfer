@@ -1,0 +1,28 @@
+name: mne
+channels:
+- defaults
+- clinicalgraphics  # Needed for VTK
+dependencies:
+- python=3.6.1
+- pip
+- mkl
+- numpy
+- scipy
+- matplotlib
+- pyqt=5
+- vtk>=7
+- nose
+- coverage
+- pytest
+- pytest-cov
+- flake8
+- pygments
+- pip:
+  - "git+https://github.com/enthought/traits.git@a7a83182048c08923953e302658b51b68c802132"
+  - "git+https://github.com/enthought/pyface.git@13a064de48adda3c880350545717d8cf8929afad"
+  - "git+https://github.com/enthought/traitsui.git@ee8ef0a34dfc1db18a8e2c0301cc18d96b7a3e2f"
+  - "git+https://github.com/enthought/mayavi.git"
+  - nibabel
+  - pytest-sugar
+  - pytest-faulthandler
+  - imageio
