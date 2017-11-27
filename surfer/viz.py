@@ -2652,7 +2652,7 @@ class Brain(object):
             raise ValueError("tmax=%r is greater than the latest time point "
                              "(%r)" % (tmax, self._times[-1]))
         n_frames = floor((tmax - tmin) * time_dilation * framerate)
-        times = np.arange(n_frames)
+        times = np.arange(n_frames).astype(float)
         times /= framerate * time_dilation
         times += tmin
         interp_func = interp1d(self._times, np.arange(self.n_times))
@@ -3076,10 +3076,6 @@ class _Hemisphere(object):
 
     def _add_scalar_data(self, data):
         """Add scalar values to dataset"""
-        if mlab.options.backend == 'test':
-            # required SetActiveAttribute filter attributes are not set under
-            # the testing backend
-            return 0, self._geo_mesh
         array_id = self._mesh_dataset.point_data.add_array(data)
         self._mesh_dataset.point_data.get_array(array_id).name = array_id
         self._mesh_dataset.point_data.update()
@@ -3097,10 +3093,6 @@ class _Hemisphere(object):
 
     def _remove_scalar_data(self, array_id):
         """Removes scalar data"""
-        if mlab.options.backend == 'test':
-            # required SetActiveAttribute filter attributes are not set under
-            # the testing backend
-            return
         self._mesh_clones.pop(array_id).remove()
         self._mesh_dataset.point_data.remove_array(array_id)
 
@@ -3117,8 +3109,7 @@ class _Hemisphere(object):
 
         # Enable backface culling
         quiver.actor.property.backface_culling = False
-        if mlab.options.backend != 'test':
-            quiver.mlab_source.update()
+        quiver.mlab_source.update()
 
         # Compute scaling for the glyphs
         quiver.glyph.glyph.scale_factor = (scale_factor_norm *
@@ -3345,8 +3336,7 @@ class _Hemisphere(object):
         self._mesh_dataset.point_data.get_array(
             data['array_id']).from_array(values)
         # avoid "AttributeError: 'Scene' object has no attribute 'update'"
-        if mlab.options.backend != 'test':
-            data['mesh'].update()
+        data['mesh'].update()
         if vectors is not None:
             q = data['glyphs']
 
@@ -3358,8 +3348,7 @@ class _Hemisphere(object):
             # Update glyphs
             q.mlab_source.vectors = vectors
             q.mlab_source.scalars = vector_values
-            if mlab.options.backend != 'test':
-                q.mlab_source.update()
+            q.mlab_source.update()
 
             # Update changed parameters, and glyph scaling
             q.glyph.glyph.scale_factor = (data['scale_factor_norm'] *
