@@ -84,8 +84,7 @@ def test_image():
     brain.save_image(tmp_name)
     brain.save_image(tmp_name, 'rgba', True)
     brain.screenshot()
-    if not (sys.platform.startswith('linux') and
-            os.getenv('TRAVIS', 'false') == 'true'):
+    if not os.getenv('TRAVIS', 'false') == 'true':
         # for some reason these fail on Travis sometimes
         brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
         brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
