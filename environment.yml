@@ -26,3 +26,4 @@ dependencies:
   - pytest-sugar
   - pytest-faulthandler
   - imageio
+  - codecov
