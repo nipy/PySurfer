@@ -375,7 +375,7 @@ def verbose(function):
             # set it back if we get an exception
             try:
                 ret = function(*args, **kwargs)
-            except:
+            except Exception:
                 set_log_level(old_level)
                 raise
             set_log_level(old_level)

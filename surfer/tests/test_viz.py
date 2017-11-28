@@ -38,19 +38,26 @@ requires_fs = np.testing.dec.skipif(not has_freesurfer(),
 
 def _set_backend(backend=None):
     """Use testing backend for Windows."""
+    only_test = (sys.platform == 'win32' or
+                 (os.getenv('TRAVIS', 'false') == 'true' and
+                  sys.version[0] == '3'))
     if backend is None:
-        backend = 'test' if sys.platform == 'win32' else 'auto'
+        backend = 'test' if only_test else 'auto'
     else:
-        if backend != 'test' and sys.platform == 'win32':
-            raise SkipTest('non-testing backend crashes on Windows')
+        if only_test:
+            raise SkipTest('non-testing backend crashes on Windows and '
+                           'Travis Py3k')
     mlab.options.backend = backend
 
 
 @requires_fsaverage
 def test_offscreen():
     """Test offscreen rendering."""
-    if sys.platform == 'darwin' and os.getenv('TRAVIS', 'false') == 'true':
-        raise SkipTest('Offscreen Travis tests fail on OSX')
+    if os.getenv('TRAVIS', 'false') == 'true':
+        if sys.platform == 'darwin':
+            raise SkipTest('Offscreen Travis tests fail on OSX')
+        if sys.version[0] == '3':
+            raise SkipTest('Offscreen Travis tests fail on Py3k')
     _set_backend()
     brain = Brain(*std_args, offscreen=True)
     # Sometimes the first screenshot is rendered with a different
@@ -77,8 +84,7 @@ def test_image():
     brain.save_image(tmp_name)
     brain.save_image(tmp_name, 'rgba', True)
     brain.screenshot()
-    if not (sys.platform.startswith('linux') and
-            os.getenv('TRAVIS', 'false') == 'true'):
+    if not os.getenv('TRAVIS', 'false') == 'true':
         # for some reason these fail on Travis sometimes
         brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
         brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')

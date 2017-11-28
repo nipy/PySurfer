@@ -40,7 +40,6 @@ To use PySurfer, you will need to have the following Python packages:
 
 * numpy_
 * scipy_
-* ipython_
 * nibabel_
 * mayavi_
 * matplotlib_
