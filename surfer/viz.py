@@ -1603,7 +1603,8 @@ class Brain(object):
         Parameters
         ----------
         coords : numpy array
-            x, y, z coordinates in stereotaxic space or array of vertex ids
+            x, y, z coordinates in stereotaxic space (default) or array of
+            vertex ids (with ``coord_as_verts=True``)
         coords_as_verts : bool
             whether the coords parameter should be interpreted as vertex ids
         map_surface : Freesurfer surf or None
