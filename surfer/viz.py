@@ -547,7 +547,7 @@ class Brain(object):
                 continue
 
             if state is False and view is None:
-                views[vi] = (mlab.view(figure=_f),
+                views[vi] = (mlab.view(figure=_f), mlab.roll(figure=_f),
                              _f.scene.camera.parallel_scale)
 
             _f.scene.disable_render = not state
@@ -555,8 +555,8 @@ class Brain(object):
             if state is True and view is not None:
                 mlab.draw(figure=_f)
                 with warnings.catch_warnings(record=True):  # traits focalpoint
-                    mlab.view(*view[0], figure=_f)
-                _f.scene.camera.parallel_scale = view[1]
+                    mlab.view(*view[0], roll=view[1], figure=_f)
+                _f.scene.camera.parallel_scale = view[2]
         # let's do the ugly force draw
         if state is True:
             _force_render(self._figures)
@@ -1602,7 +1602,8 @@ class Brain(object):
         Parameters
         ----------
         coords : numpy array
-            x, y, z coordinates in stereotaxic space or array of vertex ids
+            x, y, z coordinates in stereotaxic space (default) or array of
+            vertex ids (with ``coord_as_verts=True``)
         coords_as_verts : bool
             whether the coords parameter should be interpreted as vertex ids
         map_surface : Freesurfer surf or None
