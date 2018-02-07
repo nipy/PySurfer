@@ -521,3 +521,28 @@ ul.keywordmatches li.goodmatch a {
 .sphx-glr-thumbcontainer a.internal {
     padding: 270px 10px 0 !important;
 }
+
+@media only screen and (min-width: 140ex) {
+    div.sphx-glr-footer-example  {
+	position: unset;
+	right: unset;
+	top: unset;
+	background: unset;
+	padding: unset;
+	border: unset;
+	max-width: unset;
+	width: unset;
+	}
+    div.sphx-glr-footer-example code {
+	max-width: unset;
+	overflow: unset;
+    }
+    div.sphx-glr-footer-example a {
+	max-width: unset;
+	overflow: unset;
+	padding: 1ex;
+    }
+    div.sphx-glr-footer-example a code span:last-child {
+	font-size: unset;
+    }
+}

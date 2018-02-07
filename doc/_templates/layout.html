@@ -1,4 +1,9 @@
 {% extends "!layout.html" %}
+
+{% block extrahead %}
+<link rel="stylesheet" href="{{ pathto('_static/navy.css', 1) }} " type="text/css" />
+{% endblock %}
+
 {% set title = 'PySurfer Python Neuroimaging Visualization' %}
 
 {% block header %}

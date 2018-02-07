@@ -130,7 +130,6 @@ modindex_common_prefix = ['surfer.']
 # a list of builtin themes.
 # html_theme = 'bootstrap'
 html_theme = "sphinxdoc"
-html_style = 'navy.css'
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = []
