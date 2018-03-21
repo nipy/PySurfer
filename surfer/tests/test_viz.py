@@ -81,10 +81,12 @@ def test_image():
     brain.close()
 
     brain = Brain(*std_args, size=100)
+    if sys.platform == 'darwin' and os.getenv('TRAVIS', '') == 'true':
+        raise SkipTest('image saving on OSX travis is not supported')
     brain.save_image(tmp_name)
     brain.save_image(tmp_name, 'rgba', True)
     brain.screenshot()
-    if not os.getenv('TRAVIS', 'false') == 'true':
+    if os.getenv('TRAVIS', '') != 'true':
         # for some reason these fail on Travis sometimes
         brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
         brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
@@ -340,6 +342,8 @@ def test_movie():
                    smoothing_steps=10, time=time, time_label='time=%0.2f ms')
     brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
 
+    if sys.platform == 'darwin' and os.getenv('TRAVIS', '') == 'true':
+        raise SkipTest('movie saving on OSX Travis is not supported')
     # save movies with different options
     tempdir = mkdtemp()
     try:
