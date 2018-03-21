@@ -3257,10 +3257,10 @@ class _Hemisphere(object):
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color])
         l_m = surf.module_manager.scalar_lut_manager
-        l_m.load_lut_from_list(cmap)
-        # This works around a bug that seems to been introduced in
-        # NumPy 1.14, maybe a comparison operator failing?
-        l_m.data_range = [0., 1. + np.finfo(float).eps]
+        # for some reason (traits?) using `load_lut_from_list` here does
+        # not work (.data_range needs to be tweaked in this case),
+        # but setting the table directly does:
+        l_m.lut.table = np.round(cmap * 255).astype(np.uint8)
         return array_id, surf
 
     def add_morphometry(self, morph_data, colormap, measure,
