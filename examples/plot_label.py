@@ -26,7 +26,7 @@ brain.add_label("BA1_exvivo")
 brain.add_label("BA1_exvivo", color="blue", scalar_thresh=.5)
 
 # Or you can give a path to a label in an arbitrary location
-subj_dir = os.environ["SUBJECTS_DIR"]
+subj_dir = brain.subjects_dir
 label_file = os.path.join(subj_dir, subject_id,
                           "label", "%s.MT_exvivo.label" % hemi)
 brain.add_label(label_file)
