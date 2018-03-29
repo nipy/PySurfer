@@ -1858,6 +1858,7 @@ class Brain(object):
 
         # update mesh objects (they use a reference to geo.coords)
         for brain in self.brains:
+            brain._geo_mesh.data.points = self.geo[brain.hemi].coords
             brain.update_surf()
 
         self.surf = surf
@@ -3369,7 +3370,7 @@ class _Hemisphere(object):
                     light.azimuth *= -1
 
     def update_surf(self):
-        "Update surface mesh after mesh coordinates change"
+        """Update surface mesh after mesh coordinates change."""
         with warnings.catch_warnings(record=True):  # traits
             self._geo_mesh.update()
             for mesh in self._mesh_clones.values():
