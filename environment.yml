@@ -8,7 +8,8 @@ dependencies:
 - numpy
 - scipy
 - matplotlib
-- pyqt=5
+- pyqt>=5.9
+- vtk>=8
 - nose
 - coverage
 - pytest
@@ -16,11 +17,10 @@ dependencies:
 - flake8
 - pygments
 - pip:
-  - vtk
-  - "git+https://github.com/enthought/traits.git@a7a83182048c08923953e302658b51b68c802132"
-  - "git+https://github.com/enthought/pyface.git@13a064de48adda3c880350545717d8cf8929afad"
-  - "git+https://github.com/enthought/traitsui.git@ee8ef0a34dfc1db18a8e2c0301cc18d96b7a3e2f"
-  - "git+https://github.com/enthought/mayavi.git"
+  - "https://api.github.com/repos/enthought/traits/zipball/a99b3f64d50c5f7f28ffc01bf69419b061f9e976"
+  - "https://api.github.com/repos/enthought/pyface/zipball/6a0cac149d56293482bb828a7d98122667c773be"
+  - "https://api.github.com/repos/enthought/traitsui/zipball/e366ad3886d3c39bedb96e83bab447d31c4ab725"
+  - "https://api.github.com/repos/enthought/mayavi/zipball/master"
   - nibabel
   - pytest-sugar
   - pytest-faulthandler
