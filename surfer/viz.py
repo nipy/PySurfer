@@ -527,7 +527,8 @@ class Brain(object):
                              _f.scene.camera.parallel_scale
                              if _f.scene is not None else False)
 
-            _f.scene.disable_render = not state
+            if _f.scene is not None:
+                _f.scene.disable_render = not state
 
             if state is True and view is not None:
                 mlab.draw(figure=_f)
