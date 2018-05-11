@@ -525,7 +525,7 @@ class Brain(object):
             if state is False and view is None:
                 views[vi] = (mlab.view(figure=_f), mlab.roll(figure=_f),
                              _f.scene.camera.parallel_scale
-                             if _f.scene.camera is not None else False)
+                             if _f.scene is not None else False)
 
             _f.scene.disable_render = not state
 
@@ -534,7 +534,7 @@ class Brain(object):
                 with warnings.catch_warnings(record=True):  # traits focalpoint
                     mlab.view(*view[0], figure=_f)
                     mlab.roll(view[1], figure=_f)
-                if _f.scene.camera is not None:
+                if _f.scene is not None:
                     _f.scene.camera.parallel_scale = view[2]
         # let's do the ugly force draw
         if state is True:
