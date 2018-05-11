@@ -14,7 +14,7 @@ from surfer.io import read_stc
 print(__doc__)
 
 ###############################################################################
-# Set up some useful variables
+# Set up some useful variables and make the plot.
 
 # define subject, surface and hemisphere(s) to plot:
 
@@ -32,7 +32,6 @@ def time_label(t):
     return 'time=%0.2f ms' % (t * 1e3)
 
 
-###############################################################################
 # Read MNE dSPM inverse solution and plot
 
 for hemi in ['lh']:  # , 'rh']:

@@ -1082,6 +1082,8 @@ class Brain(object):
                 else:
                     scale_factor = (0.4 * distance /
                                     (4 * array.shape[0] ** (0.33)))
+            if self._units == 'm':
+                scale_factor = scale_factor / 1000.
             magnitude_max = magnitude.max()
         elif array.ndim not in (1, 2):
             raise ValueError('array has must have 1, 2, or 3 dimensions, '
