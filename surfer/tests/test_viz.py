@@ -6,6 +6,7 @@ import sys
 from tempfile import mkdtemp, mktemp
 import warnings
 
+import pytest
 from nose.tools import assert_equal, assert_in, assert_not_in
 from nose.plugins.skip import SkipTest
 from mayavi import mlab
@@ -240,6 +241,9 @@ def test_label():
     brain.add_label("V2", color="#FF6347", alpha=.6)
     brain.add_label("entorhinal", color=(.2, 1, .5), alpha=.6)
     brain.set_surf('white')
+    brain.show_view(dict(elevation=40, distance=430), distance=430)
+    with pytest.raises(ValueError, match='!='):
+        brain.show_view(dict(elevation=40, distance=430), distance=431)
 
     # remove labels
     brain.remove_labels('V1')

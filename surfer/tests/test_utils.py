@@ -51,6 +51,11 @@ def test_surface():
         nn = _slow_compute_normals(surface.coords, surface.faces[:10000])
         nn_fast = utils._compute_normals(surface.coords, surface.faces[:10000])
         assert_array_almost_equal(nn, nn_fast)
+        assert 50 < np.linalg.norm(surface.coords, axis=-1).mean() < 100  # mm
+    surface = utils.Surface('fsaverage', 'lh', 'inflated',
+                            subjects_dir=subj_dir, units='m')
+    surface.load_geometry()
+    assert 0.05 < np.linalg.norm(surface.coords, axis=-1).mean() < 0.1  # m
 
 
 def test_huge_cross():

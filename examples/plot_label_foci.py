@@ -16,7 +16,8 @@ subject_id = "fsaverage"
 """
 Bring up the visualization.
 """
-brain = Brain(subject_id, "lh", "inflated", cortex=("gray", -2, 7, True))
+brain = Brain(subject_id, "lh", "inflated", cortex=("gray", -2, 7, True),
+              units='m')
 
 """
 First we'll identify a stereotaxic focus in the MNI coordinate system. This
@@ -62,4 +63,4 @@ brain.add_foci([coord], map_surface="white", coords_as_verts=True,
 """
 Set the camera position to show the extent of the labels.
 """
-brain.show_view(dict(elevation=40, distance=430))
+brain.show_view(dict(elevation=40, distance=0.430))

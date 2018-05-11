@@ -71,27 +71,18 @@ class Surface(object):
         Which hemisphere to load
     surf : string
         Name of the surface to load (eg. inflated, orig ...)
-    data_path : string
-        Path where to look for data
-    x: 1d array
-        x coordinates of vertices
-    y: 1d array
-        y coordinates of vertices
-    z: 1d array
-        z coordinates of vertices
-    coords : 2d array of shape [n_vertices, 3]
-        The vertices coordinates
-    faces : 2d array
-        The faces ie. the triangles
-    nn : 2d array
-        Normalized surface normals for vertices.
     subjects_dir : str | None
         If not None, this directory will be used as the subjects directory
         instead of the value set using the SUBJECTS_DIR environment variable.
+    offset : float | None
+        If float, align inside edge of each hemisphere to center + offset.
+        If None, do not change coordinates (default).
+    units : str
+        Can be 'm' or 'mm' (default).
     """
 
     def __init__(self, subject_id, hemi, surf, subjects_dir=None,
-                 offset=None):
+                 offset=None, units='mm'):
         """Surface
 
         Parameters
@@ -116,6 +107,7 @@ class Surface(object):
         self.coords = None
         self.faces = None
         self.nn = None
+        self.units = _check_units(units)
 
         subjects_dir = _get_subjects_dir(subjects_dir)
         self.data_path = op.join(subjects_dir, subject_id)
@@ -124,6 +116,8 @@ class Surface(object):
         surf_path = op.join(self.data_path, "surf",
                             "%s.%s" % (self.hemi, self.surf))
         coords, faces = nib.freesurfer.read_geometry(surf_path)
+        if self.units == 'm':
+            coords /= 1000.
         if self.offset is not None:
             if self.hemi == 'lh':
                 coords[:, 0] -= (np.max(coords[:, 0]) + self.offset)
@@ -139,11 +133,6 @@ class Surface(object):
             self.coords[:] = coords
             self.faces[:] = faces
             self.nn[:] = nn
-
-    def save_geometry(self):
-        surf_path = op.join(self.data_path, "surf",
-                            "%s.%s" % (self.hemi, self.surf))
-        nib.freesurfer.write_geometry(surf_path, self.coords, self.faces)
 
     @property
     def x(self):
@@ -392,6 +381,12 @@ def verbose(function):
 ###############################################################################
 # USEFUL FUNCTIONS
 
+def _check_units(units):
+    if units not in ('m', 'mm'):
+        raise ValueError('Units must be "m" or "mm", got %r' % (units,))
+    return units
+
+
 def find_closest_vertices(surface_coords, point_coords):
     """Return the vertices on a surface mesh closest to some given coordinates.
 
@@ -414,25 +409,29 @@ def find_closest_vertices(surface_coords, point_coords):
     return np.argmin(cdist(surface_coords, point_coords), axis=0)
 
 
-def tal_to_mni(coords):
+def tal_to_mni(coords, units='mm'):
     """Convert Talairach coords to MNI using the Lancaster transform.
 
     Parameters
     ----------
     coords : n x 3 numpy array
         Array of Talairach coordinates
+    units : str
+        Can be 'm' or 'mm' (default).
 
     Returns
     -------
     mni_coords : n x 3 numpy array
-        Array of coordinates converted to MNI space
-
+        Array of coordinates converted to MNI space.
     """
     coords = np.atleast_2d(coords)
     xfm = np.array([[1.06860, -0.00396, 0.00826,  1.07816],
                     [0.00640,  1.05741, 0.08566,  1.16824],
                     [-0.01281, -0.08863, 1.10792, -4.17805],
                     [0.00000,  0.00000, 0.00000,  1.00000]])
+    units = _check_units(units)
+    if units == 'm':
+        xfm[:3, 3] /= 1000.
     mni_coords = np.dot(np.c_[coords, np.ones(coords.shape[0])], xfm.T)[:, :3]
     return mni_coords
 
@@ -597,7 +596,8 @@ def smoothing_matrix(vertices, adj_mat, smoothing_steps=20, verbose=None):
 
 @verbose
 def coord_to_label(subject_id, coord, label, hemi='lh', n_steps=30,
-                   map_surface='white', coord_as_vert=False, verbose=None):
+                   map_surface='white', coord_as_vert=False, units='mm',
+                   verbose=None):
     """Create label from MNI coordinate
 
     Parameters
@@ -616,18 +616,24 @@ def coord_to_label(subject_id, coord, label, hemi='lh', n_steps=30,
         The surface name used to find the closest point
     coord_as_vert : bool
         whether the coords parameter should be interpreted as vertex ids
+    units : str
+        Can be 'm' or 'mm' (default).
     verbose : bool, str, int, or None
         If not None, override default verbose level (see surfer.verbose).
     """
-    geo = Surface(subject_id, hemi, map_surface)
+    geo = Surface(subject_id, hemi, map_surface, units=units)
     geo.load_geometry()
 
+    coords = geo.coords
+    # work in mm from here on
+    if geo.units == 'm':
+        coords = coords * 1000
     if coord_as_vert:
-        coord = geo.coords[coord]
+        coord = coords[coord]
 
-    n_vertices = len(geo.coords)
+    n_vertices = len(coords)
     adj_mat = mesh_edges(geo.faces)
-    foci_vtxs = find_closest_vertices(geo.coords, [coord])
+    foci_vtxs = find_closest_vertices(coords, [coord])
     data = np.zeros(n_vertices)
     data[foci_vtxs] = 1.
     smooth_mat = smoothing_matrix(np.arange(n_vertices), adj_mat, 1)
@@ -641,7 +647,7 @@ def coord_to_label(subject_id, coord, label, hemi='lh', n_steps=30,
     f.write('#label at %s from subject %s\n' % (coord, subject_id))
     f.write('%d\n' % len(idx))
     for i in idx:
-        x, y, z = geo.coords[i]
+        x, y, z = coords[i]
         f.write('%d  %f  %f  %f 0.000000\n' % (i, x, y, z))
 
 
@@ -696,7 +702,7 @@ def has_fsaverage(subjects_dir=None, raise_error=True, return_why=False):
 
 def has_imageio():
     try:
-        import imageio  # NOQA
+        import imageio  # noqa, analysis:ignore
     except ImportError:
         return False
     else:
