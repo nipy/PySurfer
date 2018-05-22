@@ -27,3 +27,4 @@ pysurfer.egg-info
 examples/example_data/coord-lh.label
 .ipynb_checkpoints/
 .cache/
+.pytest_cache/

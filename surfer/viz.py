@@ -1,3 +1,4 @@
+from copy import deepcopy
 import logging
 from math import floor
 import os
@@ -22,7 +23,7 @@ from pyface.api import GUI
 
 from . import utils, io
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
-                    string_types, threshold_filter)
+                    string_types, threshold_filter, _check_units)
 
 
 logger = logging.getLogger('surfer')
@@ -362,6 +363,8 @@ class Brain(object):
     interaction : str
         Can be "trackball" (default) or "terrain", i.e. a turntable-style
         camera.
+    units : str
+        Can be 'm' or 'mm' (default).
 
     Attributes
     ----------
@@ -384,41 +387,13 @@ class Brain(object):
                  cortex="classic", alpha=1.0, size=800, background="black",
                  foreground=None, figure=None, subjects_dir=None,
                  views=['lat'], offset=True, show_toolbar=False,
-                 offscreen=False, interaction='trackball',
-                 config_opts=None, curv=None):
-
-        # Keep backwards compatability
-        if config_opts is not None:
-            msg = ("The `config_opts` dict has been deprecated and will "
-                   "be removed in future versions. You should update your "
-                   "code and pass these options directly to the `Brain` "
-                   "constructor.")
-            warn(msg, DeprecationWarning)
-            cortex = config_opts.get("cortex", cortex)
-            background = config_opts.get("background", background)
-            foreground = config_opts.get("foreground", foreground)
-
-            size = config_opts.get("size", size)
-            width = config_opts.get("width", size)
-            height = config_opts.get("height", size)
-            size = (width, height)
-        # Keep backwards compatability
-        if curv is not None:
-            msg = ("The `curv` keyword has been deprecated and will "
-                   "be removed in future versions. You should update your "
-                   "code and use the `cortex` keyword to specify how the "
-                   "brain surface is rendered. Setting `cortex` to `None` "
-                   "will reproduce the previous behavior when `curv` was "
-                   "set to `False`. To emulate the previous behavior for "
-                   "cases where `curv` was set to `True`, simply omit it.")
-            warn(msg, DeprecationWarning)
-            if not curv:
-                cortex = None
+                 offscreen=False, interaction='trackball', units='mm'):
 
         if not isinstance(interaction, string_types) or \
                 interaction not in ('trackball', 'terrain'):
             raise ValueError('interaction must be "trackball" or "terrain", '
                              'got "%s"' % (interaction,))
+        self._units = _check_units(units)
         col_dict = dict(lh=1, rh=1, both=1, split=2)
         n_col = col_dict[hemi]
         if hemi not in col_dict.keys():
@@ -450,7 +425,8 @@ class Brain(object):
         geo_kwargs, geo_reverse, geo_curv = self._get_geo_params(cortex, alpha)
         for h in geo_hemis:
             # Initialize a Surface object as the geometry
-            geo = Surface(subject_id, h, surf, subjects_dir, offset)
+            geo = Surface(subject_id, h, surf, subjects_dir, offset,
+                          units=self._units)
             # Load in the geometry and (maybe) curvature
             geo.load_geometry()
             if geo_curv:
@@ -548,16 +524,17 @@ class Brain(object):
 
             if state is False and view is None:
                 views[vi] = (mlab.view(figure=_f), mlab.roll(figure=_f),
-                             _f.scene.camera.parallel_scale)
+                             _f.scene.camera.parallel_scale
+                             if _f.scene is not None else False)
 
-            _f.scene.disable_render = not state
+            if _f.scene is not None:
+                _f.scene.disable_render = not state
 
-            if state is True and view is not None:
+            if state is True and view is not None and _f.scene is not None:
                 mlab.draw(figure=_f)
                 with warnings.catch_warnings(record=True):  # traits focalpoint
                     mlab.view(*view[0], figure=_f)
                     mlab.roll(view[1], figure=_f)
-                _f.scene.camera.parallel_scale = view[2]
         # let's do the ugly force draw
         if state is True:
             _force_render(self._figures)
@@ -1105,6 +1082,8 @@ class Brain(object):
                 else:
                     scale_factor = (0.4 * distance /
                                     (4 * array.shape[0] ** (0.33)))
+            if self._units == 'm':
+                scale_factor = scale_factor / 1000.
             magnitude_max = magnitude.max()
         elif array.ndim not in (1, 2):
             raise ValueError('array has must have 1, 2, or 3 dimensions, '
@@ -1609,8 +1588,8 @@ class Brain(object):
             whether the coords parameter should be interpreted as vertex ids
         map_surface : Freesurfer surf or None
             surface to map coordinates through, or None to use raw coords
-        scale_factor : int
-            controls the size of the foci spheres
+        scale_factor : float
+            Controls the size of the foci spheres (relative to 1cm).
         color : matplotlib color code
             HTML name, RBG tuple, or hex code
         alpha : float in [0, 1]
@@ -1635,7 +1614,8 @@ class Brain(object):
             foci_coords = np.atleast_2d(coords)
         else:
             foci_surf = Surface(self.subject_id, hemi, map_surface,
-                                subjects_dir=self.subjects_dir)
+                                subjects_dir=self.subjects_dir,
+                                units=self._units)
             foci_surf.load_geometry()
             foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
             foci_coords = self.geo[hemi].coords[foci_vtxs]
@@ -1650,6 +1630,8 @@ class Brain(object):
 
         views = self._toggle_render(False)
         fl = []
+        if self._units == 'm':
+            scale_factor = scale_factor / 1000.
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
                 fl.append(brain['brain'].add_foci(foci_coords, scale_factor,
@@ -2996,9 +2978,15 @@ class _Hemisphere(object):
 
         _force_render(self._f)
         if view is not None:
+            view = deepcopy(view)
             view['reset_roll'] = True
             view['figure'] = self._f
-            view['distance'] = distance
+            if 'distance' not in view:
+                view['distance'] = distance
+            elif distance is not None and distance != view['distance']:
+                raise ValueError('view parameters view["distance"] != '
+                                 'distance (%s != %s)' % (view['distance'],
+                                                          distance))
             # DO NOT set focal point, can screw up non-centered brains
             # view['focalpoint'] = (0.0, 0.0, 0.0)
             mlab.view(**view)

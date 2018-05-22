@@ -19,7 +19,7 @@ print(__doc__)
 subject_id, surf = 'fsaverage', 'white'
 hemi = 'lh'
 brain = Brain(subject_id, hemi, surf, size=(800, 800), interaction='terrain',
-              cortex='0.5', alpha=0.5, show_toolbar=True)
+              cortex='0.5', alpha=0.5, show_toolbar=True, units='m')
 
 # Read the MNE dSPM inverse solution
 
