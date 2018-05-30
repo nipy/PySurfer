@@ -4,11 +4,10 @@ Plot RGBA values on brain surface
 =================================
 
 """
-import mne
+import nibabel
 import numpy as np
 import matplotlib.pyplot as plt
 from mayavi import mlab
-from copy import deepcopy
 from tvtk.api import tvtk
 from tvtk.common import configure_input_data
 from surfer.utils import smoothing_matrix, mesh_edges
