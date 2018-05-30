@@ -19,15 +19,13 @@ print(__doc__)
 # define helper functions
 
 def norm(x):
-	'''
-	Normalise array betweeen 0-1
-	'''
+	''' Normalise array betweeen 0-1 '''
 	return (x - np.min(x)) / (np.max(x) - np.min(x))
 
 ###############################################################################
 # load surface
 
-surf_fname = '/Users/lauragwilliams/Documents/programming/PySurfer/examples/example_data/lh.white'
+surf_fname = 'example_data/lh.white'
 rr, tris = nibabel.freesurfer.io.read_geometry(surf_fname)
 tris = tris.astype(np.uint32)
 x, y, z = rr.T
@@ -36,7 +34,7 @@ x, y, z = rr.T
 # generate an rgba matrix, of shape n_vertices x 4
 
 # define color map
-cmap = plt.cm.rainbow
+cmap = plt.cm.viridis
 
 # change colour based on position on the x axis
 hue = norm(x)
@@ -47,7 +45,6 @@ alpha = norm(z)
 
 # combine hue and alpha into a Nx4 matrix
 rgba_vals = np.concatenate((colors, alpha[:, None]), axis=1)
-
 
 ###############################################################################
 # plot
@@ -69,4 +66,3 @@ configure_input_data(mapper, mesh.data)
 actor = tvtk.Actor()
 actor.mapper = mapper
 fig.scene.add_actor(actor)
-
