@@ -28,50 +28,6 @@ def norm(x, lims=[1, 99]):
     x[x > 1] = 1
     return x
 
-
-def plot_rgba_meshbrain(rgba_vals, verts, hemi='lh', surf='pial',
-                        **kwargs):
-
-    # where to load up surfaces from
-    subjects_dir = mne.datasets.sample.data_path() + '/subjects'
-
-    # make colours copy
-    colors = deepcopy(rgba_vals)
-    n_verts = colors.shape[0]
-
-    # load surface
-    rr, tris = mne.read_surface('%s/fsaverage/surf/%s.%s' % (subjects_dir,
-                                                             hemi, surf))
-    tris = tris.astype(np.uint32)
-    x, y, z = rr.T
-
-    # interpolate values from ico4 -> max
-    adj_mat = mesh_edges(tris)
-    smooth_mat = smoothing_matrix(verts[0], adj_mat,
-                                  20, verbose=False)
-
-    colors = smooth_mat.dot(colors[:n_verts])
-
-    # init figure
-    fig = mlab.figure()
-    b = Brain('fsaverage', hemi, surf, subjects_dir=subjects_dir,
-              background='white',
-              figure=fig, **kwargs)
-
-    # plot points in x,y,z
-    mesh = mlab.pipeline.triangular_mesh_source(
-        x, y, z, tris, figure=fig, **kwargs)
-    mesh.data.point_data.scalars.number_of_components = 4  # r, g, b, a
-    mesh.data.point_data.scalars = (colors * 255).astype('ubyte')
-
-    # tvtk for vis
-    mapper = tvtk.PolyDataMapper()
-    configure_input_data(mapper, mesh.data)
-    actor = tvtk.Actor()
-    actor.mapper = mapper
-    fig.scene.add_actor(actor)
-    return b
-
 ###############################################################################
 # generate an rgba matrix, of shape n_vertices x 4
 
@@ -103,5 +59,46 @@ rgba_vals = np.concatenate((colors, alpha[:, None]), axis=1)
 ###############################################################################
 # plot the rgba values on a PySurfer brain
 
-fig = plot_rgba_meshbrain(rgba_vals, stc.vertices)
+verts = stc.vertices
+hemi='lh'
+surf='pial'
+
+# where to load up surfaces from
+subjects_dir = mne.datasets.sample.data_path() + '/subjects'
+
+# make colours copy
+colors = deepcopy(rgba_vals)
+n_verts = colors.shape[0]
+
+# load surface
+rr, tris = mne.read_surface('%s/fsaverage/surf/%s.%s' % (subjects_dir,
+                                                         hemi, surf))
+tris = tris.astype(np.uint32)
+x, y, z = rr.T
+
+# interpolate values from ico4 -> max
+adj_mat = mesh_edges(tris)
+smooth_mat = smoothing_matrix(verts[0], adj_mat,
+                              20, verbose=False)
+
+colors = smooth_mat.dot(colors[:n_verts])
+
+# init figure
+fig = mlab.figure()
+b = Brain('fsaverage', hemi, surf, subjects_dir=subjects_dir,
+          background='white',
+          figure=fig)
+
+# plot points in x,y,z
+mesh = mlab.pipeline.triangular_mesh_source(
+    x, y, z, tris, figure=fig)
+mesh.data.point_data.scalars.number_of_components = 4  # r, g, b, a
+mesh.data.point_data.scalars = (colors * 255).astype('ubyte')
+
+# tvtk for vis
+mapper = tvtk.PolyDataMapper()
+configure_input_data(mapper, mesh.data)
+actor = tvtk.Actor()
+actor.mapper = mapper
+fig.scene.add_actor(actor)
 
