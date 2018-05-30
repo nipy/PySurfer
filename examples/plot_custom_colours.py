@@ -4,6 +4,7 @@ Plot RGBA values on brain surface
 =================================
 
 """
+import os
 import nibabel
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,7 +26,8 @@ def norm(x):
 ###############################################################################
 # load surface
 
-surf_fname = 'example_data/lh.white'
+subjects_dir = os.environ['SUBJECTS_DIR']
+surf_fname = '%s/fsaverage/surf/lh.white' % (subjects_dir)
 rr, tris = nibabel.freesurfer.io.read_geometry(surf_fname)
 tris = tris.astype(np.uint32)
 x, y, z = rr.T
