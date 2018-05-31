@@ -3,6 +3,11 @@
 Plot RGBA values on brain surface
 =================================
 
+In this example, each vertex on a 3D brain is plotted with a different
+RGBA value. Hue varies along the x-axis (right/left direction) and
+alpha varies along the z-axis (up/down direction). However, this can be
+easily generalised to other use cases.
+
 """
 import os
 import numpy as np
@@ -35,7 +40,7 @@ b = Brain('fsaverage', hemi, surf, subjects_dir=subjects_dir,
           background='white', figure=fig)
 
 # co-ordinates
-[x, y, z] = b.geo[hemi].coords.T
+x, y, z = b.geo[hemi].coords.T
 tris = b.geo[hemi].faces
 
 
