@@ -16,16 +16,14 @@ from surfer import Brain
 
 print(__doc__)
 
-###############################################################################
-# define helper functions
+# 1) define helper functions
 
 def norm(x):
 	''' Normalise array betweeen 0-1 '''
 	return (x - np.min(x)) / (np.max(x) - np.min(x))
 
 
-###############################################################################
-# init brain and get spatial co-ordinates
+# 2) init brain and get spatial co-ordinates
 
 # params
 subjects_dir = os.environ['SUBJECTS_DIR']
@@ -42,8 +40,7 @@ b = Brain('fsaverage', hemi, surf, subjects_dir=subjects_dir,
 tris = b.geo[hemi].faces
 
 
-###############################################################################
-# generate an rgba matrix, of shape n_vertices x 4
+# 3) generate an rgba matrix, of shape n_vertices x 4
 
 # define color map
 cmap = plt.cm.viridis
@@ -59,8 +56,7 @@ alpha = norm(z)
 rgba_vals = np.concatenate((colors, alpha[:, None]), axis=1)
 
 
-###############################################################################
-# add data to plot
+# 4) add data to plot
 
 # plot points in x,y,z
 mesh = mlab.pipeline.triangular_mesh_source(
