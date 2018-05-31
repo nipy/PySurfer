@@ -26,7 +26,7 @@ def norm(x):
 # 2) init brain and get spatial co-ordinates
 
 # params
-# subjects_dir = os.environ['SUBJECTS_DIR']
+subjects_dir = os.environ['SUBJECTS_DIR']
 hemi = 'lh'
 surf = 'white'
 
