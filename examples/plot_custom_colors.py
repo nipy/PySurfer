@@ -5,22 +5,21 @@ Plot RGBA values on brain surface
 
 """
 import os
-import nibabel
 import numpy as np
 import matplotlib.pyplot as plt
 from mayavi import mlab
 from tvtk.api import tvtk
 from tvtk.common import configure_input_data
-from surfer.utils import smoothing_matrix, mesh_edges
 from surfer import Brain
 
 print(__doc__)
 
 # 1) define helper functions
 
+
 def norm(x):
-	''' Normalise array betweeen 0-1 '''
-	return (x - np.min(x)) / (np.max(x) - np.min(x))
+    '''Normalise array betweeen 0-1'''
+    return (x - np.min(x)) / (np.max(x) - np.min(x))
 
 
 # 2) init brain and get spatial co-ordinates
