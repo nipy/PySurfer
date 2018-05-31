@@ -23,14 +23,24 @@ def norm(x):
 	''' Normalise array betweeen 0-1 '''
 	return (x - np.min(x)) / (np.max(x) - np.min(x))
 
-###############################################################################
-# load surface
 
+###############################################################################
+# init brain and get spatial co-ordinates
+
+# params
 subjects_dir = os.environ['SUBJECTS_DIR']
-surf_fname = '%s/fsaverage/surf/lh.white' % (subjects_dir)
-rr, tris = nibabel.freesurfer.io.read_geometry(surf_fname)
-tris = tris.astype(np.uint32)
-x, y, z = rr.T
+hemi = 'lh'
+surf = 'white'
+
+# init figure
+fig = mlab.figure()
+b = Brain('fsaverage', hemi, surf, subjects_dir=subjects_dir,
+          background='white', alpha=0, figure=fig)
+
+# co-ordinates
+[x, y, z] = b.geo[hemi].coords.T
+tris = b.geo[hemi].faces
+
 
 ###############################################################################
 # generate an rgba matrix, of shape n_vertices x 4
@@ -48,13 +58,9 @@ alpha = norm(z)
 # combine hue and alpha into a Nx4 matrix
 rgba_vals = np.concatenate((colors, alpha[:, None]), axis=1)
 
-###############################################################################
-# plot
 
-# init figure
-fig = mlab.figure()
-b = Brain('fsaverage', hemi, surf, subjects_dir=subjects_dir,
-          background='white', alpha=0, figure=fig)
+###############################################################################
+# add data to plot
 
 # plot points in x,y,z
 mesh = mlab.pipeline.triangular_mesh_source(
