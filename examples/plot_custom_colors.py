@@ -26,14 +26,14 @@ def norm(x):
 # 2) init brain and get spatial co-ordinates
 
 # params
-subjects_dir = os.environ['SUBJECTS_DIR']
+# subjects_dir = os.environ['SUBJECTS_DIR']
 hemi = 'lh'
 surf = 'white'
 
 # init figure
 fig = mlab.figure()
 b = Brain('fsaverage', hemi, surf, subjects_dir=subjects_dir,
-          background='white', alpha=0, figure=fig)
+          background='white', figure=fig)
 
 # co-ordinates
 [x, y, z] = b.geo[hemi].coords.T
