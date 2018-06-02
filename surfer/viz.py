@@ -1768,11 +1768,6 @@ class Brain(object):
             brain surface to view (one of 'lateral', 'medial', 'rostral',
             'caudal', 'dorsal', 'ventral', 'frontal', 'parietal') or kwargs to
             pass to :func:`mayavi.mlab.view()`.
-
-        Returns
-        -------
-        view : tuple
-            tuple returned from mlab.view
         roll : float
             camera roll
         distance : float | 'auto' | None
@@ -1781,6 +1776,13 @@ class Brain(object):
             Row index of which brain to use
         col : int
             Column index of which brain to use
+
+        Returns
+        -------
+        view : tuple
+            tuple returned from mlab.view
+        roll : float
+            camera roll returned from mlab.roll
         """
         return self.brain_matrix[row][col].show_view(view, roll, distance)
 
