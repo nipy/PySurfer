@@ -3297,8 +3297,9 @@ class _Hemisphere(object):
         array_id, pipe = self._add_scalar_data(scalar_data)
         with warnings.catch_warnings(record=True):
             thresh = threshold_filter(pipe, low=min)
-            surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
-                                                 line_width=line_width)
+            surf = mlab.pipeline.contour_surface(
+                thresh, contours=n_contours, line_width=line_width,
+                reset_zoom=False)
         if lut is not None:
             l_m = surf.module_manager.scalar_lut_manager
             l_m.load_lut_from_list(lut / 255.)

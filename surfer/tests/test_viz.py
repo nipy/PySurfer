@@ -146,10 +146,16 @@ def test_annot():
     borders = [True, False, 2]
     alphas = [1, 0.5]
     brain = Brain(*std_args)
+    fig = brain._figures[0][0]
+
+    fig.scene.camera.parallel_scale = 50
     for a, b, p in zip(annots, borders, alphas):
         brain.add_annotation(a, b, p)
+    assert fig.scene.camera.parallel_scale == 50
+
     brain.set_surf('white')
-    assert_raises(ValueError, brain.add_annotation, 'aparc', borders=-1)
+    with pytest.raises(ValueError):
+        brain.add_annotation('aparc', borders=-1)
 
     subj_dir = utils._get_subjects_dir()
     annot_path = pjoin(subj_dir, subject_id, 'label', 'lh.aparc.a2009s.annot')
@@ -164,12 +170,17 @@ def test_contour():
     """Test plotting of contour overlay."""
     _set_backend()
     brain = Brain(*std_args)
+    fig = brain._figures[0][0]
+
+    fig.scene.camera.parallel_scale = 50
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
     brain.add_contour_overlay(overlay_file)
     brain.add_contour_overlay(overlay_file, max=20, n_contours=9,
                               line_width=2)
     brain.contour['surface'].actor.property.line_width = 1
     brain.contour['surface'].contour.number_of_contours = 10
+
+    assert fig.scene.camera.parallel_scale == 50
     brain.close()
 
 
