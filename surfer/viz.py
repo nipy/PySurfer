@@ -2245,12 +2245,12 @@ class Brain(object):
         if mlab.options.backend != 'test':
             mlab.savefig(filename, figure=brain._f)
 
-    def _screenshot_figure(self, mode='rgb', antialiased=False, dpi=100):
+    def _screenshot_figure(self, mode='rgb', antialiased=False):
         """Create a matplolib figure from the current screenshot."""
         # adapted from matplotlib.image.imsave
         from matplotlib.backends.backend_agg import FigureCanvasAgg
         from matplotlib.figure import Figure
-        fig = Figure(dpi=dpi, frameon=False)  # DPI only used for metadata
+        fig = Figure(frameon=False)
         FigureCanvasAgg(fig)
         fig.figimage(self.screenshot(mode, antialiased), resize=True)
         return fig
