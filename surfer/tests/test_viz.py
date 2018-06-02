@@ -1,9 +1,7 @@
 import os
 import os.path as op
 from os.path import join as pjoin
-import shutil
 import sys
-from tempfile import mkdtemp, mktemp
 import warnings
 
 import pytest
@@ -82,9 +80,10 @@ def test_offscreen():
 
 
 @requires_fsaverage()
-def test_image():
+def test_image(tmpdir):
     """Test image saving."""
-    tmp_name = mktemp() + '.png'
+    tmp_name = tmpdir.join('temp.png')
+    tmp_name = str(tmp_name)  # coerce to str to avoid PIL error
 
     _set_backend()
     subject_id, _, surf = std_args
@@ -355,7 +354,7 @@ def test_morphometry():
 
 @requires_imageio()
 @requires_fsaverage()
-def test_movie():
+def test_movie(tmpdir):
     """Test saving a movie of an MEG inverse solution."""
     import imageio
 
@@ -373,24 +372,17 @@ def test_movie():
     if sys.platform == 'darwin' and os.getenv('TRAVIS', '') == 'true':
         raise SkipTest('movie saving on OSX Travis is not supported')
     # save movies with different options
-    tempdir = mkdtemp()
-    try:
-        dst = os.path.join(tempdir, 'test.mov')
-        # test the number of frames in the movie
-        brain.save_movie(dst)
-        frames = imageio.mimread(dst)
-        assert len(frames) == 2
-        brain.save_movie(dst, time_dilation=10)
-        frames = imageio.mimread(dst)
-        assert len(frames) == 7
-        brain.save_movie(dst, tmin=0.081, tmax=0.102)
-        frames = imageio.mimread(dst)
-        assert len(frames) == 2
-    finally:
-        # clean up
-        if not (sys.platform == 'win32' and
-                os.getenv('APPVEYOR', 'False') == 'True'):  # cleanup problems
-            shutil.rmtree(tempdir)
+    dst = str(tmpdir.join('test.mov'))
+    # test the number of frames in the movie
+    brain.save_movie(dst)
+    frames = imageio.mimread(dst)
+    assert len(frames) == 2
+    brain.save_movie(dst, time_dilation=10)
+    frames = imageio.mimread(dst)
+    assert len(frames) == 7
+    brain.save_movie(dst, tmin=0.081, tmax=0.102)
+    frames = imageio.mimread(dst)
+    assert len(frames) == 2
     brain.close()
 
 
@@ -475,12 +467,12 @@ def test_text():
 
 
 @requires_fsaverage()
-def test_animate():
+def test_animate(tmpdir):
     """Test animation."""
     _set_backend('auto')
     brain = Brain(*std_args, size=100)
     brain.add_morphometry('curv')
-    tmp_name = mktemp() + '.avi'
+    tmp_name = str(tmpdir.join('test.avi'))
     brain.animate(["m"] * 3, n_steps=2)
     brain.animate(['l', 'l'], n_steps=2, fname=tmp_name)
     # can't rotate in axial plane
