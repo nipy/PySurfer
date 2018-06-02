@@ -58,7 +58,8 @@ def get_view(brain):
         return
     fig.scene.camera.parallel_scale = 50
     assert fig.scene.camera.parallel_scale == 50
-    return fig.scene.camera.parallel_scale
+    view, roll = brain.show_view()
+    return fig.scene.camera.parallel_scale, view, roll
 
 
 def check_view(brain, view):
@@ -66,7 +67,12 @@ def check_view(brain, view):
     fig = brain._figures[0][0]
     if mlab.options.backend == 'test':
         return
-    assert fig.scene.camera.parallel_scale == view
+    parallel_scale, view, roll = view
+    assert fig.scene.camera.parallel_scale == parallel_scale
+    view_now, roll_now = brain.show_view()
+    assert view_now[:3] == view[:3]
+    assert_array_equal(view_now[3], view[3])
+    assert roll_now == roll
 
 
 @requires_fsaverage
