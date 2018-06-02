@@ -51,6 +51,24 @@ def _set_backend(backend=None):
     mlab.options.backend = backend
 
 
+def get_view(brain):
+    """Setup for view persistence test"""
+    fig = brain._figures[0][0]
+    if mlab.options.backend == 'test':
+        return
+    fig.scene.camera.parallel_scale = 50
+    assert fig.scene.camera.parallel_scale == 50
+    return fig.scene.camera.parallel_scale
+
+
+def check_view(brain, view):
+    """Test view persistence"""
+    fig = brain._figures[0][0]
+    if mlab.options.backend == 'test':
+        return
+    assert fig.scene.camera.parallel_scale == view
+
+
 @requires_fsaverage
 def test_offscreen():
     """Test offscreen rendering."""
@@ -146,12 +164,11 @@ def test_annot():
     borders = [True, False, 2]
     alphas = [1, 0.5]
     brain = Brain(*std_args)
-    fig = brain._figures[0][0]
+    view = get_view(brain)
 
-    fig.scene.camera.parallel_scale = 50
     for a, b, p in zip(annots, borders, alphas):
         brain.add_annotation(a, b, p)
-    assert fig.scene.camera.parallel_scale == 50
+    check_view(brain, view)
 
     brain.set_surf('white')
     with pytest.raises(ValueError):
@@ -170,9 +187,8 @@ def test_contour():
     """Test plotting of contour overlay."""
     _set_backend()
     brain = Brain(*std_args)
-    fig = brain._figures[0][0]
+    view = get_view(brain)
 
-    fig.scene.camera.parallel_scale = 50
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
     brain.add_contour_overlay(overlay_file)
     brain.add_contour_overlay(overlay_file, max=20, n_contours=9,
@@ -180,7 +196,7 @@ def test_contour():
     brain.contour['surface'].actor.property.line_width = 1
     brain.contour['surface'].contour.number_of_contours = 10
 
-    assert fig.scene.camera.parallel_scale == 50
+    check_view(brain, view)
     brain.close()
 
 
@@ -239,11 +255,10 @@ def test_label():
     hemi = "lh"
     surf = "inflated"
     brain = Brain(subject_id, hemi, surf)
-    fig = brain._figures[0][0]
+    view = get_view(brain)
 
-    fig.scene.camera.parallel_scale = 50
     brain.add_label("BA1")
-    assert fig.scene.camera.parallel_scale == 50
+    check_view(brain, view)
     brain.add_label("BA1", color="blue", scalar_thresh=.5)
     subj_dir = utils._get_subjects_dir()
     label_file = pjoin(subj_dir, subject_id,
