@@ -228,7 +228,11 @@ def test_label():
     hemi = "lh"
     surf = "inflated"
     brain = Brain(subject_id, hemi, surf)
+    fig = brain._figures[0][0]
+
+    fig.scene.camera.parallel_scale = 50
     brain.add_label("BA1")
+    assert fig.scene.camera.parallel_scale == 50
     brain.add_label("BA1", color="blue", scalar_thresh=.5)
     subj_dir = utils._get_subjects_dir()
     label_file = pjoin(subj_dir, subject_id,
