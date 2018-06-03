@@ -10,7 +10,8 @@ import pytest
 from mayavi import mlab
 import nibabel as nib
 import numpy as np
-from numpy.testing import assert_raises, assert_array_equal, SkipTest
+from numpy.testing import assert_raises, assert_array_equal
+from unittest import SkipTest
 
 from surfer import Brain, io, utils
 from surfer.utils import requires_fsaverage, requires_imageio
