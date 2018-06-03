@@ -1768,11 +1768,6 @@ class Brain(object):
             brain surface to view (one of 'lateral', 'medial', 'rostral',
             'caudal', 'dorsal', 'ventral', 'frontal', 'parietal') or kwargs to
             pass to :func:`mayavi.mlab.view()`.
-
-        Returns
-        -------
-        view : tuple
-            tuple returned from mlab.view
         roll : float
             camera roll
         distance : float | 'auto' | None
@@ -1781,6 +1776,13 @@ class Brain(object):
             Row index of which brain to use
         col : int
             Column index of which brain to use
+
+        Returns
+        -------
+        view : tuple
+            tuple returned from mlab.view
+        roll : float
+            camera roll returned from mlab.roll
         """
         return self.brain_matrix[row][col].show_view(view, roll, distance)
 
@@ -3125,7 +3127,8 @@ class _Hemisphere(object):
                 pos_thresh = threshold_filter(mesh, low=old.pos_lims[0])
                 pos = mlab.pipeline.surface(
                     pos_thresh, colormap="YlOrRd", figure=self._f,
-                    vmin=old.pos_lims[1], vmax=old.pos_lims[2])
+                    vmin=old.pos_lims[1], vmax=old.pos_lims[2],
+                    reset_zoom=False)
                 pos.actor.property.backface_culling = False
                 pos_bar = mlab.scalarbar(pos, nb_labels=5)
             pos_bar.reverse_lut = True
@@ -3140,7 +3143,8 @@ class _Hemisphere(object):
                 neg_thresh = threshold_filter(mesh, up=old.neg_lims[0])
                 neg = mlab.pipeline.surface(
                     neg_thresh, colormap="PuBu", figure=self._f,
-                    vmin=old.neg_lims[1], vmax=old.neg_lims[2])
+                    vmin=old.neg_lims[1], vmax=old.neg_lims[2],
+                    reset_zoom=False)
                 neg.actor.property.backface_culling = False
                 neg_bar = mlab.scalarbar(neg, nb_labels=5)
             neg_bar.scalar_bar_representation.position = (0.05, 0.01)
@@ -3196,7 +3200,7 @@ class _Hemisphere(object):
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(
                 pipe, colormap=colormap, vmin=fmin, vmax=fmax,
-                opacity=float(alpha), figure=self._f)
+                opacity=float(alpha), figure=self._f, reset_zoom=False)
             surf.actor.property.backface_culling = False
 
         # apply look up table if given
@@ -3226,7 +3230,8 @@ class _Hemisphere(object):
         # Add scalar values to dataset
         array_id, pipe = self._add_scalar_data(ids)
         with warnings.catch_warnings(record=True):
-            surf = mlab.pipeline.surface(pipe, name=annot, figure=self._f)
+            surf = mlab.pipeline.surface(pipe, name=annot, figure=self._f,
+                                         reset_zoom=False)
             surf.actor.property.backface_culling = False
 
         # Set the color table
@@ -3242,7 +3247,8 @@ class _Hemisphere(object):
         from matplotlib.colors import colorConverter
         array_id, pipe = self._add_scalar_data(label)
         with warnings.catch_warnings(record=True):
-            surf = mlab.pipeline.surface(pipe, name=label_name, figure=self._f)
+            surf = mlab.pipeline.surface(pipe, name=label_name, figure=self._f,
+                                         reset_zoom=False)
             surf.actor.property.backface_culling = False
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color])
@@ -3258,9 +3264,9 @@ class _Hemisphere(object):
         """Add a morphometry overlay to the image"""
         array_id, pipe = self._add_scalar_data(morph_data)
         with warnings.catch_warnings(record=True):
-            surf = mlab.pipeline.surface(pipe, colormap=colormap,
-                                         vmin=min, vmax=max,
-                                         name=measure, figure=self._f)
+            surf = mlab.pipeline.surface(
+                pipe, colormap=colormap, vmin=min, vmax=max, name=measure,
+                figure=self._f, reset_zoom=False)
 
         # Get the colorbar
         if colorbar:
@@ -3291,8 +3297,9 @@ class _Hemisphere(object):
         array_id, pipe = self._add_scalar_data(scalar_data)
         with warnings.catch_warnings(record=True):
             thresh = threshold_filter(pipe, low=min)
-            surf = mlab.pipeline.contour_surface(thresh, contours=n_contours,
-                                                 line_width=line_width)
+            surf = mlab.pipeline.contour_surface(
+                thresh, contours=n_contours, line_width=line_width,
+                reset_zoom=False)
         if lut is not None:
             l_m = surf.module_manager.scalar_lut_manager
             l_m.load_lut_from_list(lut / 255.)

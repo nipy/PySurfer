@@ -51,6 +51,30 @@ def _set_backend(backend=None):
     mlab.options.backend = backend
 
 
+def get_view(brain):
+    """Setup for view persistence test"""
+    fig = brain._figures[0][0]
+    if mlab.options.backend == 'test':
+        return
+    fig.scene.camera.parallel_scale = 50
+    assert fig.scene.camera.parallel_scale == 50
+    view, roll = brain.show_view()
+    return fig.scene.camera.parallel_scale, view, roll
+
+
+def check_view(brain, view):
+    """Test view persistence"""
+    fig = brain._figures[0][0]
+    if mlab.options.backend == 'test':
+        return
+    parallel_scale, view, roll = view
+    assert fig.scene.camera.parallel_scale == parallel_scale
+    view_now, roll_now = brain.show_view()
+    assert view_now[:3] == view[:3]
+    assert_array_equal(view_now[3], view[3])
+    assert roll_now == roll
+
+
 @requires_fsaverage
 def test_offscreen():
     """Test offscreen rendering."""
@@ -146,10 +170,15 @@ def test_annot():
     borders = [True, False, 2]
     alphas = [1, 0.5]
     brain = Brain(*std_args)
+    view = get_view(brain)
+
     for a, b, p in zip(annots, borders, alphas):
         brain.add_annotation(a, b, p)
+    check_view(brain, view)
+
     brain.set_surf('white')
-    assert_raises(ValueError, brain.add_annotation, 'aparc', borders=-1)
+    with pytest.raises(ValueError):
+        brain.add_annotation('aparc', borders=-1)
 
     subj_dir = utils._get_subjects_dir()
     annot_path = pjoin(subj_dir, subject_id, 'label', 'lh.aparc.a2009s.annot')
@@ -164,12 +193,16 @@ def test_contour():
     """Test plotting of contour overlay."""
     _set_backend()
     brain = Brain(*std_args)
+    view = get_view(brain)
+
     overlay_file = pjoin(data_dir, "lh.sig.nii.gz")
     brain.add_contour_overlay(overlay_file)
     brain.add_contour_overlay(overlay_file, max=20, n_contours=9,
                               line_width=2)
     brain.contour['surface'].actor.property.line_width = 1
     brain.contour['surface'].contour.number_of_contours = 10
+
+    check_view(brain, view)
     brain.close()
 
 
@@ -228,7 +261,10 @@ def test_label():
     hemi = "lh"
     surf = "inflated"
     brain = Brain(subject_id, hemi, surf)
+    view = get_view(brain)
+
     brain.add_label("BA1")
+    check_view(brain, view)
     brain.add_label("BA1", color="blue", scalar_thresh=.5)
     subj_dir = utils._get_subjects_dir()
     label_file = pjoin(subj_dir, subject_id,
