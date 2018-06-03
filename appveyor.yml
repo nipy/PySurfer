@@ -4,6 +4,7 @@ environment:
         PYTHON_ARCH: "64"
 
 install:
+  - "python --version"
   - "pip install numpy scipy matplotlib nose pillow pytest pytest-cov coverage imageio codecov"
   - "pip install traits traitsui pyface vtk mayavi nibabel"
   - "powershell make/get_fsaverage.ps1"
