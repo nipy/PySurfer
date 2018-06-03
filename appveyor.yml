@@ -5,7 +5,7 @@ environment:
       CONDA_DEPENDENCIES: "numpy scipy matplotlib nose pillow sphinx pytest pytest-cov coverage traits traitsui pyface vtk"
       PIP_DEPENDENCIES: "mayavi nibabel imageio git+git://github.com/sphinx-gallery/sphinx-gallery.git numpydoc codecov"
   matrix:
-      - PYTHON_VERSION: "3.6"
+      - PYTHON_VERSION: "2.7"
         PYTHON_ARCH: "64"
 
 install:
