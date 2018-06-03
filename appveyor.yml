@@ -18,7 +18,6 @@ install:
   - "conda install ffmpeg -c conda-forge"
   - "SET SUBJECTS_DIR=%CD%\\subjects"
   - "ls %CD%\\subjects"
-  - "pip install --upgrade git+https://github.com/enthought/mayavi.git"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
