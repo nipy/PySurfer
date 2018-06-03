@@ -1,20 +1,15 @@
 environment:
   global:
-      PYTHON: "C:\\conda"
-      MINICONDA_VERSION: "latest"
-      PIP_DEPENDENCIES: "numpy scipy matplotlib nose pillow sphinx pytest pytest-cov coverage traits traitsui pyface vtk mayavi nibabel imageio codecov"
+      PYTHON: "C:\\Python"
   matrix:
       - PYTHON_VERSION: "3.6"
         PYTHON_ARCH: "64"
 
 install:
-  - "git clone git://github.com/astropy/ci-helpers.git"
-  - "powershell ci-helpers/appveyor/install-miniconda.ps1"
+  - "pip install numpy scipy matplotlib nose pillow pytest pytest-cov coverage imageio codecov"
+  - "pip install traits traitsui pyface vtk mayavi nibabel"
   - "powershell make/get_fsaverage.ps1"
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-  - "activate test"
   - "python setup.py develop"
-  - "conda install ffmpeg -c conda-forge"
   - "SET SUBJECTS_DIR=%CD%\\subjects"
   - "ls %CD%\\subjects"
 
