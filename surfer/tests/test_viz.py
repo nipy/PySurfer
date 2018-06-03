@@ -7,12 +7,10 @@ from tempfile import mkdtemp, mktemp
 import warnings
 
 import pytest
-from nose.tools import assert_equal, assert_in, assert_not_in
-from nose.plugins.skip import SkipTest
 from mayavi import mlab
 import nibabel as nib
 import numpy as np
-from numpy.testing import assert_raises, assert_array_equal
+from numpy.testing import assert_raises, assert_array_equal, SkipTest
 
 from surfer import Brain, io, utils
 from surfer.utils import requires_fsaverage, requires_imageio
@@ -283,10 +281,10 @@ def test_label():
 
     # remove labels
     brain.remove_labels('V1')
-    assert_in('V2', brain.labels_dict)
-    assert_not_in('V1', brain.labels_dict)
+    assert 'V2' in brain.labels_dict
+    assert 'V1' not in brain.labels_dict
     brain.remove_labels()
-    assert_not_in('V2', brain.labels_dict)
+    assert 'V2' not in brain.labels_dict
 
     brain.close()
 
@@ -314,10 +312,10 @@ def test_meg_inverse():
                        smoothing_steps=1, time=time, time_label=time_label)
 
     brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
-    assert_equal(brain.data_dict['lh']['time_idx'], 0)
+    assert brain.data_dict['lh']['time_idx'] == 0
 
     brain.set_time(.1)
-    assert_equal(brain.data_dict['lh']['time_idx'], 2)
+    assert brain.data_dict['lh']['time_idx'] == 2
     # viewer = TimeViewer(brain)
 
     # multiple data layers
@@ -326,30 +324,30 @@ def test_meg_inverse():
     brain.add_data(data, colormap=colormap, vertices=vertices,
                    smoothing_steps=1, time=time, time_label=time_label,
                    initial_time=.09)
-    assert_equal(brain.data_dict['lh']['time_idx'], 1)
+    assert brain.data_dict['lh']['time_idx'] == 1
     data_dicts = brain._data_dicts['lh']
-    assert_equal(len(data_dicts), 3)
-    assert_equal(data_dicts[0]['time_idx'], 1)
-    assert_equal(data_dicts[1]['time_idx'], 1)
+    assert len(data_dicts) == 3
+    assert data_dicts[0]['time_idx'] == 1
+    assert data_dicts[1]['time_idx'] == 1
 
     # shift time in both layers
     brain.set_data_time_index(0)
-    assert_equal(data_dicts[0]['time_idx'], 0)
-    assert_equal(data_dicts[1]['time_idx'], 0)
+    assert data_dicts[0]['time_idx'] == 0
+    assert data_dicts[1]['time_idx'] == 0
     brain.set_data_smoothing_steps(2)
 
     # add second data-layer without time axis
     brain.add_data(data[:, 1], colormap=colormap, vertices=vertices,
                    smoothing_steps=2)
     brain.set_data_time_index(2)
-    assert_equal(len(data_dicts), 4)
+    assert len(data_dicts) == 4
 
     # change surface
     brain.set_surf('white')
 
     # remove all layers
     brain.remove_data()
-    assert_equal(brain._data_dicts['lh'], [])
+    assert brain._data_dicts['lh'] == []
 
     brain.close()
 
@@ -391,13 +389,13 @@ def test_movie():
         # test the number of frames in the movie
         brain.save_movie(dst)
         frames = imageio.mimread(dst)
-        assert_equal(len(frames), 2)
+        assert len(frames) == 2
         brain.save_movie(dst, time_dilation=10)
         frames = imageio.mimread(dst)
-        assert_equal(len(frames), 7)
+        assert len(frames) == 7
         brain.save_movie(dst, tmin=0.081, tmax=0.102)
         frames = imageio.mimread(dst)
-        assert_equal(len(frames), 2)
+        assert len(frames) == 2
     finally:
         # clean up
         if not (sys.platform == 'win32' and
@@ -424,8 +422,8 @@ def test_overlay():
     overlay = brain.overlays_dict.pop('two-sided')[0]
     assert_array_equal(overlay.pos_bar.data_range, [4, 30])
     assert_array_equal(overlay.neg_bar.data_range, [-30, -4])
-    assert_equal(overlay.pos_bar.reverse_lut, True)
-    assert_equal(overlay.neg_bar.reverse_lut, False)
+    assert overlay.pos_bar.reverse_lut
+    assert not overlay.neg_bar.reverse_lut
     overlay.remove()
 
     thresh = 4

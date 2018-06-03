@@ -17,7 +17,7 @@ matrix:
 
         # Full (Linux, 2.7)
         - os: linux
-          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov nose coverage"
+          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov coverage"
                PIP_DEPENDENCIES="codecov nibabel imageio"
           addons:
             apt:
@@ -26,12 +26,12 @@ matrix:
 
         # Minimal (no mencoder)
         - os: linux
-          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov nose coverage"
+          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov coverage"
                PIP_DEPENDENCIES="codecov nibabel"
 
         # OSX
         - os: osx
-          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov nose coverage"
+          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov coverage"
                PIP_DEPENDENCIES="codecov nibabel imageio"
 
 # Setup anaconda
