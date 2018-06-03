@@ -2,10 +2,10 @@ environment:
   global:
       PYTHON: "C:\\conda"
       MINICONDA_VERSION: "latest"
-      CONDA_DEPENDENCIES: "numpy scipy mayavi matplotlib nose imaging sphinx pytest pytest-cov coverage"
-      PIP_DEPENDENCIES: "nibabel imageio git+git://github.com/sphinx-gallery/sphinx-gallery.git numpydoc codecov"
+      CONDA_DEPENDENCIES: "numpy scipy matplotlib nose imaging sphinx pytest pytest-cov coverage traits traitsui pyface vtk"
+      PIP_DEPENDENCIES: "mayavi nibabel imageio git+git://github.com/sphinx-gallery/sphinx-gallery.git numpydoc codecov"
   matrix:
-      - PYTHON_VERSION: "2.7"
+      - PYTHON_VERSION: "3.6"
         PYTHON_ARCH: "64"
 
 install:
