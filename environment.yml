@@ -10,7 +10,6 @@ dependencies:
 - matplotlib
 - pyqt>=5.9
 - vtk>=8
-- nose
 - coverage
 - pytest
 - pytest-cov

@@ -7,15 +7,14 @@ from tempfile import mkdtemp, mktemp
 import warnings
 
 import pytest
-from nose.tools import assert_equal, assert_in, assert_not_in
-from nose.plugins.skip import SkipTest
 from mayavi import mlab
 import nibabel as nib
 import numpy as np
-from numpy.testing import assert_raises, assert_array_equal
+from numpy.testing import assert_array_equal
+from unittest import SkipTest
 
 from surfer import Brain, io, utils
-from surfer.utils import requires_fsaverage, requires_imageio
+from surfer.utils import requires_fsaverage, requires_imageio, requires_fs
 
 warnings.simplefilter('always')
 
@@ -24,17 +23,6 @@ std_args = [subject_id, 'lh', 'inflated']
 data_dir = pjoin(op.dirname(__file__), '..', '..', 'examples', 'example_data')
 
 overlay_fname = pjoin(data_dir, 'lh.sig.nii.gz')
-
-
-def has_freesurfer():
-    if 'FREESURFER_HOME' not in os.environ:
-        return False
-    else:
-        return True
-
-
-requires_fs = np.testing.dec.skipif(not has_freesurfer(),
-                                    'Requires FreeSurfer command line tools')
 
 
 def _set_backend(backend=None):
@@ -75,7 +63,7 @@ def check_view(brain, view):
     assert roll_now == roll
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_offscreen():
     """Test offscreen rendering."""
     if os.getenv('TRAVIS', 'false') == 'true':
@@ -93,7 +81,7 @@ def test_offscreen():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_image():
     """Test image saving."""
     tmp_name = mktemp() + '.png'
@@ -119,7 +107,7 @@ def test_image():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_brains():
     """Test plotting of Brain with different arguments."""
     # testing backend breaks when passing in a figure, so we use 'auto' here
@@ -156,13 +144,13 @@ def test_brains():
     brain = Brain(subject_id, hemi, surf, subjects_dir=sd,
                   interaction='terrain')
     brain.close()
-    assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
+    pytest.raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   subjects_dir='')
-    assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
+    pytest.raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   interaction='foo', subjects_dir=sd)
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_annot():
     """Test plotting of annot."""
     _set_backend()
@@ -188,7 +176,7 @@ def test_annot():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_contour():
     """Test plotting of contour overlay."""
     _set_backend()
@@ -206,8 +194,8 @@ def test_contour():
     brain.close()
 
 
-@requires_fsaverage
-@requires_fs
+@requires_fsaverage()
+@requires_fs()
 def test_data():
     """Test plotting of data."""
     _set_backend()
@@ -221,18 +209,18 @@ def test_data():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_data_limits():
     """Test handling of data limits."""
     _set_backend()
     brain = Brain(*std_args)
     surf_data = np.zeros(163842)
-    assert_raises(ValueError, brain.add_data, surf_data, 0, 0)
+    pytest.raises(ValueError, brain.add_data, surf_data, 0, 0)
     brain.add_data(surf_data, 0, 1)
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_foci():
     """Test plotting of foci."""
     _set_backend('test')
@@ -253,7 +241,7 @@ def test_foci():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_label():
     """Test plotting of label."""
     _set_backend()
@@ -283,15 +271,15 @@ def test_label():
 
     # remove labels
     brain.remove_labels('V1')
-    assert_in('V2', brain.labels_dict)
-    assert_not_in('V1', brain.labels_dict)
+    assert 'V2' in brain.labels_dict
+    assert 'V1' not in brain.labels_dict
     brain.remove_labels()
-    assert_not_in('V2', brain.labels_dict)
+    assert 'V2' not in brain.labels_dict
 
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_meg_inverse():
     """Test plotting of MEG inverse solution."""
     _set_backend()
@@ -314,47 +302,47 @@ def test_meg_inverse():
                        smoothing_steps=1, time=time, time_label=time_label)
 
     brain.scale_data_colormap(fmin=13, fmid=18, fmax=22, transparent=True)
-    assert_equal(brain.data_dict['lh']['time_idx'], 0)
+    assert brain.data_dict['lh']['time_idx'] == 0
 
     brain.set_time(.1)
-    assert_equal(brain.data_dict['lh']['time_idx'], 2)
+    assert brain.data_dict['lh']['time_idx'] == 2
     # viewer = TimeViewer(brain)
 
     # multiple data layers
-    assert_raises(ValueError, brain.add_data, data, vertices=vertices,
+    pytest.raises(ValueError, brain.add_data, data, vertices=vertices,
                   time=time[:-1])
     brain.add_data(data, colormap=colormap, vertices=vertices,
                    smoothing_steps=1, time=time, time_label=time_label,
                    initial_time=.09)
-    assert_equal(brain.data_dict['lh']['time_idx'], 1)
+    assert brain.data_dict['lh']['time_idx'] == 1
     data_dicts = brain._data_dicts['lh']
-    assert_equal(len(data_dicts), 3)
-    assert_equal(data_dicts[0]['time_idx'], 1)
-    assert_equal(data_dicts[1]['time_idx'], 1)
+    assert len(data_dicts) == 3
+    assert data_dicts[0]['time_idx'] == 1
+    assert data_dicts[1]['time_idx'] == 1
 
     # shift time in both layers
     brain.set_data_time_index(0)
-    assert_equal(data_dicts[0]['time_idx'], 0)
-    assert_equal(data_dicts[1]['time_idx'], 0)
+    assert data_dicts[0]['time_idx'] == 0
+    assert data_dicts[1]['time_idx'] == 0
     brain.set_data_smoothing_steps(2)
 
     # add second data-layer without time axis
     brain.add_data(data[:, 1], colormap=colormap, vertices=vertices,
                    smoothing_steps=2)
     brain.set_data_time_index(2)
-    assert_equal(len(data_dicts), 4)
+    assert len(data_dicts) == 4
 
     # change surface
     brain.set_surf('white')
 
     # remove all layers
     brain.remove_data()
-    assert_equal(brain._data_dicts['lh'], [])
+    assert brain._data_dicts['lh'] == []
 
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_morphometry():
     """Test plotting of morphometry."""
     _set_backend()
@@ -365,8 +353,8 @@ def test_morphometry():
     brain.close()
 
 
-@requires_imageio
-@requires_fsaverage
+@requires_imageio()
+@requires_fsaverage()
 def test_movie():
     """Test saving a movie of an MEG inverse solution."""
     import imageio
@@ -391,13 +379,13 @@ def test_movie():
         # test the number of frames in the movie
         brain.save_movie(dst)
         frames = imageio.mimread(dst)
-        assert_equal(len(frames), 2)
+        assert len(frames) == 2
         brain.save_movie(dst, time_dilation=10)
         frames = imageio.mimread(dst)
-        assert_equal(len(frames), 7)
+        assert len(frames) == 7
         brain.save_movie(dst, tmin=0.081, tmax=0.102)
         frames = imageio.mimread(dst)
-        assert_equal(len(frames), 2)
+        assert len(frames) == 2
     finally:
         # clean up
         if not (sys.platform == 'win32' and
@@ -406,7 +394,7 @@ def test_movie():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_overlay():
     """Test plotting of overlay."""
     _set_backend()
@@ -424,8 +412,8 @@ def test_overlay():
     overlay = brain.overlays_dict.pop('two-sided')[0]
     assert_array_equal(overlay.pos_bar.data_range, [4, 30])
     assert_array_equal(overlay.neg_bar.data_range, [-30, -4])
-    assert_equal(overlay.pos_bar.reverse_lut, True)
-    assert_equal(overlay.neg_bar.reverse_lut, False)
+    assert overlay.pos_bar.reverse_lut
+    assert not overlay.neg_bar.reverse_lut
     overlay.remove()
 
     thresh = 4
@@ -450,7 +438,7 @@ def test_overlay():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_probabilistic_labels():
     """Test plotting of probabilistic labels."""
     _set_backend()
@@ -477,7 +465,7 @@ def test_probabilistic_labels():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_text():
     """Test plotting of text."""
     _set_backend('test')
@@ -486,7 +474,7 @@ def test_text():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_animate():
     """Test animation."""
     _set_backend('auto')
@@ -496,11 +484,11 @@ def test_animate():
     brain.animate(["m"] * 3, n_steps=2)
     brain.animate(['l', 'l'], n_steps=2, fname=tmp_name)
     # can't rotate in axial plane
-    assert_raises(ValueError, brain.animate, ['l', 'd'])
+    pytest.raises(ValueError, brain.animate, ['l', 'd'])
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_views():
     """Test showing different views."""
     _set_backend('test')
