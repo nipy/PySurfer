@@ -6,7 +6,7 @@ environment:
 install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "python --version"
-  - "pip install numpy scipy matplotlib nose pillow pytest pytest-cov coverage imageio codecov"
+  - "pip install numpy scipy matplotlib nose pillow pytest pytest-cov coverage imageio codecov pyqt==5.9"
   - "pip install traits traitsui pyface vtk mayavi nibabel"
   - "powershell make/get_fsaverage.ps1"
   - "python setup.py develop"
