@@ -8,7 +8,7 @@ install:
   - "python --version"
   - "pip install numpy scipy matplotlib nose pillow pytest pytest-cov coverage imageio codecov pyqt5==5.9"
   - "pip install traits traitsui pyface vtk mayavi nibabel"
-  - "python -c 'import imageio; imageio.plugins.ffmpeg.download()'"
+  - "python -c \"import imageio; imageio.plugins.ffmpeg.download()\""
   - "powershell make/get_fsaverage.ps1"
   - "python setup.py develop"
   - "SET SUBJECTS_DIR=%CD%\\subjects"
