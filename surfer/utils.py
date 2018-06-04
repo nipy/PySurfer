@@ -716,3 +716,10 @@ def requires_imageio():
     else:
         has = True
     return pytest.mark.skipif(not has, reason="Requires imageio with ffmpeg")
+
+
+def requires_fs():
+    import pytest
+    has = ('FREESURFER_HOME' in os.environ)
+    return pytest.mark.skipif(
+        not has, reason='Requires FreeSurfer command line tools')

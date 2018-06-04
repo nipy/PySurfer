@@ -14,7 +14,7 @@ from numpy.testing import assert_raises, assert_array_equal
 from unittest import SkipTest
 
 from surfer import Brain, io, utils
-from surfer.utils import requires_fsaverage, requires_imageio
+from surfer.utils import requires_fsaverage, requires_imageio, requires_fs
 
 warnings.simplefilter('always')
 
@@ -23,17 +23,6 @@ std_args = [subject_id, 'lh', 'inflated']
 data_dir = pjoin(op.dirname(__file__), '..', '..', 'examples', 'example_data')
 
 overlay_fname = pjoin(data_dir, 'lh.sig.nii.gz')
-
-
-def has_freesurfer():
-    if 'FREESURFER_HOME' not in os.environ:
-        return False
-    else:
-        return True
-
-
-requires_fs = np.testing.dec.skipif(not has_freesurfer(),
-                                    'Requires FreeSurfer command line tools')
 
 
 def _set_backend(backend=None):
@@ -206,7 +195,7 @@ def test_contour():
 
 
 @requires_fsaverage()
-@requires_fs
+@requires_fs()
 def test_data():
     """Test plotting of data."""
     _set_backend()
