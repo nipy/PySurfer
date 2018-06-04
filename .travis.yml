@@ -68,7 +68,7 @@ before_script:
 
 script:
     - cd ${SRC_DIR}
-    - pytest surfer
+    - pytest surfer --cov=surfer
     - make flake
 
 after_success:

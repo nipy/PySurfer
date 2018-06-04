@@ -29,7 +29,7 @@ def _slow_compute_normals(rr, tris):
     return nn
 
 
-@utils.requires_fsaverage
+@utils.requires_fsaverage()
 def test_surface():
     """Test IO for Surface class"""
     subj_dir = utils._get_subjects_dir()

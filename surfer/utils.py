@@ -24,7 +24,7 @@ logger = logging.getLogger('surfer')
 
 # Py3k compat
 if sys.version[0] == '2':
-    string_types = basestring  # noqa
+    string_types = basestring  # noqa, analysis:ignore
 else:
     string_types = str
 
@@ -700,18 +700,19 @@ def has_fsaverage(subjects_dir=None, raise_error=True, return_why=False):
     return out
 
 
-def has_imageio():
+def requires_fsaverage():
+    import pytest
+    has, why = has_fsaverage(raise_error=False, return_why=True)
+    return pytest.mark.skipif(
+        not has, reason='Requires fsaverage subject data (%s)' % why)
+
+
+def requires_imageio():
+    import pytest
     try:
-        import imageio  # noqa, analysis:ignore
+        from imageio.plugins.ffmpeg import get_exe  # noqa, analysis:ignore
     except ImportError:
-        return False
+        has = False
     else:
-        return True
-
-
-_has, _why = has_fsaverage(raise_error=False, return_why=True)
-requires_fsaverage = np.testing.dec.skipif(
-    not _has, 'Requires fsaverage subject data (%s)' % _why)
-
-requires_imageio = np.testing.dec.skipif(not has_imageio(),
-                                         "Requires imageio package")
+        has = True
+    return pytest.mark.skipif(not has, reason="Requires imageio with ffmpeg")

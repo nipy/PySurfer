@@ -74,7 +74,7 @@ def check_view(brain, view):
     assert roll_now == roll
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_offscreen():
     """Test offscreen rendering."""
     if os.getenv('TRAVIS', 'false') == 'true':
@@ -92,7 +92,7 @@ def test_offscreen():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_image():
     """Test image saving."""
     tmp_name = mktemp() + '.png'
@@ -118,7 +118,7 @@ def test_image():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_brains():
     """Test plotting of Brain with different arguments."""
     # testing backend breaks when passing in a figure, so we use 'auto' here
@@ -161,7 +161,7 @@ def test_brains():
                   interaction='foo', subjects_dir=sd)
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_annot():
     """Test plotting of annot."""
     _set_backend()
@@ -187,7 +187,7 @@ def test_annot():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_contour():
     """Test plotting of contour overlay."""
     _set_backend()
@@ -205,7 +205,7 @@ def test_contour():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 @requires_fs
 def test_data():
     """Test plotting of data."""
@@ -220,7 +220,7 @@ def test_data():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_data_limits():
     """Test handling of data limits."""
     _set_backend()
@@ -231,7 +231,7 @@ def test_data_limits():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_foci():
     """Test plotting of foci."""
     _set_backend('test')
@@ -252,7 +252,7 @@ def test_foci():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_label():
     """Test plotting of label."""
     _set_backend()
@@ -290,7 +290,7 @@ def test_label():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_meg_inverse():
     """Test plotting of MEG inverse solution."""
     _set_backend()
@@ -353,7 +353,7 @@ def test_meg_inverse():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_morphometry():
     """Test plotting of morphometry."""
     _set_backend()
@@ -364,8 +364,8 @@ def test_morphometry():
     brain.close()
 
 
-@requires_imageio
-@requires_fsaverage
+@requires_imageio()
+@requires_fsaverage()
 def test_movie():
     """Test saving a movie of an MEG inverse solution."""
     import imageio
@@ -405,7 +405,7 @@ def test_movie():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_overlay():
     """Test plotting of overlay."""
     _set_backend()
@@ -449,7 +449,7 @@ def test_overlay():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_probabilistic_labels():
     """Test plotting of probabilistic labels."""
     _set_backend()
@@ -476,7 +476,7 @@ def test_probabilistic_labels():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_text():
     """Test plotting of text."""
     _set_backend('test')
@@ -485,7 +485,7 @@ def test_text():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_animate():
     """Test animation."""
     _set_backend('auto')
@@ -499,7 +499,7 @@ def test_animate():
     brain.close()
 
 
-@requires_fsaverage
+@requires_fsaverage()
 def test_views():
     """Test showing different views."""
     _set_backend('test')

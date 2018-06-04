@@ -18,11 +18,7 @@ build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests
-  - "pytest surfer"
-
+  - "pytest surfer --cov=surfer"
 
 on_success:
   - "codecov"
-
-artifacts:
-  - path: doc\_build\html
