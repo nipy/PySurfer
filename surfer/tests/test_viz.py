@@ -10,7 +10,7 @@ import pytest
 from mayavi import mlab
 import nibabel as nib
 import numpy as np
-from numpy.testing import assert_raises, assert_array_equal
+from numpy.testing import assert_array_equal
 from unittest import SkipTest
 
 from surfer import Brain, io, utils
@@ -144,9 +144,9 @@ def test_brains():
     brain = Brain(subject_id, hemi, surf, subjects_dir=sd,
                   interaction='terrain')
     brain.close()
-    assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
+    pytest.raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   subjects_dir='')
-    assert_raises(ValueError, Brain, subject_id, 'lh', 'inflated',
+    pytest.raises(ValueError, Brain, subject_id, 'lh', 'inflated',
                   interaction='foo', subjects_dir=sd)
 
 
@@ -215,7 +215,7 @@ def test_data_limits():
     _set_backend()
     brain = Brain(*std_args)
     surf_data = np.zeros(163842)
-    assert_raises(ValueError, brain.add_data, surf_data, 0, 0)
+    pytest.raises(ValueError, brain.add_data, surf_data, 0, 0)
     brain.add_data(surf_data, 0, 1)
     brain.close()
 
@@ -309,7 +309,7 @@ def test_meg_inverse():
     # viewer = TimeViewer(brain)
 
     # multiple data layers
-    assert_raises(ValueError, brain.add_data, data, vertices=vertices,
+    pytest.raises(ValueError, brain.add_data, data, vertices=vertices,
                   time=time[:-1])
     brain.add_data(data, colormap=colormap, vertices=vertices,
                    smoothing_steps=1, time=time, time_label=time_label,
@@ -484,7 +484,7 @@ def test_animate():
     brain.animate(["m"] * 3, n_steps=2)
     brain.animate(['l', 'l'], n_steps=2, fname=tmp_name)
     # can't rotate in axial plane
-    assert_raises(ValueError, brain.animate, ['l', 'd'])
+    pytest.raises(ValueError, brain.animate, ['l', 'd'])
     brain.close()
 
 
