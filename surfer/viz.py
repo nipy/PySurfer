@@ -200,13 +200,17 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
     if figure is None:
         # spawn scenes
         h, w = scene_size
-        if offscreen is True:
+        if offscreen == 'auto':
+            offscreen = mlab.options.offscreen
+        if offscreen:
             orig_val = mlab.options.offscreen
-            mlab.options.offscreen = True
-            with warnings.catch_warnings(record=True):  # traits
-                figures = [[mlab.figure(size=(h / n_row, w / n_col))
-                            for _ in range(n_col)] for __ in range(n_row)]
-            mlab.options.offscreen = orig_val
+            try:
+                mlab.options.offscreen = True
+                with warnings.catch_warnings(record=True):  # traits
+                    figures = [[mlab.figure(size=(h / n_row, w / n_col))
+                                for _ in range(n_col)] for __ in range(n_row)]
+            finally:
+                mlab.options.offscreen = orig_val
             _v = None
         else:
             # Triage: don't make TraitsUI if we don't have to
@@ -356,10 +360,11 @@ class Brain(object):
         surface where hemispheres typically overlap (Default: True)
     show_toolbar : bool
         If True, toolbars will be shown for each view.
-    offscreen : bool
+    offscreen : bool | str
         If True, rendering will be done offscreen (not shown). Useful
         mostly for generating images or screenshots, but can be buggy.
-        Use at your own risk.
+        Use at your own risk. Can be "auto" (default) to use
+        ``mlab.options.offscreen``.
     interaction : str
         Can be "trackball" (default) or "terrain", i.e. a turntable-style
         camera.
@@ -387,7 +392,7 @@ class Brain(object):
                  cortex="classic", alpha=1.0, size=800, background="black",
                  foreground=None, figure=None, subjects_dir=None,
                  views=['lat'], offset=True, show_toolbar=False,
-                 offscreen=False, interaction='trackball', units='mm'):
+                 offscreen='auto', interaction='trackball', units='mm'):
 
         if not isinstance(interaction, string_types) or \
                 interaction not in ('trackball', 'terrain'):
