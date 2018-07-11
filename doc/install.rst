@@ -11,16 +11,16 @@ PySurfer can be installed with pip_. Note that the package name on PyPi is diffe
 
 If you already have PySurfer installed, you can also use pip to update it::
 
-    pip install -U pysurfer
+    pip install -U --no-deps pysurfer
 
 If you would like to save movies of time course data, it is necessary to include the optional dependency ``imageio`` with::
 
-    pip install -U pysurfer[save_movie]
+    pip install pysurfer[save_movie]
 
 If you'd like to install the development version, you have two options. You can
 install straight from github::
 
-    pip install -U https://api.github.com/repos/nipy/PySurfer/zipball/master
+    pip install https://api.github.com/repos/nipy/PySurfer/zipball/master
 
 Or you can clone the `git repository <https://github.com/nipy/PySurfer>`_ and
 install from your local source directory::
