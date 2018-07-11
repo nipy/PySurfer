@@ -31,7 +31,7 @@ Dependencies
 ~~~~~~~~~~~~
 
 PySurfer works on Python 2.7 and 3.6+.
-(Older Python 3 versions will probably work, but are not tested).
+(Older Python 3 versions will probably work, but are not tested.)
 
 To use PySurfer, you will need to have the following Python packages:
 
@@ -44,17 +44,15 @@ To use PySurfer, you will need to have the following Python packages:
 Some input/output functions also make use of the Python Imaging Library (PIL_)
 and ``imageio``, although they are not mandatory.
 
-Other options include the Anaconda_ distribution
-and the Enthough Canopy_ environment. The difficulty on these
-platforms is generally getting Mayavi and VTK installed; see their
-installation instructions for information.
-
 Getting started
 ~~~~~~~~~~~~~~~
 
 Because PySurfer relies on some complicated dependencies (Mayavi, VTK and a GUI
 library), it can be more difficult to get started with than is the case with
-other Python libraries.
+other Python libraries. Consider using the Anaconda_ distribution
+or Enthough Canopy_ environment. The difficulty on these
+platforms is generally getting Mayavi and VTK installed; see their
+installation instructions for information.
 
 PySurfer generally works out of the box on Linux systems. Getting started on
 OSX may be trickier. We have had success using the Anaconda distribution with
