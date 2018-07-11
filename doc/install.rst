@@ -20,7 +20,7 @@ If you would like to save movies of time course data, it is necessary to include
 If you'd like to install the development version, you have two options. You can
 install straight from github::
 
-    pip install git+https://github.com/nipy/pysurfer.git
+    pip install -U https://api.github.com/repos/nipy/PySurfer/zipball/master
 
 Or you can clone the `git repository <https://github.com/nipy/PySurfer>`_ and
 install from your local source directory::
