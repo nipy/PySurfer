@@ -44,16 +44,10 @@ To use PySurfer, you will need to have the following Python packages:
 Some input/output functions also make use of the Python Imaging Library (PIL_)
 and ``imageio``, although they are not mandatory.
 
-An easy option to set up this environment is the Anaconda_ distribution, which
-is free and ships with many of the required packages. If you use Anaconda,
-you'll need to install Mayavi separately. This should be done using ``conda``::
-
-    conda install mayavi
-
-You'll also need to install nibabel, which can be done using ``pip``.
-
-Another option for getting set up is the Enthough Canopy_ environment, which is
-similar to Anaconda and free for academic use.
+Other options include the Anaconda_ distribution
+and the Enthough Canopy_ environment. The difficulty on these
+platforms is generally getting Mayavi and VTK installed; see their
+installation instructions for information.
 
 Getting started
 ~~~~~~~~~~~~~~~
