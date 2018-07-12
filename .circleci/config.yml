@@ -32,7 +32,7 @@ jobs:
         - run: echo "export DISPLAY=:99" >> $BASH_ENV
         - run: /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset;
         # Python env
-        - run: pip install -U --user --progress-bar off numpy scipy matplotlib vtk PyQt5 sip PyQt5-sip nibabel sphinx numpydoc https://api.github.com/repos/sphinx-gallery/sphinx-gallery/zipball/master
+        - run: pip install -U --user --progress-bar off numpy scipy matplotlib vtk PyQt5 sip PyQt5-sip nibabel sphinx numpydoc pillow imageio https://api.github.com/repos/sphinx-gallery/sphinx-gallery/zipball/master
         - run: pip install -U --user --progress-bar off mayavi
         - save_cache:
             key: pip-cache
