@@ -35,33 +35,9 @@ DOWNLOAD_URL = 'https://github.com/nipy/PySurfer'
 VERSION = version
 
 
-def check_dependencies():
-    # nibabel and mayavi are in install_requires
-    needed_deps = ["numpy", "scipy", "matplotlib"]
-    missing_deps = []
-    for dep in needed_deps:
-        try:
-            __import__(dep)
-        except ImportError:
-            missing_deps.append(dep)
-
-    if missing_deps:
-        missing = ", ".join(missing_deps)
-        raise ImportError("Missing dependencies: %s" % missing)
-
-
 if __name__ == "__main__":
     if os.path.exists('MANIFEST'):
         os.remove('MANIFEST')
-
-    import sys
-    if not (len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or
-            sys.argv[1] in ('--help-commands',
-                            '--version',
-                            'egg_info',
-                            'clean'))):
-        check_dependencies()
-
     setup(name=DISTNAME,
           maintainer=MAINTAINER,
           include_package_data=True,
@@ -76,9 +52,8 @@ if __name__ == "__main__":
           classifiers=['Intended Audience :: Science/Research',
                        'Intended Audience :: Developers',
                        'Programming Language :: Python :: 2.7',
-                       'Programming Language :: Python :: 3.3',
-                       'Programming Language :: Python :: 3.4',
-                       'Programming Language :: Python :: 3.5',
+                       'Programming Language :: Python :: 3.6',
+                       'Programming Language :: Python :: 3.7',
                        'License :: OSI Approved',
                        'Programming Language :: Python',
                        'Topic :: Software Development',
@@ -91,6 +66,6 @@ if __name__ == "__main__":
           platforms='any',
           packages=['surfer', 'surfer.tests'],
           scripts=['bin/pysurfer'],
-          install_requires=['nibabel >= 1.2', 'mayavi'],
+          install_requires=['numpy', 'scipy', 'matplotlib', 'nibabel >= 1.2', 'mayavi'],
           extras_require={'save_movie': ['imageio >= 1.5']},
           )
