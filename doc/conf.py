@@ -295,6 +295,7 @@ sphinx_gallery_conf = {
     }
 
 numpydoc_class_members_toctree = False
+numpydoc_show_inherited_class_members = False
 
 
 # -----------------------------------------------------------------------------

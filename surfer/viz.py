@@ -20,6 +20,7 @@ from traits.api import (HasTraits, Range, Int, Float,
                         Bool, Enum, on_trait_change, Instance)
 from tvtk.api import tvtk
 from pyface.api import GUI
+from traitsui.api import View, Item, Group, VGroup, HGroup, VSplit, HSplit
 
 from . import utils, io
 from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
@@ -249,7 +250,6 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
 
 class _MlabGenerator(HasTraits):
     """TraitsUI mlab figure generator"""
-    from traitsui.api import View
     view = Instance(View)
 
     def __init__(self, n_row, n_col, width, height, title, **traits):
@@ -280,7 +280,6 @@ class _MlabGenerator(HasTraits):
         return figures, self._v
 
     def _get_gen_view(self):
-        from traitsui.api import (View, Item, VGroup, HGroup)
         ind = 0
         va = []
         for ri in range(self.n_row):
@@ -3444,7 +3443,6 @@ class TimeViewer(HasTraits):
         brain(s) to control
     """
     # Nested import of traisui for setup.py without X server
-    from traitsui.api import (View, Item, VSplit, HSplit, Group)
     min_time = Int(0)
     max_time = Int(1E9)
     current_time = Range(low="min_time", high="max_time", value=0)
@@ -3509,7 +3507,7 @@ class TimeViewer(HasTraits):
         self.configure_traits()
 
     @on_trait_change("smoothing_steps")
-    def set_smoothing_steps(self):
+    def _set_smoothing_steps(self):
         """ Change number of smooting steps
         """
         if self._disable_updates:
@@ -3523,7 +3521,7 @@ class TimeViewer(HasTraits):
             brain.set_data_smoothing_steps(self.smoothing_steps)
 
     @on_trait_change("orientation")
-    def set_orientation(self):
+    def _set_orientation(self):
         """ Set the orientation
         """
         if self._disable_updates:
@@ -3533,7 +3531,7 @@ class TimeViewer(HasTraits):
             brain.show_view(view=self.orientation)
 
     @on_trait_change("current_time")
-    def set_time_point(self):
+    def _set_time_point(self):
         """ Set the time point shown
         """
         if self._disable_updates:
@@ -3543,7 +3541,7 @@ class TimeViewer(HasTraits):
             brain.set_data_time_index(self.current_time)
 
     @on_trait_change("fmin, fmid, fmax, transparent")
-    def scale_colormap(self):
+    def _scale_colormap(self):
         """ Scale the colormap
         """
         if self._disable_updates:
