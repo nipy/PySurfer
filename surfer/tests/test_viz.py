@@ -237,6 +237,9 @@ def test_foci():
     scale_factor = 0.7
     brain.add_foci(coords, coords_as_verts=True, scale_factor=scale_factor,
                    color="#A52A2A", name='test2')
+    with pytest.raises(ValueError):
+        brain.remove_foci(['test4'])
+    brain.remove_foci('test1')
     brain.remove_foci()
     assert len(brain.foci_dict) == 0
     brain.close()
