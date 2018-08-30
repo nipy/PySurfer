@@ -1474,7 +1474,8 @@ class Brain(object):
             else:
                 keys = foci
             if not all(key in self.foci_dict for key in keys):
-                missing = ', '.join(key for key in keys if key not in self.foci_dict)
+                missing = ', '.join(key for key in keys if key not in
+                                    self.foci_dict)
                 raise ValueError("foci=%r: no foci named %s" % (foci, missing))
 
         for key in keys:
