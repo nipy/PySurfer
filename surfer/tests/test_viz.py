@@ -227,7 +227,7 @@ def test_foci():
     coords = [[-36, 18, -3],
               [-43, 25, 24],
               [-48, 26, -2]]
-    brain.add_foci(coords, map_surface="white", color="gold")
+    brain.add_foci(coords, map_surface="white", color="gold", name='test1')
 
     subj_dir = utils._get_subjects_dir()
     annot_path = pjoin(subj_dir, subject_id, 'label', 'lh.aparc.a2009s.annot')
@@ -235,8 +235,13 @@ def test_foci():
     verts = np.arange(0, len(ids))
     coords = np.random.permutation(verts[ids == 74])[:10]
     scale_factor = 0.7
-    brain.add_foci(coords, coords_as_verts=True,
-                   scale_factor=scale_factor, color="#A52A2A")
+    brain.add_foci(coords, coords_as_verts=True, scale_factor=scale_factor,
+                   color="#A52A2A", name='test2')
+    with pytest.raises(ValueError):
+        brain.remove_foci(['test4'])
+    brain.remove_foci('test1')
+    brain.remove_foci()
+    assert len(brain.foci_dict) == 0
     brain.close()
 
 

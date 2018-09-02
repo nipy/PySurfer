@@ -1454,6 +1454,34 @@ class Brain(object):
         if all(len(brain.data) == 0 for brain in self.brains):
             self.n_times = self._times = None
 
+    def remove_foci(self, name=None):
+        """Remove foci added with ``Brain.add_foci()``.
+
+        Parameters
+        ----------
+        name : str | list of str | None
+            Names of the foci to remove (if None, remove all).
+
+        Notes
+        -----
+        Only foci added with a unique names can be removed.
+        """
+        if name is None:
+            keys = tuple(self.foci_dict)
+        else:
+            if isinstance(name, str):
+                keys = (name,)
+            else:
+                keys = name
+            if not all(key in self.foci_dict for key in keys):
+                missing = ', '.join(key for key in keys if key not in
+                                    self.foci_dict)
+                raise ValueError("foci=%r: no foci named %s" % (name, missing))
+
+        for key in keys:
+            for points in self.foci_dict.pop(key):
+                points.remove()
+
     def remove_labels(self, labels=None, hemi=None):
         """Remove one or more previously added labels from the image.
 
