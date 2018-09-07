@@ -2,37 +2,28 @@ language: c
 sudo: false
 
 env:
-    global: PYTHON_VERSION=2.7
+    global: PYTHON_VERSION=3.6
+            CONDA_DEPENDENCIES="numpy scipy matplotlib pyqt>=5.9 coverage pytest pytest-cov flake8 pygments traits traitsui pyface"
+            PIP_DEPENDENCIES="codecov pytest-sugar pytest-faulthandler nibabel imageio"
             DISPLAY=:99.0
 
 matrix:
     include:
-        # Full (Linux, 3.6)
+        # Full
         - os: linux
-          env: CONDA_ENVIRONMENT="environment.yml"
           addons:
             apt:
               packages:
                 - mencoder
 
-        # Full (Linux, 2.7)
+        # 2.7, no mencoder
         - os: linux
-          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov coverage"
-               PIP_DEPENDENCIES="codecov nibabel imageio"
-          addons:
-            apt:
-              packages:
-                - mencoder
-
-        # Minimal (no mencoder)
-        - os: linux
-          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov coverage"
-               PIP_DEPENDENCIES="codecov nibabel"
+          env: PYTHON_VERSION=2.7
+               CONDA_DEPENDENCIES="numpy scipy matplotlib coverage pytest pytest-cov flake8 mayavi"
+               PIP_DEPENDENCIES="codecov pytest-sugar faulthandler pytest-faulthandler nibabel imageio"
 
         # OSX
         - os: osx
-          env: CONDA_DEPENDENCIES="numpy scipy matplotlib mayavi flake8 pytest pytest-cov coverage"
-               PIP_DEPENDENCIES="codecov nibabel imageio"
 
 # Setup anaconda
 before_install:
@@ -47,6 +38,10 @@ before_install:
       fi;
     - git clone https://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda.sh
+    - if [ "$PYTHON_VERSION" != "2.7" ]; then
+        pip install vtk;
+        pip install mayavi;
+      fi;
 
 install:
     - python setup.py build
@@ -68,7 +63,7 @@ before_script:
 
 script:
     - cd ${SRC_DIR}
-    - pytest surfer --cov=surfer
+    - pytest surfer --cov=surfer -v
     - make flake
 
 after_success:

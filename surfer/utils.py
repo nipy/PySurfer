@@ -332,6 +332,28 @@ def set_log_file(fname=None, output_format='%(message)s', overwrite=None):
     logger.addHandler(lh)
 
 
+if hasattr(inspect, 'signature'):  # py35
+    def _get_args(function, varargs=False):
+        params = inspect.signature(function).parameters
+        args = [key for key, param in params.items()
+                if param.kind not in (param.VAR_POSITIONAL, param.VAR_KEYWORD)]
+        if varargs:
+            varargs = [param.name for param in params.values()
+                       if param.kind == param.VAR_POSITIONAL]
+            if len(varargs) == 0:
+                varargs = None
+            return args, varargs
+        else:
+            return args
+else:
+    def _get_args(function, varargs=False):
+        out = inspect.getargspec(function)  # args, varargs, keywords, defaults
+        if varargs:
+            return out[:2]
+        else:
+            return out[0]
+
+
 def verbose(function):
     """Decorator to allow functions to override default log level
 
@@ -348,7 +370,7 @@ def verbose(function):
         None defaults to using the current log level [e.g., set using
         mne.set_log_level()].
     """
-    arg_names = inspect.getargspec(function).args
+    arg_names = _get_args(function)
     # this wrap allows decorated functions to be pickled (e.g., for parallel)
 
     @wraps(function)

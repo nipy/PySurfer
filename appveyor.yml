@@ -6,7 +6,7 @@ environment:
 install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "python --version"
-  - "pip install numpy scipy matplotlib nose pillow pytest pytest-cov coverage imageio codecov pyqt5==5.9"
+  - "pip install numpy scipy matplotlib nose pillow pytest pytest-cov pytest-faulthandler coverage imageio codecov pyqt5==5.9"
   - "pip install traits traitsui pyface vtk mayavi nibabel"
   - "python -c \"import imageio; imageio.plugins.ffmpeg.download()\""
   - "powershell make/get_fsaverage.ps1"
@@ -18,7 +18,7 @@ build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests
-  - "pytest surfer --cov=surfer"
+  - "pytest surfer --cov=surfer -v"
 
 on_success:
   - "codecov"
