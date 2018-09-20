@@ -1267,13 +1267,11 @@ class Brain(object):
             self._to_borders(labels, hemi, borders)
 
             # Handle null labels properly
-            # (tksurfer doesn't use the alpha channel, so sometimes this
-            # is set weirdly. For our purposes, it should always be 0.
-            # Unless this sometimes causes problems?
             cmap[:, 3] = 255
             bgcolor = self._brain_color
             bgcolor[-1] = 0
-            cmap[np.where(cmap[:, 4] <= 0), :4] = bgcolor
+            cmap[cmap[:, 4] < 0, 4] += 2 ** 24  # wrap to positive
+            cmap[cmap[:, 4] <= 0, :4] = bgcolor
             if np.any(labels == 0) and not np.any(cmap[:, -1] <= 0):
                 cmap = np.vstack((cmap, np.concatenate([bgcolor, [0]])))
 
