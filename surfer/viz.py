@@ -1270,9 +1270,12 @@ class Brain(object):
             # (tksurfer doesn't use the alpha channel, so sometimes this
             # is set weirdly. For our purposes, it should always be 0.
             # Unless this sometimes causes problems?
-            cmap[np.where(cmap[:, 4] == 0), 3] = 0
-            if np.any(labels == 0) and not np.any(cmap[:, -1] == 0):
-                cmap = np.vstack((cmap, np.zeros(5, int)))
+            cmap[:, 3] = 255
+            bgcolor = self._brain_color
+            bgcolor[-1] = 0
+            cmap[np.where(cmap[:, 4] <= 0), :4] = bgcolor
+            if np.any(labels == 0) and not np.any(cmap[:, -1] <= 0):
+                cmap = np.vstack((cmap, np.concatenate([bgcolor, [0]])))
 
             # Set label ids sensibly
             order = np.argsort(cmap[:, -1])
@@ -1885,6 +1888,21 @@ class Brain(object):
             if brain._f.scene is not None:
                 brain._f.scene.reset_zoom()
 
+    @property
+    def _brain_color(self):
+        geo_actor = self._brain_list[0]['brain']._geo_surf.actor
+        if self._brain_list[0]['brain']._using_lut:
+            bgcolor = np.mean(
+                self._brain_list[0]['brain']._geo_surf.module_manager
+                .scalar_lut_manager.lut.table.to_array(), axis=0)
+        else:
+            bgcolor = geo_actor.property.color
+            if len(bgcolor) == 3:
+                bgcolor = bgcolor + (1,)
+            bgcolor = 255 * np.array(bgcolor)
+        bgcolor[-1] *= geo_actor.property.opacity
+        return bgcolor
+
     @verbose
     def scale_data_colormap(self, fmin, fmid, fmax, transparent,
                             center=None, alpha=1.0, verbose=None):
@@ -1942,17 +1960,7 @@ class Brain(object):
                                 center, alpha)
 
         # Get the effective background color as 255-based 4-element array
-        geo_actor = self._brain_list[0]['brain']._geo_surf.actor
-        if self._brain_list[0]['brain']._using_lut:
-            bgcolor = np.mean(
-                self._brain_list[0]['brain']._geo_surf.module_manager
-                .scalar_lut_manager.lut.table.to_array(), axis=0)
-        else:
-            bgcolor = geo_actor.property.color
-            if len(bgcolor) == 3:
-                bgcolor = bgcolor + (1,)
-            bgcolor = 255 * np.array(bgcolor)
-        bgcolor[-1] *= geo_actor.property.opacity
+        bgcolor = self._brain_color
 
         views = self._toggle_render(False)
         # Use the new colormap
