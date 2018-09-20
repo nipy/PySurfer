@@ -25,6 +25,12 @@ This is the reference for classes (``CamelCase`` names) and functions
 
 .. autosummary::
    :toctree: generated/
+   :template: class_noinherited.rst
+
+   TimeViewer
+
+.. autosummary::
+   :toctree: generated/
    :template: function.rst
 
    project_volume_data
