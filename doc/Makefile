@@ -40,7 +40,7 @@ clean:
 	-rm -rf *.nii.gz
 
 html_stable:
-	$(SPHINXBUILD) -D -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html_stable
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html_stable
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html_stable."
 
