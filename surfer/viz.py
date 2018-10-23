@@ -1570,7 +1570,7 @@ class Brain(object):
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
                  scale_factor=1, color="white", alpha=1, name=None,
-                 hemi=None, allow_data=False, data=None):
+                 hemi=None, data=None, colormap=None):
         """Add spherical foci, possibly mapping to displayed surf.
 
         The foci spheres can be displayed at the coordinates given, or
@@ -1588,7 +1588,7 @@ class Brain(object):
             whether the coords parameter should be interpreted as vertex ids
         map_surface : Freesurfer surf or None
             surface to map coordinates through, or None to use raw coords
-        scale_factor : int
+        scale_factor : float
             controls the size of the foci spheres
         color : matplotlib color code
             HTML name, RBG tuple, or hex code
@@ -1600,13 +1600,14 @@ class Brain(object):
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
             be thrown.
-        allow_data : bool | False
-            If True, will plot foci using quiver3d instead of points3d to allow
-            mapping data to spheres.
         data : numpy array
-            1D array the same size as the number of foci. Spheres will be
-            colorcoded acording to data values, whereas spheres' sizes will be
-            coded using the absolute values of data.
+            None or 1D array the same size as the number of foci (n,).
+            Spheres sizes will be coded using the absolute values of data.
+            If data is None, all spheres will have the same size.
+        colormap : str
+            Mayavi colormap name. Default is None, which means all foci will
+            have the same color given by the 'color' argument. If colormap is
+            not None, foci will be colorcoded acording to data values.
 
         """
         from matplotlib.colors import colorConverter
@@ -1639,14 +1640,12 @@ class Brain(object):
         fl = []
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                if allow_data:
-                    vtxs = utils.find_closest_vertices(self.geo[hemi].coords, foci_coords)
-                    fl.append(brain['brain'].add_foci_data(foci_coords,
-                                                           scale_factor, color, alpha, name, data,
-                                                           self.geo[hemi].nn[vtxs, :]))
-                else:
-                    fl.append(brain['brain'].add_foci(foci_coords,
-                                                      scale_factor, color, alpha, name))
+                vtxs = utils.find_closest_vertices(self.geo[hemi].coords,
+                                                   foci_coords)
+                fl.append(brain['brain'].add_foci(foci_coords, scale_factor,
+                                                  color, alpha, name, data,
+                                                  self.geo[hemi].nn[vtxs, :],
+                                                  colormap))
         self.foci_dict[name] = fl
         self._toggle_render(True, views)
 
@@ -1736,6 +1735,7 @@ class Brain(object):
             Row index of which brain to use
         col : int
             Column index of which brain to use
+        font_size :
         """
         if name in self.texts_dict:
             self.texts_dict[name]['text'].remove()
@@ -3330,34 +3330,29 @@ class _Hemisphere(object):
         return dict(surface=surf, colorbar=bar, measure=measure, brain=self,
                     array_id=array_id)
 
-    def add_foci(self, foci_coords, scale_factor, color, alpha, name):
-        """Add spherical foci, possibly mapping to displayed surf"""
-        # Create the visualization
-        with warnings.catch_warnings(record=True):  # traits
-            points = mlab.points3d(
-                foci_coords[:, 0], foci_coords[:, 1], foci_coords[:, 2],
-                np.ones(foci_coords.shape[0]), name=name, figure=self._f,
-                scale_factor=(10. * scale_factor), color=color, opacity=alpha)
-        return points
-
-    def add_foci_data(self, foci_coords, scale_factor, color, alpha, name,data, normals):
+    def add_foci(self, foci_coords, scale_factor, color, alpha, name, data, normals, colormap):
         """Add spherical foci with attached data, possibly mapping to displayed surf"""
         # Create the visualization
-        hemi = self.hemi
-        if data == None:
+        if data is None:
             u = np.array(normals[:,0])
             v = np.array(normals[:,1])
             w = np.array(normals[:,2])
         else:
-            u = self.geo[hemi].nn[:,0] * np.abs(data)
-            v = self.geo[hemi].nn[:,1] * np.abs(data)
-            w = self.geo[hemi].nn[:,2] * np.abs(data)
+            u = normals[:,0] * np.abs(data)
+            v = normals[:,1] * np.abs(data)
+            w = normals[:,2] * np.abs(data)
         with warnings.catch_warnings(record=True):  # traits
-            points = mlab.quiver3d(foci_coords[:, 0],foci_coords[:, 1],foci_coords[:, 2],
-                u,v,w, scalars = data, colormap='coolwarm', mode='sphere',
-                name=name, figure=self._f, scale_factor=(10. * scale_factor),
-                color=color, opacity=alpha)
-            points.glyph.color_mode = 'color_by_scalar'
+            if colormap is None:
+                points = mlab.quiver3d(foci_coords[:, 0],foci_coords[:, 1],foci_coords[:, 2],
+                    u,v,w, scalars = data, mode='sphere',
+                    name=name, figure=self._f, scale_factor=(10. * scale_factor),
+                    color=color, opacity=alpha)
+            else:
+                points = mlab.quiver3d(foci_coords[:, 0],foci_coords[:, 1],foci_coords[:, 2],
+                    u,v,w, scalars = data, colormap=colormap, mode='sphere',
+                    name=name, figure=self._f, scale_factor=(10. * scale_factor),
+                    color=color, opacity=alpha)
+                points.glyph.color_mode = 'color_by_scalar'
             points.glyph.glyph_source.glyph_source.center = [0, 0, 0]
         return points
 
