@@ -229,6 +229,9 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
                     for f in figure:
                         f.scene.interactor.interactor_style = \
                             tvtk.InteractorStyleTerrain()
+            for figure in figures:
+                for f in figure:
+                    f.scene.renderer.use_fxaa = True
     else:
         if isinstance(figure, int):  # use figure with specified id
             figure = [mlab.figure(figure, size=scene_size)]
@@ -387,6 +390,7 @@ class Brain(object):
     texts : dict
         The text objects.
     """
+
     def __init__(self, subject_id, hemi, surf, title=None,
                  cortex="classic", alpha=1.0, size=800, background="black",
                  foreground=None, figure=None, subjects_dir=None,
@@ -2957,6 +2961,7 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
 
 class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
+
     def __init__(self, subject_id, hemi, figure, geo, geo_curv,
                  geo_kwargs, geo_reverse, subjects_dir, bg_color, backend,
                  fg_color):
@@ -3139,7 +3144,7 @@ class _Hemisphere(object):
                 vmax=fmax, figure=self._f, opacity=vector_alpha)
 
         # Enable backface culling
-        quiver.actor.property.backface_culling = False
+        quiver.actor.property.backface_culling = True
         quiver.mlab_source.update()
 
         # Compute scaling for the glyphs
