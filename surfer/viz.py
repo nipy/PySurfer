@@ -1186,7 +1186,8 @@ class Brain(object):
 
         self._data_dicts[hemi].append(data)
 
-        self.scale_data_colormap(min, mid, max, transparent, center, alpha)
+        self.scale_data_colormap(min, mid, max, transparent, center, alpha,
+                                 data)
 
         if initial_time_index is not None:
             self.set_data_time_index(initial_time_index)
@@ -1907,7 +1908,7 @@ class Brain(object):
 
     @verbose
     def scale_data_colormap(self, fmin, fmid, fmax, transparent,
-                            center=None, alpha=1.0, verbose=None):
+                            center=None, alpha=1.0, data=None, verbose=None):
         """Scale the data colormap.
 
         The colormap may be sequential or divergent. When the colormap is
@@ -1946,17 +1947,22 @@ class Brain(object):
             center of the (divergent) colormap
         alpha : float
             sets the overall opacity of colors, maintains transparent regions
+        data : dict | None
+            The data entry for which to scale the colormap.
+            If None, will use the data dict from either the left or right
+            hemisphere (in that order).
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
         """
         divergent = center is not None
 
         # Get the original colormap
-        for h in ['lh', 'rh']:
-            data = self.data_dict[h]
-            if data is not None:
-                table = data["orig_ctable"].copy()
-                break
+        if data is None:
+            for h in ['lh', 'rh']:
+                data = self.data_dict[h]
+                if data is not None:
+                    break
+        table = data["orig_ctable"].copy()
 
         lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent,
                                 center, alpha)
