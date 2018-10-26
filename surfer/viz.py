@@ -231,7 +231,7 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
                             tvtk.InteractorStyleTerrain()
             for figure in figures:
                 for f in figure:
-                    if f.scene.renderer is not None:  # i.e., non-test backend
+                    if f.scene is not None:  # i.e., on a non-testing backend
                         f.scene.renderer.use_fxaa = True
     else:
         if isinstance(figure, int):  # use figure with specified id
