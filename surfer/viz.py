@@ -229,6 +229,11 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
                     for f in figure:
                         f.scene.interactor.interactor_style = \
                             tvtk.InteractorStyleTerrain()
+            for figure in figures:
+                for f in figure:
+                    # on a non-testing backend, and using modern VTK/Mayavi
+                    if hasattr(getattr(f.scene, 'renderer', None), 'use_fxaa'):
+                        f.scene.renderer.use_fxaa = True
     else:
         if isinstance(figure, int):  # use figure with specified id
             figure = [mlab.figure(figure, size=scene_size)]
@@ -387,6 +392,7 @@ class Brain(object):
     texts : dict
         The text objects.
     """
+
     def __init__(self, subject_id, hemi, surf, title=None,
                  cortex="classic", alpha=1.0, size=800, background="black",
                  foreground=None, figure=None, subjects_dir=None,
@@ -1182,7 +1188,8 @@ class Brain(object):
 
         self._data_dicts[hemi].append(data)
 
-        self.scale_data_colormap(min, mid, max, transparent, center, alpha)
+        self.scale_data_colormap(min, mid, max, transparent, center, alpha,
+                                 data)
 
         if initial_time_index is not None:
             self.set_data_time_index(initial_time_index)
@@ -1903,7 +1910,7 @@ class Brain(object):
 
     @verbose
     def scale_data_colormap(self, fmin, fmid, fmax, transparent,
-                            center=None, alpha=1.0, verbose=None):
+                            center=None, alpha=1.0, data=None, verbose=None):
         """Scale the data colormap.
 
         The colormap may be sequential or divergent. When the colormap is
@@ -1942,17 +1949,22 @@ class Brain(object):
             center of the (divergent) colormap
         alpha : float
             sets the overall opacity of colors, maintains transparent regions
+        data : dict | None
+            The data entry for which to scale the colormap.
+            If None, will use the data dict from either the left or right
+            hemisphere (in that order).
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
         """
         divergent = center is not None
 
         # Get the original colormap
-        for h in ['lh', 'rh']:
-            data = self.data_dict[h]
-            if data is not None:
-                table = data["orig_ctable"].copy()
-                break
+        if data is None:
+            for h in ['lh', 'rh']:
+                data = self.data_dict[h]
+                if data is not None:
+                    break
+        table = data["orig_ctable"].copy()
 
         lut = _scale_mayavi_lut(table, fmin, fmid, fmax, transparent,
                                 center, alpha)
@@ -2957,6 +2969,7 @@ def _scale_mayavi_lut(lut_table, fmin, fmid, fmax, transparent,
 
 class _Hemisphere(object):
     """Object for visualizing one hemisphere with mlab"""
+
     def __init__(self, subject_id, hemi, figure, geo, geo_curv,
                  geo_kwargs, geo_reverse, subjects_dir, bg_color, backend,
                  fg_color):
@@ -3139,7 +3152,7 @@ class _Hemisphere(object):
                 vmax=fmax, figure=self._f, opacity=vector_alpha)
 
         # Enable backface culling
-        quiver.actor.property.backface_culling = False
+        quiver.actor.property.backface_culling = True
         quiver.mlab_source.update()
 
         # Compute scaling for the glyphs
