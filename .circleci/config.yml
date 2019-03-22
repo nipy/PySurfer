@@ -7,14 +7,14 @@ jobs:
         # Get our data and merge with upstream
         - checkout
         - run:
-          name: Merge with master
-          command: |
-            echo $(git log -1 --pretty=%B) | tee gitlog.txt
-            echo ${CI_PULL_REQUEST//*pull\//} | tee merge.txt
-            if [[ $(cat merge.txt) != "" ]]; then
-              echo "Merging $(cat merge.txt)";
-              git pull --ff-only origin "refs/pull/$(cat merge.txt)/merge";
-            fi
+            name: Merge with master
+            command: |
+              echo $(git log -1 --pretty=%B) | tee gitlog.txt
+              echo ${CI_PULL_REQUEST//*pull\//} | tee merge.txt
+              if [[ $(cat merge.txt) != "" ]]; then
+                echo "Merging $(cat merge.txt)";
+                git pull --ff-only origin "refs/pull/$(cat merge.txt)/merge";
+              fi
 
         # Load our data
         - restore_cache:
