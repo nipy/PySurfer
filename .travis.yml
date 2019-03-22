@@ -20,7 +20,7 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=2.7
                CONDA_DEPENDENCIES="numpy scipy matplotlib coverage pytest pytest-cov flake8 mayavi"
-               PIP_DEPENDENCIES="codecov pytest-sugar faulthandler pytest-faulthandler nibabel imageio imageio-ffmpeg"
+               PIP_DEPENDENCIES="codecov pytest-sugar faulthandler pytest-faulthandler nibabel imageio"
 
         # OSX
         - os: osx
