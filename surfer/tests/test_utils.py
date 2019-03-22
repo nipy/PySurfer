@@ -32,12 +32,12 @@ def _slow_compute_normals(rr, tris):
 @utils.requires_fsaverage()
 def test_surface():
     """Test IO for Surface class"""
-    subj_dir = utils._get_subjects_dir()
+    extra, subj_dir = utils._get_extra()
     for subjects_dir in [None, subj_dir]:
         surface = utils.Surface('fsaverage', 'lh', 'inflated',
                                 subjects_dir=subjects_dir)
         surface.load_geometry()
-        surface.load_label('BA1')
+        surface.load_label('BA1' + extra)
         surface.load_curvature()
         xfm = np.eye(4)
         xfm[:3, -1] += 2  # translation
