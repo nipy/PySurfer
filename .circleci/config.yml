@@ -1,53 +1,66 @@
 version: 2
 jobs:
-    build:
+    build_docs:
       docker:
         - image: circleci/python:3.7-stretch
       steps:
-        # Get our data and merge with upstream
         - checkout
         - run:
-            name: Merge with master
+            name: Set BASH_ENV
+            command: |
+              echo "set -e" >> $BASH_ENV;
+              echo "export SUBJECTS_DIR=~/subjects" >> $BASH_ENV;
+              echo "export DISPLAY=:99" >> $BASH_ENV;
+              echo "export OPENBLAS_NUM_THREADS=4" >> $BASH_ENV;
+              echo "export PATH=~/.local/bin:$PATH" >> $BASH_ENV;
+        - run:
+            name: Merge with upstream
             command: |
               echo $(git log -1 --pretty=%B) | tee gitlog.txt
               echo ${CI_PULL_REQUEST//*pull\//} | tee merge.txt
               if [[ $(cat merge.txt) != "" ]]; then
                 echo "Merging $(cat merge.txt)";
-                git pull --ff-only origin "refs/pull/$(cat merge.txt)/merge";
+                git remote add upstream git://github.com/mne-tools/mne-python.git;
+                git pull --ff-only upstream "refs/pull/$(cat merge.txt)/merge";
+                git fetch upstream master;
               fi
 
         # Load our data
         - restore_cache:
             keys:
-              - data-cache
+              - data-cache-0
               - pip-cache
 
-        # Fix libgcc_s.so.1 pthread_cancel bug:
+        - run:
+            name: Spin up Xvfb
+            command: |
+              /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset;
+
         # https://github.com/ContinuumIO/anaconda-issues/issues/9190#issuecomment-386508136
+        # https://github.com/golemfactory/golem/issues/1019
         - run:
             name: Fix libgcc_s.so.1 pthread_cancel bug
             command: |
               sudo apt-get install qt5-default
+
         - run:
-            name: Set up environment
+            name: Get Python running
             command: |
-              echo "export SUBJECTS_DIR=~/subjects" >> $BASH_ENV
-              echo "export PATH=~/.local/bin:$PATH" >> $BASH_ENV
-              echo "export DISPLAY=:99" >> $BASH_ENV
-              /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset;
-        - run:
-            name: Python env
-            command: |
-              pip install -U --user --progress-bar off numpy scipy matplotlib vtk "PyQt5<5.12" nibabel sphinx numpydoc pillow imageio imageio-ffmpeg https://api.github.com/repos/sphinx-gallery/sphinx-gallery/zipball/master mayavi
+              pip install --user -q --upgrade pip numpy
+              pip install --user -q --upgrade --progress-bar off scipy matplotlib vtk pyqt5 pyqt5-sip nibabel sphinx numpydoc pillow imageio imageio-ffmpeg https://api.github.com/repos/sphinx-gallery/sphinx-gallery/zipball/master mayavi
         - save_cache:
             key: pip-cache
             paths:
-              - "~/.cache/pip"
-        - run: python setup.py develop --user
-        # Check libs
-        - run: LIBGL_DEBUG=verbose python -c "from mayavi import mlab; import matplotlib.pyplot as plt; mlab.figure(); plt.figure()"
-        - run: echo $SUBJECTS_DIR
+              - ~/.cache/pip
+
+        # Look at what we have and fail early if there is some library conflict
         - run:
+            name: Check installation
+            command: |
+              LIBGL_DEBUG=verbose python -c "from mayavi import mlab; import matplotlib.pyplot as plt; mlab.figure(); plt.figure()"
+              echo $SUBJECTS_DIR
+        - run:
+            name: Get data
             command: |
               if [ ! -d $SUBJECTS_DIR ]; then
                 mkdir $SUBJECTS_DIR;
@@ -56,14 +69,31 @@ jobs:
                 unzip fsaverage_min.zip;
                 rm fsaverage_min.zip;
               fi;
-        - run: ls $SUBJECTS_DIR
-        - run: cd doc && sphinx-build -D plot_gallery=1 -D sphinx_gallery_conf.filename_pattern=^\(\(?\!plot_fmri_activation_volume\|plot_morphometry\|plot_label\.py\|plot_probabilistic_label\|plot_resting_correlations\|plot_transparent_brain\|rotate_animation\|save_movie\|save_views\).\)*\$ -b html -d _build/doctrees . _build/html
+              ls $SUBJECTS_DIR
+        - run:
+            name: Install PySurfer
+            command: |
+              python setup.py develop --user
+
+        - run:
+            name: Build docs
+            command: |
+              cd doc
+              sphinx-build -D plot_gallery=1 -D sphinx_gallery_conf.filename_pattern=^\(\(?\!plot_fmri_activation_volume\|plot_morphometry\|plot_label\.py\|plot_probabilistic_label\|plot_resting_correlations\|plot_transparent_brain\|rotate_animation\|save_movie\|save_views\).\)*\$ -b html -d _build/doctrees . _build/html
 
         - store_artifacts:
             path: doc/_build/html/
             destination: html
 
         - save_cache:
-            key: data-cache
+            key: data-cache-0
             paths:
               - "~/subjects"
+
+workflows:
+  version: 2
+
+  default:
+    jobs:
+      - build_docs
+
