@@ -745,3 +745,10 @@ def requires_fs():
     has = ('FREESURFER_HOME' in os.environ)
     return pytest.mark.skipif(
         not has, reason='Requires FreeSurfer command line tools')
+
+
+def _get_extra():
+    # Get extra label for newer freesurfer
+    subj_dir = _get_subjects_dir()
+    fname = op.join(subj_dir, 'fsaverage', 'label', 'lh.BA1.label')
+    return '_exvivo' if not op.isfile(fname) else '', subj_dir

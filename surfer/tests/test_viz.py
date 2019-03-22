@@ -13,7 +13,8 @@ from numpy.testing import assert_array_equal, assert_array_less
 from unittest import SkipTest
 
 from surfer import Brain, io, utils
-from surfer.utils import requires_fsaverage, requires_imageio, requires_fs
+from surfer.utils import (requires_fsaverage, requires_imageio, requires_fs,
+                          _get_extra)
 
 warnings.simplefilter('always')
 
@@ -247,30 +248,30 @@ def test_label():
     brain = Brain(subject_id, hemi, surf)
     view = get_view(brain)
 
-    brain.add_label("BA1")
+    extra, subj_dir = _get_extra()
+    brain.add_label("BA1" + extra)
     check_view(brain, view)
-    brain.add_label("BA1", color="blue", scalar_thresh=.5)
-    subj_dir = utils._get_subjects_dir()
+    brain.add_label("BA1" + extra, color="blue", scalar_thresh=.5)
     label_file = pjoin(subj_dir, subject_id,
-                       "label", "%s.MT.label" % hemi)
+                       "label", "%s.MT%s.label" % (hemi, extra))
     brain.add_label(label_file)
-    brain.add_label("BA44", borders=True)
-    brain.add_label("BA6", alpha=.7)
+    brain.add_label("BA44" + extra, borders=True)
+    brain.add_label("BA6" + extra, alpha=.7)
     brain.show_view("medial")
-    brain.add_label("V1", color="steelblue", alpha=.6)
-    brain.add_label("V2", color="#FF6347", alpha=.6)
-    brain.add_label("entorhinal", color=(.2, 1, .5), alpha=.6)
+    brain.add_label("V1" + extra, color="steelblue", alpha=.6)
+    brain.add_label("V2" + extra, color="#FF6347", alpha=.6)
+    brain.add_label("entorhinal" + extra, color=(.2, 1, .5), alpha=.6)
     brain.set_surf('white')
     brain.show_view(dict(elevation=40, distance=430), distance=430)
     with pytest.raises(ValueError, match='!='):
         brain.show_view(dict(elevation=40, distance=430), distance=431)
 
     # remove labels
-    brain.remove_labels('V1')
-    assert 'V2' in brain.labels_dict
-    assert 'V1' not in brain.labels_dict
+    brain.remove_labels('V1' + extra)
+    assert 'V2' + extra in brain.labels_dict
+    assert 'V1' + extra not in brain.labels_dict
     brain.remove_labels()
-    assert 'V2' not in brain.labels_dict
+    assert 'V2' + extra not in brain.labels_dict
 
     brain.close()
 
@@ -432,15 +433,15 @@ def test_probabilistic_labels():
     brain = Brain("fsaverage", "lh", "inflated",
                   cortex="low_contrast")
 
-    brain.add_label("BA1", color="darkblue")
+    extra, subj_dir = _get_extra()
+    brain.add_label("BA1" + extra, color="darkblue")
+    brain.add_label("BA1" + extra, color="dodgerblue", scalar_thresh=.5)
+    brain.add_label("BA45" + extra, color="firebrick", borders=True)
+    brain.add_label("BA45" + extra, color="salmon", borders=True,
+                    scalar_thresh=.5)
 
-    brain.add_label("BA1", color="dodgerblue", scalar_thresh=.5)
-
-    brain.add_label("BA45", color="firebrick", borders=True)
-    brain.add_label("BA45", color="salmon", borders=True, scalar_thresh=.5)
-
-    subj_dir = utils._get_subjects_dir()
-    label_file = pjoin(subj_dir, "fsaverage", "label", "lh.BA6.label")
+    label_file = pjoin(subj_dir, "fsaverage", "label",
+                       "lh.BA6%s.label" % (extra,))
     prob_field = np.zeros_like(brain.geo['lh'].x)
     ids, probs = nib.freesurfer.read_label(label_file, read_scalars=True)
     prob_field[ids] = probs

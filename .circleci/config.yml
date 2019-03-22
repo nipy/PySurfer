@@ -6,14 +6,15 @@ jobs:
       steps:
         # Get our data and merge with upstream
         - checkout
-        - run: echo $(git log -1 --pretty=%B) | tee gitlog.txt
-        - run: echo ${CI_PULL_REQUEST//*pull\//} | tee merge.txt
         - run:
-           command: |
-             if [[ $(cat merge.txt) != "" ]]; then
-               echo "Merging $(cat merge.txt)";
-               git pull --ff-only origin "refs/pull/$(cat merge.txt)/merge";
-             fi
+          name: Merge with master
+          command: |
+            echo $(git log -1 --pretty=%B) | tee gitlog.txt
+            echo ${CI_PULL_REQUEST//*pull\//} | tee merge.txt
+            if [[ $(cat merge.txt) != "" ]]; then
+              echo "Merging $(cat merge.txt)";
+              git pull --ff-only origin "refs/pull/$(cat merge.txt)/merge";
+            fi
 
         # Load our data
         - restore_cache:
@@ -23,14 +24,21 @@ jobs:
 
         # Fix libgcc_s.so.1 pthread_cancel bug:
         # https://github.com/ContinuumIO/anaconda-issues/issues/9190#issuecomment-386508136
-        - run: sudo apt-get install libgl1-mesa-glx libegl1-mesa libxrandr2 libxrandr2 libxss1 libxcursor1 libxcomposite1 libasound2 libxi6 libxtst6
-        - run: echo "export SUBJECTS_DIR=~/subjects" >> $BASH_ENV
-        - run: echo "export PATH=~/.local/bin:$PATH" >> $BASH_ENV
-        # Spin up Xvfb
-        - run: echo "export DISPLAY=:99" >> $BASH_ENV
-        - run: /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset;
-        # Python env
-        - run: pip install -U --user --progress-bar off numpy scipy matplotlib vtk "PyQt5<5.12" nibabel sphinx numpydoc pillow imageio imageio-ffmpeg https://api.github.com/repos/sphinx-gallery/sphinx-gallery/zipball/master mayavi
+        - run:
+            name: Fix libgcc_s.so.1 pthread_cancel bug
+            command: |
+              sudo apt-get install qt5-default
+        - run:
+            name: Set up environment
+            command: |
+              echo "export SUBJECTS_DIR=~/subjects" >> $BASH_ENV
+              echo "export PATH=~/.local/bin:$PATH" >> $BASH_ENV
+              echo "export DISPLAY=:99" >> $BASH_ENV
+              /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset;
+        - run:
+            name: Python env
+            command: |
+              pip install -U --user --progress-bar off numpy scipy matplotlib vtk "PyQt5<5.12" nibabel sphinx numpydoc pillow imageio imageio-ffmpeg https://api.github.com/repos/sphinx-gallery/sphinx-gallery/zipball/master mayavi
         - save_cache:
             key: pip-cache
             paths:
