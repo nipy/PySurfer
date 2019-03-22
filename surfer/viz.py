@@ -208,7 +208,7 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
             try:
                 mlab.options.offscreen = True
                 with warnings.catch_warnings(record=True):  # traits
-                    figures = [[mlab.figure(size=(h / n_row, w / n_col))
+                    figures = [[mlab.figure(size=(w / n_col, h / n_row))
                                 for _ in range(n_col)] for __ in range(n_row)]
             finally:
                 mlab.options.offscreen = orig_val
