@@ -4,7 +4,7 @@ sudo: false
 env:
     global: PYTHON_VERSION=3.6
             CONDA_DEPENDENCIES="numpy scipy matplotlib pyqt>=5.9 coverage pytest pytest-cov flake8 pygments traits traitsui pyface"
-            PIP_DEPENDENCIES="codecov pytest-sugar pytest-faulthandler nibabel imageio"
+            PIP_DEPENDENCIES="codecov pytest-sugar pytest-faulthandler nibabel imageio imageio-ffmpeg"
             DISPLAY=:99.0
 
 matrix:
@@ -20,7 +20,7 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=2.7
                CONDA_DEPENDENCIES="numpy scipy matplotlib coverage pytest pytest-cov flake8 mayavi"
-               PIP_DEPENDENCIES="codecov pytest-sugar faulthandler pytest-faulthandler nibabel imageio"
+               PIP_DEPENDENCIES="codecov pytest-sugar faulthandler pytest-faulthandler nibabel imageio imageio-ffmpeg"
 
         # OSX
         - os: osx
@@ -57,9 +57,6 @@ before_script:
     - unzip ../fsaverage_min.zip
     - cd ..
     - export SUBJECTS_DIR="${PWD}/subjects"
-    - if [[ $PIP_DEPENDENCIES == *"imageio"* ]] || [ ! -z "$CONDA_ENVIRONMENT" ]; then
-        python -c "import imageio; imageio.plugins.ffmpeg.download()";
-      fi
 
 script:
     - cd ${SRC_DIR}
