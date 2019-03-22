@@ -355,7 +355,8 @@ def test_morphometry():
 def test_movie(tmpdir):
     """Test saving a movie of an MEG inverse solution."""
     import imageio
-
+    if sys.version_info < (3,):
+        raise SkipTest('imageio ffmpeg requires Python 3')
     # create and setup the Brain instance
     _set_backend()
     brain = Brain(*std_args)
