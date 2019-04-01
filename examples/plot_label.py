@@ -39,9 +39,9 @@ brain.add_label("BA44_exvivo", borders=True)
 brain.add_label("BA6_exvivo", alpha=.7)
 
 # Finally, you can plot the label in any color you want.
-brain.show_view(dict(azimuth=-42, elevation=105, distance=225,
-                     focalpoint=[-30, -20, 15]))
-
+if not brain.patch_mode:
+    brain.show_view(dict(azimuth=-42, elevation=105, distance=225,
+                         focalpoint=[-30, -20, 15]))
 # Use any valid matplotlib color.
 brain.add_label("V1_exvivo", color="steelblue", alpha=.6)
 brain.add_label("V2_exvivo", color="#FF6347", alpha=.6)

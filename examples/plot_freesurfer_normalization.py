@@ -34,4 +34,5 @@ for hemi in ["lh", "rh"]:
                               line_width=3, hemi=hemi)
     brain.contour_list[-1]["colorbar"].visible = False
 
-brain.show_view("dorsal")
+if not brain.patch_mode:
+    brain.show_view("dorsal")

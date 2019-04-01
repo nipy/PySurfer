@@ -74,3 +74,28 @@ configure_input_data(mapper, mesh.data)
 actor = tvtk.Actor()
 actor.mapper = mapper
 fig.scene.add_actor(actor)
+
+# 5) project rgba matrix to flat cortex patch:
+fig = mlab.figure()
+b2 = Brain('fsaverage', hemi, 'cortex.patch.flat', subjects_dir=subjects_dir,
+          background='white', figure=fig)
+print('original rgba_vals.shape:',rgba_vals.shape)
+rgba_vals=b2.geo[hemi].surf_to_patch_array(rgba_vals)
+print('patch-compatible rgba_vals.shape:',rgba_vals.shape)
+
+# these are the patch's vertices coordinates
+x, y, z = b2.geo[hemi].coords.T
+tris = b2.geo[hemi].faces
+
+# plot points in x,y,z
+mesh = mlab.pipeline.triangular_mesh_source(
+    x, y, z, tris, figure=fig)
+mesh.data.point_data.scalars.number_of_components = 4  # r, g, b, a
+mesh.data.point_data.scalars = (rgba_vals * 255).astype('ubyte')
+
+# tvtk for vis
+mapper = tvtk.PolyDataMapper()
+configure_input_data(mapper, mesh.data)
+actor = tvtk.Actor()
+actor.mapper = mapper
+fig.scene.add_actor(actor)
