@@ -15,8 +15,15 @@ from surfer import Brain, project_volume_data
 print(__doc__)
 
 """Bring up the visualization"""
-brain = Brain("fsaverage", "split", "inflated",
-              views=['lat', 'med'], background="white")
+surf='inflated'
+
+if not 'patch' in surf.lower().split('.'):
+    views=['lat', 'med']
+else:
+    views=None
+
+brain = Brain("fsaverage", "split", surf,
+              views=views, background="white")
 
 """Project the volume file and return as an array"""
 mri_file = "example_data/resting_corr.nii.gz"

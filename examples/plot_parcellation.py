@@ -14,7 +14,10 @@ print(__doc__)
 subject_id = 'fsaverage'
 hemi = 'both'
 surf = 'inflated'
-view = 'frontal'
+if 'patch' in surf.lower().split('.'):
+    view=None
+else:
+    view = 'frontal'
 
 """
 Bring up the visualization
