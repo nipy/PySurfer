@@ -2776,6 +2776,23 @@ class Brain(object):
             if ret:
                 print("\n\nError occured when exporting movie\n\n")
 
+    def __repr__(self):
+        return ('<Brain subject_id="%s", hemi="%s", surf="%s">' %
+                (self.subject_id, self._hemi, self.surf))
+
+    def _ipython_display_(self):
+        """Called by Jupyter notebook to display a brain."""
+        from IPython.display import display as idisplay
+
+        if mlab.options.offscreen:
+            # Render the mayavi scenes to the notebook
+            for figure in self._figures:
+                for scene in figure:
+                    idisplay(scene.scene)
+        else:
+            # Render string representation
+            print(repr(self))
+
 
 def _scale_sequential_lut(lut_table, fmin, fmid, fmax):
     """Scale a sequential colormap."""
