@@ -77,6 +77,17 @@ notebook), you have to activate the correct GUI backend, which is probably qt::
 This will allow you to have an open PySurfer window while still being able to
 execute code in the console/notebook.
 
+It is also possible to embed the PySurfer visualization into a Jupyter notebook.
+This is achieved by leveraging `Mayavi's notebook integration
+<https://docs.enthought.com/mayavi/mayavi/tips.html#using-mayavi-in-jupyter-notebooks>`_::
+
+    from mayavi import mlab
+    mlab.init_notebook(backend='png')
+
+The ``backend`` parameter can either be ``'png'`` to render the visualization
+as a static PNG image, or ``'x3d'`` to render it using
+`X3D <https://www.x3dom.org>`_ (still experimental).
+
 If you are having trouble getting started using PySurfer, please describe the problem on the `nipy mailing list`_.
 
 .. include:: links_names.txt
