@@ -175,6 +175,201 @@ class Surface(object):
         self.coords = np.dot(np.c_[self.coords, np.ones(len(self.coords))],
                              mtx.T)[:, :3]
 
+class Patch(Surface):
+    """Container for patch object
+
+    Attributes
+    ----------
+    subject_id : string
+        Name of subject
+    hemi : {'lh', 'rh'}
+        Which hemisphere to load
+    surf: string
+        Name of the patch to load (e.g., for left hemi, will look for lh.patch)
+    subjects_dir : str | None
+        If not None, this directory will be used as the subjects directory
+        instead of the value set using the SUBJECTS_DIR environment variable.
+    offset : float | None
+        If float, align inside edge of each hemisphere to center + offset.
+        If None, do not change coordinates (default).
+    units : str
+        Can be 'm' or 'mm' (default).
+    """
+
+    def load_geometry(self):
+        patch_path = op.join(self.data_path, "surf",
+                            "%s.%s" % (self.hemi, self.surf))
+        patch = read_patch_file(patch_path)
+        coords=np.stack([patch['x'],patch['y'],patch['z']],axis=1)
+        if self.units == 'm':
+            coords /= 1000.
+        if self.offset is not None:
+            if self.hemi == 'lh':
+                coords[:, 1] -= (np.max(coords[:, 1]) + self.offset)
+            else:
+                coords[:, 1] -= (np.min(coords[:, 1]) + self.offset)
+            coords[:, 0] -= np.mean(coords[:, 0]) # this aligns the vertical center of mass between the two hemis
+
+        # The patch file specifies selected vertices' indecis and coordinates
+        # but it doesn't include the mesh faces.
+        # Therefore, we load a surface geometry to extract these.
+
+        surface_to_take_faces_from='orig'
+        surf_path = op.join(self.data_path, "surf",
+                            "%s.%s" % (self.hemi, surface_to_take_faces_from))
+        orig_coords, orig_faces = nib.freesurfer.read_geometry(surf_path)
+        n_orig_vertices=orig_coords.shape[0]
+        assert np.max(patch['vno']) < n_orig_vertices, 'mismatching vertices in patch and orig surface'
+
+        # re-define faces to use the indecis of the selected vertices
+        patch_vertices_in_original_surf_indexing=patch['vno']
+
+        # reverse the lookup table:
+        original_vertices_in_patch_indexing=np.zeros((n_orig_vertices,)); original_vertices_in_patch_indexing[:]=np.nan
+        original_vertices_in_patch_indexing[patch_vertices_in_original_surf_indexing]=np.arange(len(patch_vertices_in_original_surf_indexing))
+
+        # apply the reversed lookup table on the uncut faces:
+        orig_faces_in_patch_indexing=original_vertices_in_patch_indexing[orig_faces]
+
+        n_selected_vertices=np.sum(~np.isnan(orig_faces_in_patch_indexing),axis=1)
+        valid_faces=n_selected_vertices==3
+        faces=np.asarray(orig_faces_in_patch_indexing[valid_faces],dtype=np.int) # these are the patch faces with patch vertex indexing
+
+        # sanity check - every patch vertex has to be a member in at least one patch face
+        assert np.min(np.bincount(faces.flatten()))>=1
+
+        nn = _compute_normals(coords, faces)
+
+#        # for a flat patch, all vertex normals should point at the same direction
+        if 'flat' in self.surf:
+            from scipy import stats
+            common_normal=stats.mode(nn,axis=0)[0]
+            nn=np.tile(common_normal,[nn.shape[0],1])
+
+        if self.coords is None:
+            self.coords = coords
+            self.faces = faces
+            self.nn = nn
+        else:
+            self.coords[:] = coords
+            self.faces[:] = faces
+            self.nn[:] = nn
+
+        # in order to project overlays, labels and so on,
+        # we need to save an index-array that transforms
+        # the data from its original surface-indexing to the patch indexing
+        self.patch_vertices_in_original_surf_indexing=patch_vertices_in_original_surf_indexing
+        self.original_vertices_in_patch_indexing=original_vertices_in_patch_indexing
+        self.n_original_surface_vertices=len(self.original_vertices_in_patch_indexing)
+        self.n_patch_vertices=len(self.patch_vertices_in_original_surf_indexing)
+
+    def load_curvature(self):
+        """ load curtvature for patch """
+        super().load_curvature() # start with loading the normal curvature
+
+        self.curv =self.surf_to_patch_array(self.curv)
+        self.bin_curv =self.surf_to_patch_array(self.bin_curv)
+
+    def load_label(self, name):
+        """Load in a Freesurfer .label file.
+
+        Label files are just text files indicating the vertices included
+        in the label. Each Surface instance has a dictionary of labels, keyed
+        by the name (which is taken from the file name if not given as an
+        argument.
+
+        """
+        label = nib.freesurfer.read_label(op.join(self.data_path, 'label',
+                                          '%s.%s.label' % (self.hemi, name)))
+        label=self.surf_to_patch_vertices(label)
+        label_array = np.zeros(len(self.x), np.int)
+        label_array[label] = 1
+        try:
+            self.labels[name] = label_array
+        except AttributeError:
+            self.labels = {name: label_array}
+
+    def surf_to_patch_array(self,array):
+        """ cut a surface array into a patch array
+
+        When an input (data, label and so on) is fed to a patch object,
+        it has to be transformed from the original surface vertex indexing
+        to the vertex indexing of the patch.
+
+        returns a cut array, indexed according to the patch's vertices.
+        """
+        if array.shape[0] == self.n_original_surface_vertices:
+            # array is given in original (uncut) surface indexing
+            array=array[self.patch_vertices_in_original_surf_indexing]
+        elif array.shape[0]==self.n_patch_vertices:
+            # array is given in cut surface indexing. do nothing
+            pass
+        else:
+            raise Exception('array height ({}) is inconsistent with either patch ({}) or uncut surface ({})'.format(
+                    array.shape[0],self.n_patch_vertices,self.n_original_surface_vertices))
+        return array
+    def surf_to_patch_vertices(self,vertices,*args):
+        """ cut a surface vertex set into a patch vertex set
+
+        Given a vector of surface indecis, returns a vector of patch vertex
+        indecis. Note that the returned vector might be shorter than the
+        original if some of the vertices are not included in the patch.
+        If additional arguments are provided, they are assumed to be vectors or
+        arrays whose first dimension is corresponding to the vertices provided.
+        They are returned with the missing vertices removed.
+
+        return transformed vertices, and potentially the cut optional data vectors/arrays.
+        """
+
+        # if vertices are supplied, filter them according them to the patch's vertices
+        if not isinstance(vertices,np.ndarray): # vertices might be a list
+            vertices=np.asarray(vertices)
+        original_dtype=vertices.dtype
+
+        vertices=self.original_vertices_in_patch_indexing[vertices]
+        # find NaN indecis (-> vertices outside of the patch)
+        vertices_in_patch=np.logical_not(np.isnan(vertices))
+
+        # remove the missing vertices
+        vertices=vertices[vertices_in_patch]
+        vertices=np.array(vertices,original_dtype)
+        if len(args)==0:
+            return vertices
+        else:
+            cut_v=[]
+            for v in args:
+                cut_v.append(np.asarray(v)[vertices_in_patch])
+            return (vertices,)+tuple(cut_v)
+def read_patch_file(fname):
+    """ loads a FreeSurfer binary patch file
+    # This is a Python adaptation of Bruce Fischl's read_patch.m (FreeSurfer Matlab interface)
+    """
+    def read_an_int(fid):
+        return np.asscalar(np.fromfile(fid,dtype='>i4',count=1))
+
+    patch={}
+    with open(fname,'r') as fid:
+        ver=read_an_int(fid) # '> signifies big endian'
+        if ver != -1:
+            raise Exception('incorrect version # %d (not -1) found in file'.format(ver))
+
+        patch['npts'] = read_an_int(fid)
+
+        rectype = np.dtype( [ ('ind', '>i4'), ('x', '>f'), ('y', '>f'), ('z','>f') ])
+        recs = np.fromfile(fid,dtype=rectype,count=patch['npts'])
+
+        recs['ind']=np.abs(recs['ind'])-1 # strange correction to indexing, following the Matlab source...
+        patch['vno']=recs['ind']
+        patch['x']=recs['x']
+        patch['y']=recs['y']
+        patch['z']=recs['z']
+
+        # make sure it's sorted
+        index_array=np.argsort(patch['vno'])
+        for field in ['vno','x','y','z']:
+            patch[field]=patch[field][index_array]
+    return patch
+
 
 def _fast_cross_3d(x, y):
     """Compute cross product between list of 3D vectors

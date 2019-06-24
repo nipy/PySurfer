@@ -52,5 +52,15 @@ label_file = join(subjects_dir, "fsaverage", "label", "lh.BA6_exvivo.label")
 
 prob_field = np.zeros_like(brain.geo['lh'].x)
 ids, probs = read_label(label_file, read_scalars=True)
+
+# A slight complication when using a patch:
+# When a patch's was loaded (e.g. cortex.patch.flat), brain.geo['lh'] describes
+# the patch's vertices, not the original surface's vertices. The following
+# command transform the original vertices ('ids') to the patch's vertices. It
+# also applies the same filtering to 'probs'. Note that some vertices might be 
+# present only in the original surface.
+
+if brain.patch_mode:
+    ids,probs=brain.geo['lh'].surf_to_patch_vertices(ids,probs)
 prob_field[ids] = probs
 brain.add_data(prob_field, thresh=1e-5, colormap="RdPu")

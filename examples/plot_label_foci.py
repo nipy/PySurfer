@@ -63,4 +63,5 @@ brain.add_foci([coord], map_surface="white", coords_as_verts=True,
 """
 Set the camera position to show the extent of the labels.
 """
-brain.show_view(dict(elevation=40, distance=0.430))
+if not brain.patch_mode:
+    brain.show_view(dict(elevation=40, distance=0.430))
