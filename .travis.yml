@@ -19,10 +19,10 @@ matrix:
               packages:
                 - mencoder
 
-        # 2.7, no mencoder
+        # 3.5, no mencoder
         - os: linux
-          env: PYTHON_VERSION=2.7
-               CONDA_DEPENDENCIES="numpy scipy matplotlib coverage pytest pytest-cov flake8 mayavi"
+          env: PYTHON_VERSION=3.5
+               CONDA_DEPENDENCIES="numpy scipy matplotlib coverage pytest pytest-cov flake8"
                PIP_DEPENDENCIES="codecov pytest-sugar faulthandler pytest-faulthandler nibabel imageio"
 
         # OSX
@@ -37,10 +37,8 @@ before_install:
       fi;
     - git clone https://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda.sh
-    - if [ "$PYTHON_VERSION" != "2.7" ]; then
-        pip install vtk;
-        pip install mayavi;
-      fi;
+    - pip install vtk
+    - pip install mayavi
     - mkdir -p $SUBJECTS_DIR
     - pip install "https://api.github.com/repos/mne-tools/mne-python/zipball/master"
     - python -c "import mne; mne.datasets.fetch_fsaverage(verbose=True)"
