@@ -13,6 +13,7 @@ jobs:
               echo "export DISPLAY=:99" >> $BASH_ENV;
               echo "export OPENBLAS_NUM_THREADS=4" >> $BASH_ENV;
               echo "export PATH=~/.local/bin:$PATH" >> $BASH_ENV;
+              echo "export PATTERN=\"^\(\(?\!plot_fmri_activation_volume\|plot_resting_correlations\|rotate_animation\|save_movie\|save_views\).\)*\$\"" >> $BASH_ENV;
         - run:
             name: Merge with upstream
             command: |
@@ -81,7 +82,8 @@ jobs:
             name: Build docs
             command: |
               cd doc
-              PATTERN="^\(\(?\!plot_fmri_activation_volume\|plot_resting_correlations\|rotate_animation\|save_movie\|save_views\).\)*\$" make html_dev-pattern
+              echo $PATTERN
+              make html_dev-pattern
 
         - store_artifacts:
             path: doc/_build/html/
