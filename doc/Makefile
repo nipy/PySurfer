@@ -50,7 +50,7 @@ html_dev:
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html"
 
 html_dev-pattern:
-	BUILD_DEV_HTML=1 $(SPHINXBUILD) -D plot_gallery=1 -D sphinx_gallery_conf.filename_pattern=$(PATTERN) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	BUILD_DEV_HTML=1 $(SPHINXBUILD) -D plot_gallery=1 -D sphinx_gallery_conf.filename_pattern=$(PATTERN) -D sphinx_gallery_conf.ignore_pattern=$(IGNORE_PATTERN) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html"
 

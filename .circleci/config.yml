@@ -13,7 +13,8 @@ jobs:
               echo "export DISPLAY=:99" >> $BASH_ENV;
               echo "export OPENBLAS_NUM_THREADS=4" >> $BASH_ENV;
               echo "export PATH=~/.local/bin:$PATH" >> $BASH_ENV;
-              echo "export PATTERN=\"^\(\(?\!plot_fmri_activation_volume\|plot_resting_correlations\|rotate_animation\|save_movie\|save_views\).\)*\$\"" >> $BASH_ENV;
+              echo "export PATTERN=/plot_" >> $BASH_ENV;
+              echo "export IGNORE_PATTERN=\"\(plot_fmri_activation_volume\|plot_resting_correlations\)\"" >> $BASH_ENV;
         - run:
             name: Merge with upstream
             command: |
@@ -48,7 +49,7 @@ jobs:
             name: Get Python running
             command: |
               pip install --user -q --upgrade pip numpy
-              pip install --user -q --upgrade --progress-bar off scipy matplotlib vtk pyqt5 pyqt5-sip nibabel sphinx numpydoc pillow imageio imageio-ffmpeg https://api.github.com/repos/sphinx-gallery/sphinx-gallery/zipball/master mayavi
+              pip install --user -q --upgrade --progress-bar off scipy matplotlib vtk pyqt5 pyqt5-sip nibabel sphinx numpydoc pillow imageio imageio-ffmpeg sphinx-gallery mayavi
               pip install --user -q --upgrade "https://api.github.com/repos/mne-tools/mne-python/zipball/master"
         - save_cache:
             key: pip-cache
@@ -60,12 +61,12 @@ jobs:
             name: Check installation
             command: |
               LIBGL_DEBUG=verbose python -c "from mayavi import mlab; import matplotlib.pyplot as plt; mlab.figure(); plt.figure()"
-              echo $SUBJECTS_DIR
 
         - run:
             name: Get data
             command: |
-              mkdir -p $SUBJECTS_DIR;
+              echo $SUBJECTS_DIR
+              mkdir -p $SUBJECTS_DIR
               python -c "import mne; mne.datasets.fetch_fsaverage(verbose=True)"
               ls $SUBJECTS_DIR
         - save_cache:
