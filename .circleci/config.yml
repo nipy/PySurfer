@@ -25,12 +25,6 @@ jobs:
                 git fetch upstream master;
               fi
 
-        # Load our data
-        - restore_cache:
-            keys:
-              - data-cache-0
-              - pip-cache
-
         - run:
             name: Spin up Xvfb
             command: |
@@ -43,11 +37,18 @@ jobs:
             command: |
               sudo apt-get install qt5-default
 
+        # Load our data
+        - restore_cache:
+            keys:
+              - data-cache-0
+              - pip-cache
+
         - run:
             name: Get Python running
             command: |
               pip install --user -q --upgrade pip numpy
               pip install --user -q --upgrade --progress-bar off scipy matplotlib vtk pyqt5 pyqt5-sip nibabel sphinx numpydoc pillow imageio imageio-ffmpeg https://api.github.com/repos/sphinx-gallery/sphinx-gallery/zipball/master mayavi
+              pip install --user -q --upgrade "https://api.github.com/repos/mne-tools/mne-python/zipball/master"
         - save_cache:
             key: pip-cache
             paths:
@@ -59,17 +60,18 @@ jobs:
             command: |
               LIBGL_DEBUG=verbose python -c "from mayavi import mlab; import matplotlib.pyplot as plt; mlab.figure(); plt.figure()"
               echo $SUBJECTS_DIR
+
         - run:
             name: Get data
             command: |
-              if [ ! -d $SUBJECTS_DIR ]; then
-                mkdir $SUBJECTS_DIR;
-                cd $SUBJECTS_DIR;
-                wget http://faculty.washington.edu/larsoner/fsaverage_min.zip;
-                unzip fsaverage_min.zip;
-                rm fsaverage_min.zip;
-              fi;
+              mkdir -p $SUBJECTS_DIR;
+              python -c "import mne; mne.datasets.fetch_fsaverage(verbose=True)"
               ls $SUBJECTS_DIR
+        - save_cache:
+            key: data-cache-0
+            paths:
+              - "~/subjects"
+
         - run:
             name: Install PySurfer
             command: |
@@ -85,10 +87,6 @@ jobs:
             path: doc/_build/html/
             destination: html
 
-        - save_cache:
-            key: data-cache-0
-            paths:
-              - "~/subjects"
 
 workflows:
   version: 2
@@ -96,4 +94,3 @@ workflows:
   default:
     jobs:
       - build_docs
-
