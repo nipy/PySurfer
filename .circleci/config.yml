@@ -81,7 +81,7 @@ jobs:
             name: Build docs
             command: |
               cd doc
-              sphinx-build -nWT --keep-going -D plot_gallery=1 -D sphinx_gallery_conf.filename_pattern=^\(\(?\!plot_fmri_activation_volume\|plot_resting_correlations\|rotate_animation\|save_movie\|save_views\).\)*\$ -b html -d _build/doctrees . _build/html
+              PATTERN="^\(\(?\!plot_fmri_activation_volume\|plot_resting_correlations\|rotate_animation\|save_movie\|save_views\).\)*\$" make html_dev-pattern
 
         - store_artifacts:
             path: doc/_build/html/
