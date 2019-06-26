@@ -51,7 +51,7 @@ extensions = [
 ]
 
 autosummary_generate = True
-autodoc_default_flags = ['inherited-members']
+autodoc_default_options = {'inherited-members': None}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -250,10 +250,10 @@ intersphinx_mapping = {
     # 'python': ('http://docs.python.org/', None),
     # 'numpy': ('http://docs.scipy.org/doc/numpy-dev/', None),
     # 'scipy': ('http://scipy.github.io/devdocs/', None),
-    'matplotlib': ('http://matplotlib.org', None),
-    'imageio': ('http://imageio.readthedocs.io/en/latest', None),
-    'mayavi': ('http://docs.enthought.com/mayavi/mayavi', None),
-    'nibabel': ('http://nipy.org/nibabel', None),
+    'matplotlib': ('https://matplotlib.org', None),
+    'imageio': ('https://imageio.readthedocs.io/en/latest', None),
+    'mayavi': ('https://docs.enthought.com/mayavi/mayavi', None),
+    'nibabel': ('https://nipy.org/nibabel', None),
 }
 
 # One entry per manual page. List of tuples
@@ -268,31 +268,25 @@ gallery_dirs = ['auto_examples']
 
 try:
     from mayavi import mlab
-    find_mayavi_figures = True
     # Do not pop up any mayavi windows while running the
     # examples. These are very annoying since they steal the focus.
     mlab.options.offscreen = True
+    scrapers = ('matplotlib', 'mayavi')
 except Exception:
-    find_mayavi_figures = False
+    scrapers = ('matplotlib',)
 
 sphinx_gallery_conf = {
     'doc_module': ('surfer',),
-    'reference_url': {
-        'surfer': None,
-        'matplotlib': 'http://matplotlib.org',
-        'numpy': 'http://docs.scipy.org/doc/numpy',
-        'scipy': 'http://docs.scipy.org/doc/scipy/reference',
-        'mayavi': 'http://docs.enthought.com/mayavi/mayavi',
-        },
+    'reference_url': {'surfer': None},
     'examples_dirs': examples_dirs,
     'gallery_dirs': gallery_dirs,
     'within_subsection_order': FileNameSortKey,
-    'find_mayavi_figures': find_mayavi_figures,
+    'image_scrapers': scrapers,
     'default_thumb_file': os.path.join('_static', 'pysurfer_logo_small.png'),
     'backreferences_dir': 'generated',
     'download_section_examples': False,
     'thumbnail_size': (250, 250),
-    }
+}
 
 numpydoc_class_members_toctree = False
 numpydoc_show_inherited_class_members = False

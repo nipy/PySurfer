@@ -13,6 +13,7 @@ jobs:
               echo "export DISPLAY=:99" >> $BASH_ENV;
               echo "export OPENBLAS_NUM_THREADS=4" >> $BASH_ENV;
               echo "export PATH=~/.local/bin:$PATH" >> $BASH_ENV;
+              echo "export PATTERN=\"plot_\(?\!fmri_activation_volume\|resting_correlations\)\"" >> $BASH_ENV;
         - run:
             name: Merge with upstream
             command: |
@@ -24,12 +25,6 @@ jobs:
                 git pull --ff-only upstream "refs/pull/$(cat merge.txt)/merge";
                 git fetch upstream master;
               fi
-
-        # Load our data
-        - restore_cache:
-            keys:
-              - data-cache-0
-              - pip-cache
 
         - run:
             name: Spin up Xvfb
@@ -43,11 +38,18 @@ jobs:
             command: |
               sudo apt-get install qt5-default
 
+        # Load our data
+        - restore_cache:
+            keys:
+              - data-cache-0
+              - pip-cache
+
         - run:
             name: Get Python running
             command: |
               pip install --user -q --upgrade pip numpy
-              pip install --user -q --upgrade --progress-bar off scipy matplotlib vtk pyqt5 pyqt5-sip nibabel sphinx numpydoc pillow imageio imageio-ffmpeg https://api.github.com/repos/sphinx-gallery/sphinx-gallery/zipball/master mayavi
+              pip install --user -q --upgrade --progress-bar off scipy matplotlib vtk pyqt5 pyqt5-sip nibabel sphinx numpydoc pillow imageio imageio-ffmpeg sphinx-gallery
+              pip install --user -q --upgrade mayavi "https://api.github.com/repos/mne-tools/mne-python/zipball/master"
         - save_cache:
             key: pip-cache
             paths:
@@ -58,18 +60,19 @@ jobs:
             name: Check installation
             command: |
               LIBGL_DEBUG=verbose python -c "from mayavi import mlab; import matplotlib.pyplot as plt; mlab.figure(); plt.figure()"
-              echo $SUBJECTS_DIR
+
         - run:
             name: Get data
             command: |
-              if [ ! -d $SUBJECTS_DIR ]; then
-                mkdir $SUBJECTS_DIR;
-                cd $SUBJECTS_DIR;
-                wget http://faculty.washington.edu/larsoner/fsaverage_min.zip;
-                unzip fsaverage_min.zip;
-                rm fsaverage_min.zip;
-              fi;
+              echo $SUBJECTS_DIR
+              mkdir -p $SUBJECTS_DIR
+              python -c "import mne; mne.datasets.fetch_fsaverage(verbose=True)"
               ls $SUBJECTS_DIR
+        - save_cache:
+            key: data-cache-0
+            paths:
+              - "~/subjects"
+
         - run:
             name: Install PySurfer
             command: |
@@ -79,16 +82,13 @@ jobs:
             name: Build docs
             command: |
               cd doc
-              sphinx-build -D plot_gallery=1 -D sphinx_gallery_conf.filename_pattern=^\(\(?\!plot_fmri_activation_volume\|plot_morphometry\|plot_label\.py\|plot_probabilistic_label\|plot_resting_correlations\|plot_transparent_brain\|rotate_animation\|save_movie\|save_views\).\)*\$ -b html -d _build/doctrees . _build/html
+              echo $PATTERN
+              make html_dev-pattern
 
         - store_artifacts:
             path: doc/_build/html/
             destination: html
 
-        - save_cache:
-            key: data-cache-0
-            paths:
-              - "~/subjects"
 
 workflows:
   version: 2
@@ -96,4 +96,3 @@ workflows:
   default:
     jobs:
       - build_docs
-

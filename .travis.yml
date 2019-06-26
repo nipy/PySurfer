@@ -1,11 +1,14 @@
 language: c
 sudo: false
-
+dist: xenial
+services:
+    - xvfb
 env:
     global: PYTHON_VERSION=3.7
             CONDA_DEPENDENCIES="numpy scipy matplotlib pyqt>=5.9 coverage pytest pytest-cov flake8 pygments traits traitsui pyface"
             PIP_DEPENDENCIES="codecov pytest-sugar pytest-faulthandler nibabel imageio imageio-ffmpeg"
             DISPLAY=:99.0
+            SUBJECTS_DIR=~/subjects
 
 matrix:
     include:
@@ -16,11 +19,11 @@ matrix:
               packages:
                 - mencoder
 
-        # 2.7, no mencoder
+        # 3.5, no mencoder
         - os: linux
-          env: PYTHON_VERSION=2.7
-               CONDA_DEPENDENCIES="numpy scipy matplotlib coverage pytest pytest-cov flake8 mayavi"
-               PIP_DEPENDENCIES="codecov pytest-sugar faulthandler pytest-faulthandler nibabel imageio"
+          env: PYTHON_VERSION=3.5
+               CONDA_DEPENDENCIES="numpy scipy matplotlib coverage pytest pytest-cov flake8"
+               PIP_DEPENDENCIES="codecov pytest-sugar nibabel imageio imageio-ffmpeg"
 
         # OSX
         - os: osx
@@ -32,31 +35,18 @@ before_install:
     - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then
         unset -f cd;
       fi;
-    - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-        echo "Starting Xvfb...";
-        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render;
-      fi;
     - git clone https://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda.sh
-    - if [ "$PYTHON_VERSION" != "2.7" ]; then
-        pip install vtk;
-        pip install mayavi;
-      fi;
+    - pip install vtk
+    - pip install mayavi
+    - mkdir -p $SUBJECTS_DIR
+    - pip install "https://api.github.com/repos/mne-tools/mne-python/zipball/master"
+    - python -c "import mne; mne.datasets.fetch_fsaverage(verbose=True)"
 
 install:
     - python setup.py build
     - python setup.py install
     - SRC_DIR=$(pwd)
-
-before_script:
-    # Let's create a (fake) display on Travis, and let's use a funny resolution
-    - cd ~
-    - wget --quiet http://faculty.washington.edu/larsoner/fsaverage_min.zip
-    - mkdir subjects
-    - cd subjects
-    - unzip ../fsaverage_min.zip
-    - cd ..
-    - export SUBJECTS_DIR="${PWD}/subjects"
 
 script:
     - cd ${SRC_DIR}

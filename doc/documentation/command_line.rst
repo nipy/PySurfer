@@ -50,6 +50,3 @@ Other command-line options
 As in tksurfer, most aspects of the visualization can be initialized
 from the command-line. To get a full documentation of the command-line
 interface, simply type ``pysurfer`` at a terminal prompt and hit enter.
-For convenience, this usage message is reproduced below.
-
-.. literalinclude:: pysurfer_usage.txt
