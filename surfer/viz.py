@@ -3304,7 +3304,7 @@ class _Hemisphere(object):
 
         # Set the color table
         l_m = surf.module_manager.scalar_lut_manager
-        l_m.load_lut_from_list(cmap / 255.)
+        l_m.lut.table = np.round(cmap).astype(np.uint8)
 
         # Set the brain attributes
         return dict(surface=surf, name=annot, colormap=cmap, brain=self,
