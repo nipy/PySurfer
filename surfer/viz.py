@@ -1196,7 +1196,7 @@ class Brain(object):
         self._toggle_render(True, views)
 
     def add_annotation(self, annot, borders=True, alpha=1, hemi=None,
-                       remove_existing=True):
+                       remove_existing=True, color=None):
         """Add an annotation file.
 
         Parameters
@@ -1220,6 +1220,10 @@ class Brain(object):
             for both hemispheres.
         remove_existing : bool
             If True (default), remove old annotations.
+        color : matplotlib-style color code
+            If used, show all annotations in the same (specified) color.
+            Probably useful only when showing annotation borders.
+
         """
         hemis = self._check_hemis(hemi)
 
@@ -1291,6 +1295,12 @@ class Brain(object):
             #  Set the alpha level
             alpha_vec = cmap[:, 3]
             alpha_vec[alpha_vec > 0] = alpha * 255
+
+            # Override the cmap when a single color is used
+            if color is not None:
+                from matplotlib.colors import colorConverter
+                rgb = np.round(np.multiply(colorConverter.to_rgb(color), 255))
+                cmap[:, :3] = rgb.astype(cmap.dtype)
 
             for brain in self._brain_list:
                 if brain['hemi'] == hemi:
