@@ -165,6 +165,12 @@ def test_annot():
     labels, ctab, names = nib.freesurfer.read_annot(annot_path)
     brain.add_annotation((labels, ctab))
 
+    brain.add_annotation('aparc', color="red", remove_existing=True)
+    surf = brain.annot["surface"]
+    ctab = surf.module_manager.scalar_lut_manager.lut.table
+    for color in ctab:
+        assert color[:3] == (255, 0, 0)
+
     brain.close()
 
 
