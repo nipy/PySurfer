@@ -3365,7 +3365,8 @@ class _Hemisphere(object):
             points = mlab.points3d(
                 foci_coords[:, 0], foci_coords[:, 1], foci_coords[:, 2],
                 np.ones(foci_coords.shape[0]), name=name, figure=self._f,
-                scale_factor=(10. * scale_factor), color=color, opacity=alpha)
+                scale_factor=(10. * scale_factor), color=color, opacity=alpha,
+                reset_zoom=False)
         return points
 
     def add_contour_overlay(self, scalar_data, min=None, max=None,
