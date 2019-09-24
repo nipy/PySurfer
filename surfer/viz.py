@@ -1005,9 +1005,12 @@ class Brain(object):
             alpha level to control opacity of the overlay.
         vertices : numpy array
             vertices for which the data is defined (needed if len(data) < nvtx)
-        smoothing_steps : int or None
-            number of smoothing steps (smoothing is used if len(data) < nvtx)
-            Default : 20
+        smoothing_steps : int | str | None
+            Number of smoothing steps (if data come from surface subsampling).
+            Can be None to use the fewest steps that result in all vertices
+            taking on data values, or "nearest" such that each high resolution
+            vertex takes the value of the its nearest (on the sphere)
+            low-resolution vertex. Default is 20.
         time : numpy array
             time points in the data array (if data is 2D or 3D)
         time_label : str | callable | None
@@ -2114,13 +2117,17 @@ class Brain(object):
         raise RuntimeError("Brain instance has no data overlay")
 
     @verbose
-    def set_data_smoothing_steps(self, smoothing_steps, verbose=None):
+    def set_data_smoothing_steps(self, smoothing_steps=20, verbose=None):
         """Set the number of smoothing steps
 
         Parameters
         ----------
-        smoothing_steps : int
-            Number of smoothing steps
+        smoothing_steps : int | str | None
+            Number of smoothing steps (if data come from surface subsampling).
+            Can be None to use the fewest steps that result in all vertices
+            taking on data values, or "nearest" such that each high resolution
+            vertex takes the value of the its nearest (on the sphere)
+            low-resolution vertex. Default is 20.
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
         """
