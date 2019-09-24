@@ -1,5 +1,24 @@
-PySurfer Changes
-================
+Changelog
+=========
+
+.. currentmodule:: surfer
+
+Development version (0.10.dev0)
+-------------------------------
+
+- Added an option to smooth to nearest vertex in :meth:`Brain.add_data` using
+  ``smoothing_steps='nearest'``
+- Added options for using offscreen mode
+- Improved integration with Jupyter notebook
+- Avoided view changes when using :meth:`Brain.add_foci`
+
+Version 0.9
+-----------
+
+- Fixed transparency issues with colormaps with
+  :meth:`Brain.scale_data_colormap`
+- Added an example of using custom colors
+- Added options for choosing units for :class:`Brain` (``m`` or ``mm``)
 
 Version 0.8
 -----------

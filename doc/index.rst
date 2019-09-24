@@ -19,6 +19,7 @@ More Information
     auto_examples/index.rst
     documentation/index.rst
     python_reference.rst
+    changes.rst
 
 Authors
 -------
