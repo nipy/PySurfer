@@ -2,6 +2,7 @@ from distutils.version import LooseVersion
 import numpy as np
 import scipy
 from scipy import sparse
+import pytest
 import matplotlib as mpl
 from numpy.testing import assert_allclose, assert_array_equal
 
