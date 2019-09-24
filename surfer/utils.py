@@ -597,8 +597,8 @@ def _nearest(vertices, adj_mat):
     _, _, sources = dijkstra(adj_mat, False, indices=vertices, min_only=True,
                              return_predecessors=True)
     col = np.searchsorted(vertices, sources)
-    # ... then restore the original order.
-    col = np.argsort(order)[col]
+    # ... then get things back to the correct configuration.
+    col = order[col]
     row = np.arange(len(col))
     data = np.ones(len(col))
     mat = sparse.coo_matrix((data, (row, col)))
