@@ -50,9 +50,10 @@ for hemi in ['lh']:  # , 'rh']:
     # colormap to use
     colormap = 'hot'
 
-    # add data and set the initial time displayed to 100 ms
+    # add data and set the initial time displayed to 100 ms,
+    # plotted using the nearest relevant colors
     brain.add_data(data, colormap=colormap, vertices=vertices,
-                   smoothing_steps=5, time=time, time_label=time_label,
+                   smoothing_steps='nearest', time=time, time_label=time_label,
                    hemi=hemi, initial_time=0.1, verbose=False)
 
 # scale colormap
