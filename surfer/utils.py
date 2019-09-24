@@ -583,7 +583,6 @@ def smoothing_matrix(vertices, adj_mat, smoothing_steps=20, verbose=None):
         mat = _nearest(vertices, adj_mat)
     else:
         mat = _smooth(vertices, adj_mat, smoothing_steps)
-    assert mat.shape == (adj_mat.shape[0], len(vertices))
     return mat
 
 
@@ -592,12 +591,19 @@ def _nearest(vertices, adj_mat):
     from scipy.sparse.csgraph import dijkstra
     if LooseVersion(scipy.__version__) < LooseVersion('1.3'):
         raise RuntimeError('smoothing_steps="nearest" requires SciPy >= 1.3')
-    _, _, col = dijkstra(adj_mat, False, indices=vertices, min_only=True,
-                         return_predecessors=True)
-    col = np.searchsorted(vertices, col)
+    # Vertices can be out of order, so sort them to start ...
+    order = np.argsort(vertices)
+    vertices = vertices[order]
+    _, _, sources = dijkstra(adj_mat, False, indices=vertices, min_only=True,
+                             return_predecessors=True)
+    col = np.searchsorted(vertices, sources)
+    # ... then restore the original order.
+    col = np.argsort(order)[col]
     row = np.arange(len(col))
     data = np.ones(len(col))
-    return sparse.coo_matrix((data, (row, col)))
+    mat = sparse.coo_matrix((data, (row, col)))
+    assert mat.shape == (adj_mat.shape[0], len(vertices)), mat.shape
+    return mat
 
 
 def _smooth(vertices, adj_mat, smoothing_steps):
