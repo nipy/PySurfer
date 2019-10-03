@@ -226,7 +226,11 @@ def test_foci():
     coords = [[-36, 18, -3],
               [-43, 25, 24],
               [-48, 26, -2]]
-    brain.add_foci(coords, map_surface="white", color="gold", name='test1', resolution=25)
+    brain.add_foci(coords,
+                   map_surface="white",
+                   color="gold",
+                   name='test1',
+                   resolution=25)
 
     subj_dir = utils._get_subjects_dir()
     annot_path = pjoin(subj_dir, subject_id, 'label', 'lh.aparc.a2009s.annot')
