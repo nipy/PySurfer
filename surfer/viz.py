@@ -958,7 +958,8 @@ class Brain(object):
                  time_label="time index=%d", colorbar=True,
                  hemi=None, remove_existing=False, time_label_size=14,
                  initial_time=None, scale_factor=None, vector_alpha=None,
-                 mid=None, center=None, transparent=False, verbose=None, **kwargs):
+                 mid=None, center=None, transparent=False, verbose=None,
+                 **kwargs):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to
@@ -1307,7 +1308,8 @@ class Brain(object):
             for brain in self._brain_list:
                 if brain['hemi'] == hemi:
                     self.annot_list.append(
-                        brain['brain'].add_annotation(annot, ids, cmap, **kwargs))
+                        brain['brain'].add_annotation(annot, ids, cmap,
+                                                      **kwargs))
         self._toggle_render(True, views)
 
     def add_label(self, label, color=None, alpha=1, scalar_thresh=None,
@@ -1617,7 +1619,8 @@ class Brain(object):
             for brain in self.brains:
                 if brain.hemi == hemi:
                     self.morphometry_list.append(brain.add_morphometry(
-                        morph_data, colormap, measure, min, max, colorbar, **kwargs))
+                        morph_data, colormap, measure, min, max, colorbar,
+                        **kwargs))
         self._toggle_render(True, views)
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
@@ -1688,13 +1691,15 @@ class Brain(object):
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
                 fl.append(brain['brain'].add_foci(foci_coords, scale_factor,
-                                                  color, alpha, name, **kwargs))
+                                                  color, alpha, name,
+                                                  **kwargs))
         self.foci_dict[name] = fl
         self._toggle_render(True, views)
 
     def add_contour_overlay(self, source, min=None, max=None,
                             n_contours=7, line_width=1.5, colormap="YlOrRd_r",
-                            hemi=None, remove_existing=True, colorbar=True, **kwargs):
+                            hemi=None, remove_existing=True, colorbar=True,
+                            **kwargs):
         """Add a topographic contour overlay of the positive data.
 
         Note: This visualization will look best when using the "low_contrast"
@@ -1783,7 +1788,8 @@ class Brain(object):
         if name in self.texts_dict:
             self.texts_dict[name]['text'].remove()
         text = self.brain_matrix[row, col].add_text(x, y, text,
-                                                    name, color, opacity, **kwargs)
+                                                    name, color, opacity,
+                                                    **kwargs)
         self.texts_dict[name] = dict(row=row, col=col, text=text)
         if font_size is not None:
             text.property.font_size = font_size
@@ -3282,7 +3288,8 @@ class _Hemisphere(object):
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(
                 pipe, colormap=colormap, vmin=fmin, vmax=fmax,
-                opacity=float(alpha), figure=self._f, reset_zoom=False, **kwargs)
+                opacity=float(alpha), figure=self._f, reset_zoom=False,
+                **kwargs)
             surf.actor.property.backface_culling = False
 
         # apply look up table if given
@@ -3362,7 +3369,8 @@ class _Hemisphere(object):
         return dict(surface=surf, colorbar=bar, measure=measure, brain=self,
                     array_id=array_id)
 
-    def add_foci(self, foci_coords, scale_factor, color, alpha, name, **kwargs):
+    def add_foci(self, foci_coords, scale_factor, color, alpha, name,
+                 **kwargs):
         """Add spherical foci, possibly mapping to displayed surf"""
         # Create the visualization
         with warnings.catch_warnings(record=True):  # traits
