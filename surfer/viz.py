@@ -913,7 +913,7 @@ class Brain(object):
     ###########################################################################
     # ADDING DATA PLOTS
     def add_overlay(self, source, min=2, max="robust_max", sign="abs",
-                    name=None, hemi=None):
+                    name=None, hemi=None, **kwargs):
         """Add an overlay to the overlay dict from a file or array.
 
         Parameters
@@ -932,6 +932,7 @@ class Brain(object):
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
             be thrown.
+        kwargs: other mayavi surface arguments.
         """
         hemi = self._check_hemi(hemi)
         # load data here
@@ -944,7 +945,7 @@ class Brain(object):
         views = self._toggle_render(False)
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
-                ol.append(brain['brain'].add_overlay(old))
+                ol.append(brain['brain'].add_overlay(old, **kwargs))
         if name in self.overlays_dict:
             name = "%s%d" % (name, len(self.overlays_dict) + 1)
         self.overlays_dict[name] = ol
@@ -957,7 +958,7 @@ class Brain(object):
                  time_label="time index=%d", colorbar=True,
                  hemi=None, remove_existing=False, time_label_size=14,
                  initial_time=None, scale_factor=None, vector_alpha=None,
-                 mid=None, center=None, transparent=False, verbose=None):
+                 mid=None, center=None, transparent=False, verbose=None, **kwargs):
         """Display data from a numpy array on the surface.
 
         This provides a similar interface to
@@ -1035,6 +1036,7 @@ class Brain(object):
             vector-valued data. If None (default), ``alpha`` is used.
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
+        kwargs: other mayavi surface arguments.
 
         Notes
         -----
@@ -1172,7 +1174,7 @@ class Brain(object):
                 s, ct, bar, gl = brain['brain'].add_data(
                     array, min, mid, max, thresh, lut, colormap, alpha,
                     colorbar, layer_id, smooth_mat, magnitude, magnitude_max,
-                    scale_factor, vertices, vector_alpha)
+                    scale_factor, vertices, vector_alpha, **kwargs)
                 surfs.append(s)
                 bars.append(bar)
                 glyphs.append(gl)
@@ -1196,7 +1198,7 @@ class Brain(object):
         self._toggle_render(True, views)
 
     def add_annotation(self, annot, borders=True, alpha=1, hemi=None,
-                       remove_existing=True, color=None):
+                       remove_existing=True, color=None, **kwargs):
         """Add an annotation file.
 
         Parameters
@@ -1223,7 +1225,7 @@ class Brain(object):
         color : matplotlib-style color code
             If used, show all annotations in the same (specified) color.
             Probably useful only when showing annotation borders.
-
+        kwargs: other mayavi surface arguments.
         """
         hemis = self._check_hemis(hemi)
 
@@ -1305,11 +1307,11 @@ class Brain(object):
             for brain in self._brain_list:
                 if brain['hemi'] == hemi:
                     self.annot_list.append(
-                        brain['brain'].add_annotation(annot, ids, cmap))
+                        brain['brain'].add_annotation(annot, ids, cmap, **kwargs))
         self._toggle_render(True, views)
 
     def add_label(self, label, color=None, alpha=1, scalar_thresh=None,
-                  borders=False, hemi=None, subdir=None):
+                  borders=False, hemi=None, subdir=None, **kwargs):
         """Add an ROI label to the image.
 
         Parameters
@@ -1341,7 +1343,7 @@ class Brain(object):
             label directory rather than in the label directory itself (e.g.
             for ``$SUBJECTS_DIR/$SUBJECT/label/aparc/lh.cuneus.label``
             ``brain.add_label('cuneus', subdir='aparc')``).
-
+        kwargs: other mayavi surface arguments.
         Notes
         -----
         To remove previously added labels, run Brain.remove_labels().
@@ -1422,7 +1424,7 @@ class Brain(object):
         for brain in self.brains:
             if brain.hemi == hemi:
                 array_id, surf = brain.add_label(label, label_name, color,
-                                                 alpha)
+                                                 alpha, **kwargs)
                 surfaces.append(surf)
                 array_ids.append((brain, array_id))
         self._label_dicts[label_name] = {'surfaces': surfaces,
@@ -1532,7 +1534,7 @@ class Brain(object):
 
     def add_morphometry(self, measure, grayscale=False, hemi=None,
                         remove_existing=True, colormap=None,
-                        min=None, max=None, colorbar=True):
+                        min=None, max=None, colorbar=True, **kwargs):
         """Add a morphometry overlay to the image.
 
         Parameters
@@ -1554,7 +1556,7 @@ class Brain(object):
             of the data is used.
         colorbar : bool
             If True, show a colorbar corresponding to the overlay data.
-
+        kwargs: other mayavi surface arguments.
         """
         hemis = self._check_hemis(hemi)
         morph_files = []
@@ -1615,12 +1617,12 @@ class Brain(object):
             for brain in self.brains:
                 if brain.hemi == hemi:
                     self.morphometry_list.append(brain.add_morphometry(
-                        morph_data, colormap, measure, min, max, colorbar))
+                        morph_data, colormap, measure, min, max, colorbar, **kwargs))
         self._toggle_render(True, views)
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
                  scale_factor=1, color="white", alpha=1, name=None,
-                 hemi=None):
+                 hemi=None, **kwargs):
         """Add spherical foci, possibly mapping to displayed surf.
 
         The foci spheres can be displayed at the coordinates given, or
@@ -1650,6 +1652,7 @@ class Brain(object):
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
             be thrown.
+        kwargs: other mayavi point3d arguments.
         """
         from matplotlib.colors import colorConverter
         hemi = self._check_hemi(hemi)
@@ -1685,13 +1688,13 @@ class Brain(object):
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
                 fl.append(brain['brain'].add_foci(foci_coords, scale_factor,
-                                                  color, alpha, name))
+                                                  color, alpha, name, **kwargs))
         self.foci_dict[name] = fl
         self._toggle_render(True, views)
 
     def add_contour_overlay(self, source, min=None, max=None,
                             n_contours=7, line_width=1.5, colormap="YlOrRd_r",
-                            hemi=None, remove_existing=True, colorbar=True):
+                            hemi=None, remove_existing=True, colorbar=True, **kwargs):
         """Add a topographic contour overlay of the positive data.
 
         Note: This visualization will look best when using the "low_contrast"
@@ -1721,7 +1724,7 @@ class Brain(object):
             If there is an existing contour overlay, remove it before plotting.
         colorbar : bool
             If True, show the colorbar for the scalar value.
-
+        kwargs: other mayavi surface arguments.
         """
         hemi = self._check_hemi(hemi)
 
@@ -1748,11 +1751,11 @@ class Brain(object):
             if brain.hemi == hemi:
                 self.contour_list.append(brain.add_contour_overlay(
                     scalar_data, min, max, n_contours, line_width, lut,
-                    colorbar))
+                    colorbar, **kwargs))
         self._toggle_render(True, views)
 
     def add_text(self, x, y, text, name, color=None, opacity=1.0,
-                 row=-1, col=-1, font_size=None, justification=None):
+                 row=-1, col=-1, font_size=None, justification=None, **kwargs):
         """ Add a text to the visualization
 
         Parameters
@@ -1775,11 +1778,12 @@ class Brain(object):
             Row index of which brain to use
         col : int
             Column index of which brain to use
+        kwargs: other mayavi text3d arguments.
         """
         if name in self.texts_dict:
             self.texts_dict[name]['text'].remove()
         text = self.brain_matrix[row, col].add_text(x, y, text,
-                                                    name, color, opacity)
+                                                    name, color, opacity, **kwargs)
         self.texts_dict[name] = dict(row=row, col=col, text=text)
         if font_size is not None:
             text.property.font_size = font_size
@@ -3196,7 +3200,7 @@ class _Hemisphere(object):
         if glyphs is not None:
             glyphs.parent.parent.remove()
 
-    def add_overlay(self, old):
+    def add_overlay(self, old, **kwargs):
         """Add an overlay to the overlay dict from a file or array"""
         array_id, mesh = self._add_scalar_data(old.mlab_data)
 
@@ -3206,7 +3210,7 @@ class _Hemisphere(object):
                 pos = mlab.pipeline.surface(
                     pos_thresh, colormap="YlOrRd", figure=self._f,
                     vmin=old.pos_lims[1], vmax=old.pos_lims[2],
-                    reset_zoom=False)
+                    reset_zoom=False, **kwargs)
                 pos.actor.property.backface_culling = False
                 pos_bar = mlab.scalarbar(pos, nb_labels=5)
             pos_bar.reverse_lut = True
@@ -3222,7 +3226,7 @@ class _Hemisphere(object):
                 neg = mlab.pipeline.surface(
                     neg_thresh, colormap="PuBu", figure=self._f,
                     vmin=old.neg_lims[1], vmax=old.neg_lims[2],
-                    reset_zoom=False)
+                    reset_zoom=False, **kwargs)
                 neg.actor.property.backface_culling = False
                 neg_bar = mlab.scalarbar(neg, nb_labels=5)
             neg_bar.scalar_bar_representation.position = (0.05, 0.01)
@@ -3236,7 +3240,7 @@ class _Hemisphere(object):
     @verbose
     def add_data(self, array, fmin, fmid, fmax, thresh, lut, colormap, alpha,
                  colorbar, layer_id, smooth_mat, magnitude, magnitude_max,
-                 scale_factor, vertices, vector_alpha):
+                 scale_factor, vertices, vector_alpha, **kwargs):
         """Add data to the brain"""
         # Calculate initial data to plot
         if array.ndim == 1:
@@ -3278,7 +3282,7 @@ class _Hemisphere(object):
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(
                 pipe, colormap=colormap, vmin=fmin, vmax=fmax,
-                opacity=float(alpha), figure=self._f, reset_zoom=False)
+                opacity=float(alpha), figure=self._f, reset_zoom=False, **kwargs)
             surf.actor.property.backface_culling = False
 
         # apply look up table if given
@@ -3303,13 +3307,13 @@ class _Hemisphere(object):
             scale_factor_norm=scale_factor_norm)
         return surf, orig_ctable, bar, glyphs
 
-    def add_annotation(self, annot, ids, cmap):
+    def add_annotation(self, annot, ids, cmap, **kwargs):
         """Add an annotation file"""
         # Add scalar values to dataset
         array_id, pipe = self._add_scalar_data(ids)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(pipe, name=annot, figure=self._f,
-                                         reset_zoom=False)
+                                         reset_zoom=False, **kwargs)
             surf.actor.property.backface_culling = False
 
         # Set the color table
@@ -3320,13 +3324,13 @@ class _Hemisphere(object):
         return dict(surface=surf, name=annot, colormap=cmap, brain=self,
                     array_id=array_id)
 
-    def add_label(self, label, label_name, color, alpha):
+    def add_label(self, label, label_name, color, alpha, **kwargs):
         """Add an ROI label to the image"""
         from matplotlib.colors import colorConverter
         array_id, pipe = self._add_scalar_data(label)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(pipe, name=label_name, figure=self._f,
-                                         reset_zoom=False)
+                                         reset_zoom=False, **kwargs)
             surf.actor.property.backface_culling = False
         color = colorConverter.to_rgba(color, alpha)
         cmap = np.array([(0, 0, 0, 0,), color])
@@ -3338,13 +3342,13 @@ class _Hemisphere(object):
         return array_id, surf
 
     def add_morphometry(self, morph_data, colormap, measure,
-                        min, max, colorbar):
+                        min, max, colorbar, **kwargs):
         """Add a morphometry overlay to the image"""
         array_id, pipe = self._add_scalar_data(morph_data)
         with warnings.catch_warnings(record=True):
             surf = mlab.pipeline.surface(
                 pipe, colormap=colormap, vmin=min, vmax=max, name=measure,
-                figure=self._f, reset_zoom=False)
+                figure=self._f, reset_zoom=False, **kwargs)
 
         # Get the colorbar
         if colorbar:
@@ -3358,7 +3362,7 @@ class _Hemisphere(object):
         return dict(surface=surf, colorbar=bar, measure=measure, brain=self,
                     array_id=array_id)
 
-    def add_foci(self, foci_coords, scale_factor, color, alpha, name):
+    def add_foci(self, foci_coords, scale_factor, color, alpha, name, **kwargs):
         """Add spherical foci, possibly mapping to displayed surf"""
         # Create the visualization
         with warnings.catch_warnings(record=True):  # traits
@@ -3366,19 +3370,19 @@ class _Hemisphere(object):
                 foci_coords[:, 0], foci_coords[:, 1], foci_coords[:, 2],
                 np.ones(foci_coords.shape[0]), name=name, figure=self._f,
                 scale_factor=(10. * scale_factor), color=color, opacity=alpha,
-                reset_zoom=False)
+                reset_zoom=False, **kwargs)
         return points
 
     def add_contour_overlay(self, scalar_data, min=None, max=None,
                             n_contours=7, line_width=1.5, lut=None,
-                            colorbar=True):
+                            colorbar=True, **kwargs):
         """Add a topographic contour overlay of the positive data"""
         array_id, pipe = self._add_scalar_data(scalar_data)
         with warnings.catch_warnings(record=True):
             thresh = threshold_filter(pipe, low=min)
             surf = mlab.pipeline.contour_surface(
                 thresh, contours=n_contours, line_width=line_width,
-                reset_zoom=False)
+                reset_zoom=False, **kwargs)
         if lut is not None:
             l_m = surf.module_manager.scalar_lut_manager
             l_m.load_lut_from_list(lut / 255.)
@@ -3396,12 +3400,12 @@ class _Hemisphere(object):
         # Set up a dict attribute with pointers at important things
         return dict(surface=surf, colorbar=bar, brain=self, array_id=array_id)
 
-    def add_text(self, x, y, text, name, color=None, opacity=1.0):
+    def add_text(self, x, y, text, name, color=None, opacity=1.0, **kwargs):
         """ Add a text to the visualization"""
         color = self._fg_color if color is None else color
         with warnings.catch_warnings(record=True):
             text = mlab.text(x, y, text, name=name, color=color,
-                             opacity=opacity, figure=self._f)
+                             opacity=opacity, figure=self._f, **kwargs)
             return text
 
     def remove_data(self, layer_id):
