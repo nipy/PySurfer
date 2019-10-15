@@ -47,9 +47,9 @@ jobs:
         - run:
             name: Get Python running
             command: |
-              pip install --user -q --upgrade pip numpy
-              pip install --user -q --upgrade --progress-bar off scipy matplotlib vtk pyqt5 pyqt5-sip nibabel sphinx numpydoc pillow imageio imageio-ffmpeg sphinx-gallery
-              pip install --user -q --upgrade mayavi "https://api.github.com/repos/mne-tools/mne-python/zipball/master"
+              python -m pip install --user -q --upgrade pip numpy
+              python -m pip install --user -q --upgrade --progress-bar off scipy matplotlib vtk pyqt5 pyqt5-sip nibabel sphinx numpydoc pillow imageio imageio-ffmpeg sphinx-gallery
+              python -m pip install --user -q --upgrade mayavi "https://api.github.com/repos/mne-tools/mne-python/zipball/master"
         - save_cache:
             key: pip-cache
             paths:
