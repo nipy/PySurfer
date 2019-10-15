@@ -5,6 +5,7 @@
 .#*
 *.swp
 *.orig
+*.mov
 build
 
 dist/

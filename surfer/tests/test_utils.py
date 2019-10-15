@@ -1,6 +1,10 @@
+from distutils.version import LooseVersion
 import numpy as np
+import scipy
+from scipy import sparse
+import pytest
 import matplotlib as mpl
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import assert_allclose, assert_array_equal
 
 from surfer import utils
 
@@ -44,12 +48,12 @@ def test_surface():
         x = surface.x
         surface.apply_xfm(xfm)
         x_ = surface.x
-        assert_array_almost_equal(x + 2, x_)
+        assert_allclose(x + 2, x_)
 
         # normals
         nn = _slow_compute_normals(surface.coords, surface.faces[:10000])
         nn_fast = utils._compute_normals(surface.coords, surface.faces[:10000])
-        assert_array_almost_equal(nn, nn_fast)
+        assert_allclose(nn, nn_fast)
         assert 50 < np.linalg.norm(surface.coords, axis=-1).mean() < 100  # mm
     surface = utils.Surface('fsaverage', 'lh', 'inflated',
                             subjects_dir=subj_dir, units='m')
@@ -99,3 +103,18 @@ def test_create_color_lut():
     # Test that we can ask for a specific number of colors
     cmap_out = utils.create_color_lut("Reds", 12)
     assert cmap_out.shape == (12, 4)
+
+
+def test_smooth():
+    """Test smoothing support."""
+    adj_mat = sparse.csc_matrix(np.repeat(np.repeat(np.eye(2), 2, 0), 2, 1))
+    vertices = np.array([0, 2])
+    want = np.repeat(np.eye(2), 2, axis=0)
+    smooth = utils.smoothing_matrix(vertices, adj_mat).toarray()
+    assert_allclose(smooth, want)
+    if LooseVersion(scipy.__version__) < LooseVersion('1.3'):
+        with pytest.raises(RuntimeError, match='nearest.*requires'):
+            utils.smoothing_matrix(vertices, adj_mat, 'nearest')
+    else:
+        smooth = utils.smoothing_matrix(vertices, adj_mat, 'nearest').toarray()
+        assert_allclose(smooth, want)

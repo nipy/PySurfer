@@ -579,10 +579,36 @@ def smoothing_matrix(vertices, adj_mat, smoothing_steps=20, verbose=None):
     smooth_mat : sparse matrix
         smoothing matrix with size N x len(vertices)
     """
+    if smoothing_steps == 'nearest':
+        mat = _nearest(vertices, adj_mat)
+    else:
+        mat = _smooth(vertices, adj_mat, smoothing_steps)
+    return mat
+
+
+def _nearest(vertices, adj_mat):
+    import scipy
+    from scipy.sparse.csgraph import dijkstra
+    if LooseVersion(scipy.__version__) < LooseVersion('1.3'):
+        raise RuntimeError('smoothing_steps="nearest" requires SciPy >= 1.3')
+    # Vertices can be out of order, so sort them to start ...
+    order = np.argsort(vertices)
+    vertices = vertices[order]
+    _, _, sources = dijkstra(adj_mat, False, indices=vertices, min_only=True,
+                             return_predecessors=True)
+    col = np.searchsorted(vertices, sources)
+    # ... then get things back to the correct configuration.
+    col = order[col]
+    row = np.arange(len(col))
+    data = np.ones(len(col))
+    mat = sparse.coo_matrix((data, (row, col)))
+    assert mat.shape == (adj_mat.shape[0], len(vertices)), mat.shape
+    return mat
+
+
+def _smooth(vertices, adj_mat, smoothing_steps):
     from scipy import sparse
-
     logger.info("Updating smoothing matrix, be patient..")
-
     e = adj_mat.copy()
     e.data[e.data == 2] = 1
     n_vertices = e.shape[0]
