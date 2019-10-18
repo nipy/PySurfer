@@ -933,8 +933,8 @@ class Brain(object):
             shown. If two hemispheres are being shown, an error will
             be thrown.
         **kwargs: additional keyword arguments
-            These are passed to the underlying :func:
-                `mayavi.mlab.pipeline.surface` call.
+            These are passed to the underlying
+                :func:`mayavi.mlab.pipeline.surface` call.
 
         """
         hemi = self._check_hemi(hemi)
@@ -1041,8 +1041,8 @@ class Brain(object):
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
         **kwargs: additional keyword arguments
-            These are passed to the underlying :func:
-                `mayavi.mlab.pipeline.surface` call.
+            These are passed to the underlying
+                :func:`mayavi.mlab.pipeline.surface` call.
 
         Notes
         -----
@@ -1232,8 +1232,8 @@ class Brain(object):
             If used, show all annotations in the same (specified) color.
             Probably useful only when showing annotation borders.
         **kwargs: additional keyword arguments
-            These are passed to the underlying :func:
-                `mayavi.mlab.pipeline.surface` call.
+            These are passed to the underlying
+                :func:`mayavi.mlab.pipeline.surface` call.
         """
         hemis = self._check_hemis(hemi)
 
@@ -1353,8 +1353,8 @@ class Brain(object):
             for ``$SUBJECTS_DIR/$SUBJECT/label/aparc/lh.cuneus.label``
             ``brain.add_label('cuneus', subdir='aparc')``).
         **kwargs: additional keyword arguments
-            These are passed to the underlying :func:
-                `mayavi.mlab.pipeline.surface` call.
+            These are passed to the underlying
+                :func:`mayavi.mlab.pipeline.surface` call.
         Notes
         -----
         To remove previously added labels, run Brain.remove_labels().
@@ -1568,8 +1568,8 @@ class Brain(object):
         colorbar : bool
             If True, show a colorbar corresponding to the overlay data.
         **kwargs: additional keyword arguments
-            These are passed to the underlying :func:
-                `mayavi.mlab.pipeline.surface` call.
+            These are passed to the underlying
+                :func:`mayavi.mlab.pipeline.surface` call.
         """
         hemis = self._check_hemis(hemi)
         morph_files = []
@@ -1667,8 +1667,8 @@ class Brain(object):
             shown. If two hemispheres are being shown, an error will
             be thrown.
         **kwargs: additional keyword arguments
-            These are passed to the underlying :func:
-                `mayavi.mlab.point3d` call.
+            These are passed to the underlying
+                :func:`mayavi.mlab.point3d` call.
         """
         from matplotlib.colors import colorConverter
         hemi = self._check_hemi(hemi)
@@ -1743,8 +1743,8 @@ class Brain(object):
         colorbar : bool
             If True, show the colorbar for the scalar value.
         **kwargs: additional keyword arguments
-            These are passed to the underlying :func:
-                `mayavi.mlab.pipeline.contour_surface` call.
+            These are passed to the underlying
+                :func:`mayavi.mlab.pipeline.contour_surface` call.
         """
         hemi = self._check_hemi(hemi)
 
@@ -1799,8 +1799,8 @@ class Brain(object):
         col : int
             Column index of which brain to use
         **kwargs: additional keyword arguments
-            These are passed to the underlying :func:
-                `mayavi.mlab.text3d` call.
+            These are passed to the underlying
+                :func:`mayavi.mlab.text3d` call.
         """
         if name in self.texts_dict:
             self.texts_dict[name]['text'].remove()
