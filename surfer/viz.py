@@ -934,7 +934,7 @@ class Brain(object):
             be thrown.
         **kwargs: additional keyword arguments
             These are passed to the underlying
-                :func:`mayavi.mlab.pipeline.surface` call.
+            `mayavi.mlab.pipeline.surface` call.
 
         """
         hemi = self._check_hemi(hemi)
@@ -1042,7 +1042,7 @@ class Brain(object):
             If not None, override default verbose level (see surfer.verbose).
         **kwargs: additional keyword arguments
             These are passed to the underlying
-                :func:`mayavi.mlab.pipeline.surface` call.
+            `mayavi.mlab.pipeline.surface` call.
 
         Notes
         -----
@@ -1233,7 +1233,7 @@ class Brain(object):
             Probably useful only when showing annotation borders.
         **kwargs: additional keyword arguments
             These are passed to the underlying
-                :func:`mayavi.mlab.pipeline.surface` call.
+            `mayavi.mlab.pipeline.surface` call.
         """
         hemis = self._check_hemis(hemi)
 
@@ -1354,7 +1354,7 @@ class Brain(object):
             ``brain.add_label('cuneus', subdir='aparc')``).
         **kwargs: additional keyword arguments
             These are passed to the underlying
-                :func:`mayavi.mlab.pipeline.surface` call.
+            `mayavi.mlab.pipeline.surface` call.
         Notes
         -----
         To remove previously added labels, run Brain.remove_labels().
@@ -1569,7 +1569,7 @@ class Brain(object):
             If True, show a colorbar corresponding to the overlay data.
         **kwargs: additional keyword arguments
             These are passed to the underlying
-                :func:`mayavi.mlab.pipeline.surface` call.
+            `mayavi.mlab.pipeline.surface` call.
         """
         hemis = self._check_hemis(hemi)
         morph_files = []
@@ -1668,7 +1668,7 @@ class Brain(object):
             be thrown.
         **kwargs: additional keyword arguments
             These are passed to the underlying
-                :func:`mayavi.mlab.point3d` call.
+             :func:`mayavi.mlab.points3d` call.
         """
         from matplotlib.colors import colorConverter
         hemi = self._check_hemi(hemi)
@@ -1744,7 +1744,7 @@ class Brain(object):
             If True, show the colorbar for the scalar value.
         **kwargs: additional keyword arguments
             These are passed to the underlying
-                :func:`mayavi.mlab.pipeline.contour_surface` call.
+            `mayavi.mlab.pipeline.contour_surface` call.
         """
         hemi = self._check_hemi(hemi)
 
@@ -1800,7 +1800,7 @@ class Brain(object):
             Column index of which brain to use
         **kwargs: additional keyword arguments
             These are passed to the underlying
-                :func:`mayavi.mlab.text3d` call.
+            :func:`mayavi.mlab.text3d` call.
         """
         if name in self.texts_dict:
             self.texts_dict[name]['text'].remove()
