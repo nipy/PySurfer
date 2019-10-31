@@ -1350,8 +1350,8 @@ class Brain(object):
             If a label is specified as name, subdir can be used to indicate
             that the label file is in a sub-directory of the subject's
             label directory rather than in the label directory itself (e.g.
-            for ``$SUBJECTS_DIR/$SUBJECT/label/aparc/lh.cuneus.label``
-            ``brain.add_label('cuneus', subdir='aparc')``).
+            for <br> ``$SUBJECTS_DIR/$SUBJECT/label/aparc/lh.cuneus.label``
+            <br> ``brain.add_label('cuneus', subdir='aparc')``).
         **kwargs : additional keyword arguments
             These are passed to the underlying
             `mayavi.mlab.pipeline.surface` call.
