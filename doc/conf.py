@@ -243,6 +243,15 @@ latex_documents = [
 # If false, no module index is generated.
 # latex_domain_indices = True
 
+# A string of reStructuredText that will be included at the beginning of every
+# source file that is read.
+rst_prolog = """
+.. |br| raw:: html
+
+   <br />
+
+"""
+
 trim_doctests_flags = True
 
 # Example configuration for intersphinx: refer to the Python standard library.
