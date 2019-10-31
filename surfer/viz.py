@@ -932,7 +932,7 @@ class Brain(object):
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
             be thrown.
-        **kwargs: additional keyword arguments
+        **kwargs : additional keyword arguments
             These are passed to the underlying
             `mayavi.mlab.pipeline.surface` call.
 
@@ -1040,7 +1040,7 @@ class Brain(object):
             vector-valued data. If None (default), ``alpha`` is used.
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
-        **kwargs: additional keyword arguments
+        **kwargs : additional keyword arguments
             These are passed to the underlying
             `mayavi.mlab.pipeline.surface` call.
 
@@ -1231,7 +1231,7 @@ class Brain(object):
         color : matplotlib-style color code
             If used, show all annotations in the same (specified) color.
             Probably useful only when showing annotation borders.
-        **kwargs: additional keyword arguments
+        **kwargs : additional keyword arguments
             These are passed to the underlying
             `mayavi.mlab.pipeline.surface` call.
         """
@@ -1353,7 +1353,7 @@ class Brain(object):
             for
             ``$SUBJECTS_DIR/$SUBJECT/label/aparc/lh.cuneus.label``
             ``brain.add_label('cuneus', subdir='aparc')``).
-        **kwargs: additional keyword arguments
+        **kwargs : additional keyword arguments
             These are passed to the underlying
             `mayavi.mlab.pipeline.surface` call.
         Notes
@@ -1568,7 +1568,7 @@ class Brain(object):
             of the data is used.
         colorbar : bool
             If True, show a colorbar corresponding to the overlay data.
-        **kwargs: additional keyword arguments
+        **kwargs : additional keyword arguments
             These are passed to the underlying
             `mayavi.mlab.pipeline.surface` call.
         """
@@ -1667,7 +1667,7 @@ class Brain(object):
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
             be thrown.
-        **kwargs: additional keyword arguments
+        **kwargs : additional keyword arguments
             These are passed to the underlying
              :func:`mayavi.mlab.points3d` call.
         """
@@ -1743,7 +1743,7 @@ class Brain(object):
             If there is an existing contour overlay, remove it before plotting.
         colorbar : bool
             If True, show the colorbar for the scalar value.
-        **kwargs: additional keyword arguments
+        **kwargs : additional keyword arguments
             These are passed to the underlying
             `mayavi.mlab.pipeline.contour_surface` call.
         """
@@ -1799,7 +1799,7 @@ class Brain(object):
             Row index of which brain to use
         col : int
             Column index of which brain to use
-        **kwargs: additional keyword arguments
+        **kwargs : additional keyword arguments
             These are passed to the underlying
             :func:`mayavi.mlab.text3d` call.
         """
