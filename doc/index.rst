@@ -1,10 +1,6 @@
 Introduction
 ============
 
-.. |br| raw:: html
-
-   <br />
-
 PySurfer is a Python library for visualizing cortical surface representations
 of neuroimaging data. The package is primarily intended for use with
 `Freesurfer <http://surfer.nmr.mgh.harvard.edu/>`_, but it can plot data that
