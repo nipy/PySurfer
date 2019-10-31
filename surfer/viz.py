@@ -934,7 +934,7 @@ class Brain(object):
             be thrown.
         **kwargs : additional keyword arguments
             These are passed to the underlying
-            `mayavi.mlab.pipeline.surface` call.
+            ``mayavi.mlab.pipeline.surface`` call.
 
         """
         hemi = self._check_hemi(hemi)
@@ -1042,7 +1042,7 @@ class Brain(object):
             If not None, override default verbose level (see surfer.verbose).
         **kwargs : additional keyword arguments
             These are passed to the underlying
-            `mayavi.mlab.pipeline.surface` call.
+            ``mayavi.mlab.pipeline.surface`` call.
 
         Notes
         -----
@@ -1233,7 +1233,7 @@ class Brain(object):
             Probably useful only when showing annotation borders.
         **kwargs : additional keyword arguments
             These are passed to the underlying
-            `mayavi.mlab.pipeline.surface` call.
+            ``mayavi.mlab.pipeline.surface`` call.
         """
         hemis = self._check_hemis(hemi)
 
@@ -1354,7 +1354,7 @@ class Brain(object):
             |br| ``brain.add_label('cuneus', subdir='aparc')``).
         **kwargs : additional keyword arguments
             These are passed to the underlying
-            `mayavi.mlab.pipeline.surface` call.
+            ``mayavi.mlab.pipeline.surface`` call.
         Notes
         -----
         To remove previously added labels, run Brain.remove_labels().
@@ -1569,7 +1569,7 @@ class Brain(object):
             If True, show a colorbar corresponding to the overlay data.
         **kwargs : additional keyword arguments
             These are passed to the underlying
-            `mayavi.mlab.pipeline.surface` call.
+            ``mayavi.mlab.pipeline.surface`` call.
         """
         hemis = self._check_hemis(hemi)
         morph_files = []
@@ -1744,7 +1744,7 @@ class Brain(object):
             If True, show the colorbar for the scalar value.
         **kwargs : additional keyword arguments
             These are passed to the underlying
-            `mayavi.mlab.pipeline.contour_surface` call.
+            ``mayavi.mlab.pipeline.contour_surface`` call.
         """
         hemi = self._check_hemi(hemi)
 
