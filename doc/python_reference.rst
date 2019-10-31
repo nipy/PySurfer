@@ -2,10 +2,6 @@
 
 .. _api_reference:
 
-.. |br| raw:: html
-
-   <br />
-
 ====================
 Python API Reference
 ====================
