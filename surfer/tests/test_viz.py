@@ -153,7 +153,7 @@ def test_annot():
     view = get_view(brain)
 
     for a, b, p in zip(annots, borders, alphas):
-        brain.add_annotation(a, b, p)
+        brain.add_annotation(a, b, p, opacity=0.8)
     check_view(brain, view)
 
     brain.set_surf('white')
@@ -226,7 +226,11 @@ def test_foci():
     coords = [[-36, 18, -3],
               [-43, 25, 24],
               [-48, 26, -2]]
-    brain.add_foci(coords, map_surface="white", color="gold", name='test1')
+    brain.add_foci(coords,
+                   map_surface="white",
+                   color="gold",
+                   name='test1',
+                   resolution=25)
 
     subj_dir = utils._get_subjects_dir()
     annot_path = pjoin(subj_dir, subject_id, 'label', 'lh.aparc.a2009s.annot')
@@ -398,7 +402,7 @@ def test_overlay():
     brain = Brain(*std_args)
     brain.add_overlay(overlay_file)
     brain.overlays["sig"].remove()
-    brain.add_overlay(overlay_file, min=5, max=20, sign="pos")
+    brain.add_overlay(overlay_file, min=5, max=20, sign="pos", opacity=0.7)
     sig1 = io.read_scalar_data(pjoin(data_dir, "lh.sig.nii.gz"))
     sig2 = io.read_scalar_data(pjoin(data_dir, "lh.alt_sig.nii.gz"))
 
