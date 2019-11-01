@@ -1355,6 +1355,7 @@ class Brain(object):
         **kwargs : additional keyword arguments
             These are passed to the underlying
             ``mayavi.mlab.pipeline.surface`` call.
+
         Notes
         -----
         To remove previously added labels, run Brain.remove_labels().
