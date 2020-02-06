@@ -2290,20 +2290,30 @@ class Brain(object):
 
     def close(self):
         """Close all figures and cleanup data structure."""
+
+    def _close(self, force_render=True):
         for ri, ff in enumerate(self._figures):
             for ci, f in enumerate(ff):
                 if f is not None:
-                    mlab.close(f)
+                    try:
+                        mlab.close(f)
+                    except Exception:
+                        pass
                     self._figures[ri][ci] = None
-        _force_render([])
+
+        if force_render:
+            _force_render([])
 
         # should we tear down other variables?
         if getattr(self, '_v', None) is not None:
-            self._v.dispose()
+            try:
+                self._v.dispose()
+            except Exception:
+                pass
             self._v = None
 
     def __del__(self):
-        self.close()
+        self._close(force_render=False)
 
     ###########################################################################
     # SAVING OUTPUT
