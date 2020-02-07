@@ -1,5 +1,4 @@
 from copy import deepcopy
-import gc
 import logging
 from math import floor
 import os
@@ -2291,9 +2290,6 @@ class Brain(object):
 
     def close(self):
         """Close all figures and cleanup data structure."""
-        self._close()
-
-    def _close(self, force_render=True):
         for ri, ff in enumerate(self._figures):
             for ci, f in enumerate(ff):
                 if f is not None:
@@ -2303,8 +2299,7 @@ class Brain(object):
                         pass
                     self._figures[ri][ci] = None
 
-        if force_render:
-            _force_render([])
+        _force_render([])
 
         # should we tear down other variables?
         if getattr(self, '_v', None) is not None:
@@ -2313,10 +2308,9 @@ class Brain(object):
             except Exception:
                 pass
             self._v = None
-        gc.collect()
 
     def __del__(self):
-        self._close(force_render=False)
+        self.close()
 
     ###########################################################################
     # SAVING OUTPUT
