@@ -2290,6 +2290,7 @@ class Brain(object):
 
     def close(self):
         """Close all figures and cleanup data structure."""
+        self._close()
 
     def _close(self, force_render=True):
         for ri, ff in enumerate(self._figures):

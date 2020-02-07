@@ -87,6 +87,8 @@ def test_image(tmpdir):
     brain.close()
 
     brain = Brain(*std_args, size=100)
+    for b in brain.brain_matrix.ravel():
+        assert b._f.scene is not None
     brain.save_image(tmp_name)
     brain.save_image(tmp_name, 'rgba', True)
     brain.screenshot()

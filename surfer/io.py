@@ -29,7 +29,7 @@ def read_scalar_data(filepath):
         flat numpy array of scalar data
     """
     try:
-        scalar_data = nib.load(filepath).get_data()
+        scalar_data = np.asanyarray(nib.load(filepath).dataobj)
         scalar_data = np.ravel(scalar_data, order="F")
         return scalar_data
 
