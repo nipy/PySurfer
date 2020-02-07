@@ -1,3 +1,4 @@
+import gc
 import os
 import os.path as op
 from os.path import join as pjoin
@@ -85,6 +86,7 @@ def test_image(tmpdir):
     brain.add_overlay(overlay_fname, hemi='lh', min=5, max=20, sign="pos")
     brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
     brain.close()
+    del brain
 
     brain = Brain(*std_args, size=100)
     for b in brain.brain_matrix.ravel():
@@ -151,6 +153,7 @@ def test_annot():
     annots = ['aparc', 'aparc.a2005s']
     borders = [True, False, 2]
     alphas = [1, 0.5]
+    gc.collect()
     brain = Brain(*std_args)
     view = get_view(brain)
 
