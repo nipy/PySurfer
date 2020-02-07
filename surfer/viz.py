@@ -1,4 +1,5 @@
 from copy import deepcopy
+import gc
 import logging
 from math import floor
 import os
@@ -2312,6 +2313,7 @@ class Brain(object):
             except Exception:
                 pass
             self._v = None
+        gc.collect()
 
     def __del__(self):
         self._close(force_render=False)
