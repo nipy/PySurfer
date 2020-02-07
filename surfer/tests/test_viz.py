@@ -1,4 +1,3 @@
-import gc
 import os
 import os.path as op
 from os.path import join as pjoin
@@ -88,6 +87,7 @@ def test_image(tmpdir):
     brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
     brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
     brain.save_montage(tmp_name, [['l', 'v'], ['m', 'f']])
+    brain.close()
 
 
 @requires_fsaverage()
