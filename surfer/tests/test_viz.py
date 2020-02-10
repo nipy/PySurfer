@@ -2,7 +2,6 @@ import os
 import os.path as op
 from os.path import join as pjoin
 import sys
-import warnings
 
 import pytest
 from mayavi import mlab
@@ -15,8 +14,6 @@ from unittest import SkipTest
 from surfer import Brain, io, utils
 from surfer.utils import (requires_fsaverage, requires_imageio, requires_fs,
                           _get_extra)
-
-warnings.simplefilter('always')
 
 subject_id = 'fsaverage'
 std_args = [subject_id, 'lh', 'inflated']
@@ -84,18 +81,26 @@ def test_image(tmpdir):
     brain = Brain(subject_id, 'both', surf=surf, size=100)
     brain.add_overlay(overlay_fname, hemi='lh', min=5, max=20, sign="pos")
     brain.save_imageset(tmp_name, ['med', 'lat'], 'jpg')
-    brain.close()
-
-    brain = Brain(*std_args, size=100)
     brain.save_image(tmp_name)
     brain.save_image(tmp_name, 'rgba', True)
     brain.screenshot()
-    if os.getenv('TRAVIS', '') != 'true':
-        # for some reason these fail on Travis sometimes
-        brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
-        brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
-        brain.save_montage(tmp_name, [['l', 'v'], ['m', 'f']])
+    brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='v')
+    brain.save_montage(tmp_name, ['l', 'v', 'm'], orientation='h')
+    brain.save_montage(tmp_name, [['l', 'v'], ['m', 'f']])
     brain.close()
+
+
+@requires_fsaverage()
+def test_brain_separate():
+    """Test that Brain does not reuse existing figures by default."""
+    _set_backend('auto')
+    brain = Brain(*std_args)
+    assert brain.brain_matrix.size == 1
+    brain_2 = Brain(*std_args)
+    assert brain_2.brain_matrix.size == 1
+    assert brain._figures[0][0] is not brain_2._figures[0][0]
+    brain_3 = Brain(*std_args, figure=brain._figures[0][0])
+    assert brain._figures[0][0] is brain_3._figures[0][0]
 
 
 @requires_fsaverage()
@@ -104,8 +109,7 @@ def test_brains():
     # testing backend breaks when passing in a figure, so we use 'auto' here
     # (shouldn't affect usability, but it makes testing more annoying)
     _set_backend('auto')
-    with warnings.catch_warnings(record=True):  # traits for mlab.figure()
-        mlab.figure(101)
+    mlab.figure(101)
     surfs = ['inflated', 'white', 'white', 'white', 'white', 'white', 'white']
     hemis = ['lh', 'rh', 'both', 'both', 'rh', 'both', 'both']
     titles = [None, 'Hello', 'Good bye!', 'lut test',
@@ -118,8 +122,7 @@ def test_brains():
                    (0.2, 0.2, 0.2), "black", "0.75"]
     foregrounds = ["black", "white", "0.75", "red",
                    (0.2, 0.2, 0.2), "blue", "black"]
-    with warnings.catch_warnings(record=True):  # traits for mlab.figure()
-        figs = [101, mlab.figure(), None, None, mlab.figure(), None, None]
+    figs = [101, mlab.figure(), None, None, mlab.figure(), None, None]
     subj_dir = utils._get_subjects_dir()
     subj_dirs = [None, subj_dir, subj_dir, subj_dir,
                  subj_dir, subj_dir, subj_dir]
@@ -458,9 +461,8 @@ def test_probabilistic_labels():
     prob_field[ids] = probs
     brain.add_data(prob_field, thresh=1e-5)
 
-    with warnings.catch_warnings(record=True):
-        brain.data["colorbar"].number_of_colors = 10
-        brain.data["colorbar"].number_of_labels = 11
+    brain.data["colorbar"].number_of_colors = 10
+    brain.data["colorbar"].number_of_labels = 11
     brain.close()
 
 

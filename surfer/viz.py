@@ -217,8 +217,8 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
             # Triage: don't make TraitsUI if we don't have to
             if n_row == 1 and n_col == 1:
                 with warnings.catch_warnings(record=True):  # traits
-                    figure = mlab.figure(title, size=(w, h))
-                mlab.clf(figure)
+                    figure = mlab.figure(size=(w, h))
+                figure.name = title  # should set the figure title
                 figures = [[figure]]
                 _v = None
             else:
@@ -2293,13 +2293,20 @@ class Brain(object):
         for ri, ff in enumerate(self._figures):
             for ci, f in enumerate(ff):
                 if f is not None:
-                    mlab.close(f)
+                    try:
+                        mlab.close(f)
+                    except Exception:
+                        pass
                     self._figures[ri][ci] = None
+
         _force_render([])
 
         # should we tear down other variables?
         if getattr(self, '_v', None) is not None:
-            self._v.dispose()
+            try:
+                self._v.dispose()
+            except Exception:
+                pass
             self._v = None
 
     def __del__(self):
