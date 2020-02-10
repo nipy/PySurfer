@@ -91,6 +91,19 @@ def test_image(tmpdir):
 
 
 @requires_fsaverage()
+def test_brain_separate():
+    """Test that Brain does not reuse existing figures by default."""
+    _set_backend('auto')
+    brain = Brain(*std_args)
+    assert brain.brain_matrix.size == 1
+    brain_2 = Brain(*std_args)
+    assert brain_2.brain_matrix.size == 1
+    assert brain._figures[0][0] is not brain_2._figures[0][0]
+    brain_3 = Brain(*std_args, figure=brain._figures[0][0])
+    assert brain._figures[0][0] is brain_3._figures[0][0]
+
+
+@requires_fsaverage()
 def test_brains():
     """Test plotting of Brain with different arguments."""
     # testing backend breaks when passing in a figure, so we use 'auto' here

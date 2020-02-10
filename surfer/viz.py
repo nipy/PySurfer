@@ -217,8 +217,8 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
             # Triage: don't make TraitsUI if we don't have to
             if n_row == 1 and n_col == 1:
                 with warnings.catch_warnings(record=True):  # traits
-                    figure = mlab.figure(title, size=(w, h))
-                mlab.clf(figure)
+                    figure = mlab.figure(size=(w, h))
+                figure.name = title  # should set the figure title
                 figures = [[figure]]
                 _v = None
             else:
