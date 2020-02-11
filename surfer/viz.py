@@ -3322,6 +3322,11 @@ class _Hemisphere(object):
                 **kwargs)
             surf.actor.property.backface_culling = False
 
+            # There is a bug on some graphics cards concerning transparant
+            # overlays that is fixed by setting force_opaque.
+            if float(alpha) == 1:
+                surf.actor.actor.force_opaque = True
+
         # apply look up table if given
         if lut is not None:
             l_m = surf.module_manager.scalar_lut_manager
