@@ -6,6 +6,10 @@ Changelog
 Development version (0.10.dev0)
 -------------------------------
 
+
+Version 0.10.0
+--------------
+
 - Added an option to smooth to nearest vertex in :meth:`Brain.add_data` using
   ``smoothing_steps='nearest'``
 - Added options for using offscreen mode
