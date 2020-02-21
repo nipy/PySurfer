@@ -514,9 +514,11 @@ ul.keywordmatches li.goodmatch a {
 }
 .sphx-glr-thumbcontainer .figure {
     width: 250px !important;
+    max-width: 250px !important;
 }
 .sphx-glr-thumbcontainer img {
     max-height: 250px !important;
+    max-width: 250px !important;
     width: 250px !important;
 }
 .sphx-glr-thumbcontainer a.internal {
