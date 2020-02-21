@@ -1200,7 +1200,7 @@ class Brain(object):
         self._data_dicts[hemi].append(data)
 
         self.scale_data_colormap(min, mid, max, transparent, center, alpha,
-                                 data)
+                                 data, hemi=hemi)
 
         if initial_time_index is not None:
             self.set_data_time_index(initial_time_index)
@@ -1951,7 +1951,8 @@ class Brain(object):
 
     @verbose
     def scale_data_colormap(self, fmin, fmid, fmax, transparent,
-                            center=None, alpha=1.0, data=None, verbose=None):
+                            center=None, alpha=1.0, data=None,
+                            hemi=None, verbose=None):
         """Scale the data colormap.
 
         The colormap may be sequential or divergent. When the colormap is
@@ -1994,15 +1995,19 @@ class Brain(object):
             The data entry for which to scale the colormap.
             If None, will use the data dict from either the left or right
             hemisphere (in that order).
+        hemi : str | None
+            If None, all hemispheres will be scaled.
         verbose : bool, str, int, or None
             If not None, override default verbose level (see surfer.verbose).
         """
         divergent = center is not None
+        hemis = self._check_hemis(hemi)
+        del hemi
 
         # Get the original colormap
         if data is None:
-            for h in ['lh', 'rh']:
-                data = self.data_dict[h]
+            for hemi in hemis:
+                data = self.data_dict[hemi]
                 if data is not None:
                     break
         table = data["orig_ctable"].copy()
@@ -2015,14 +2020,15 @@ class Brain(object):
 
         views = self._toggle_render(False)
         # Use the new colormap
-        for hemi in ['lh', 'rh']:
+        for hemi in hemis:
             data = self.data_dict[hemi]
             if data is not None:
                 for surf in data['surfaces']:
                     cmap = surf.module_manager.scalar_lut_manager
                     cmap.load_lut_from_list(lut / 255.)
                     if divergent:
-                        cmap.data_range = np.array([center-fmax, center+fmax])
+                        cmap.data_range = np.array(
+                            [center - fmax, center + fmax])
                     else:
                         cmap.data_range = np.array([fmin, fmax])
 
@@ -2050,7 +2056,7 @@ class Brain(object):
                         l_m.load_lut_from_list(lut / 255.)
                         if divergent:
                             l_m.data_range = np.array(
-                                    [center-fmax, center+fmax])
+                                [center - fmax, center + fmax])
                         else:
                             l_m.data_range = np.array([fmin, fmax])
 

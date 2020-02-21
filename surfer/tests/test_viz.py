@@ -214,10 +214,14 @@ def test_data():
 def test_data_limits():
     """Test handling of data limits."""
     _set_backend()
-    brain = Brain(*std_args)
-    surf_data = np.zeros(163842)
+    brain = Brain('fsaverage', 'both', 'inflated')
+    surf_data = np.linspace(0, 1, 163842)
     pytest.raises(ValueError, brain.add_data, surf_data, 0, 0)
-    brain.add_data(surf_data, 0, 1)
+    brain.add_data(surf_data, 0, 1, hemi='lh')
+    assert brain.data_dict['lh']['fmax'] == 1.
+    brain.add_data(surf_data, 0, 0.5, hemi='rh')
+    assert brain.data_dict['lh']['fmax'] == 1.  # unmodified
+    assert brain.data_dict['rh']['fmax'] == 0.5
     brain.close()
 
 
