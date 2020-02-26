@@ -2321,7 +2321,7 @@ class Brain(object):
 
     def __del__(self):
         # Forcing the GUI updates during GC seems to be problematic
-        self.close(force_render=False)
+        self._close(force_render=False)
 
     ###########################################################################
     # SAVING OUTPUT
