@@ -7,6 +7,8 @@ trigger:
 
 jobs:
 - job: Windows
+  variables:
+    PIP_CACHE_FOLDER: $(Pipeline.Workspace)/.cache/pip
   pool:
     vmIMage: 'VS2017-Win2016'
   strategy:
@@ -21,14 +23,19 @@ jobs:
       versionSpec: $(PYTHON_VERSION)
       architecture: $(PYTHON_ARCH)
       addToPath: true
+- task: Cache@2
+  inputs:
+    key: 'python -VV'
+    path: $(PIP_CACHE_FOLDER)
+  displayName: Cache pip packages
   - powershell: |
-     pip install numpy scipy matplotlib nose pillow pytest pytest-cov pytest-faulthandler coverage imageio imageio-ffmpeg codecov pyqt5==5.9
-     pip install traits traitsui pyface vtk mayavi nibabel
+     pip install numpy scipy matplotlib nose pillow pytest pytest-cov pytest-faulthandler coverage imageio imageio-ffmpeg codecov pyqt5==5.9 --cache-dir $(PIP_CACHE_FOLDER)
+     pip install traits traitsui pyface vtk mayavi nibabel --cache-dir $(PIP_CACHE_FOLDER)
     displayName: 'Install pip dependencies'
   - powershell: |
      powershell make/get_fsaverage.ps1
      $env:SUBJECTS_DIR = '$(System.DefaultWorkingDirectory)' + '\subjects'
-     Write-Host ("##vso[task.setvariable variable=PATH]" + $env:PATH)
+     Write-Host ("##vso[task.setvariable variable=SUBJECTS_DIR]" + $env:SUBJECTS_DIR)
     displayName: 'Get fsaverage'
   - powershell: |
      git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
