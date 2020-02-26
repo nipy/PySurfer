@@ -23,11 +23,11 @@ jobs:
       versionSpec: $(PYTHON_VERSION)
       architecture: $(PYTHON_ARCH)
       addToPath: true
-- task: Cache@2
-  inputs:
-    key: 'python -VV'
-    path: $(PIP_CACHE_FOLDER)
-  displayName: Cache pip packages
+  - task: Cache@2
+    inputs:
+      key: 'pip'
+      path: $(PIP_CACHE_FOLDER)
+    displayName: Cache pip packages
   - powershell: |
      pip install numpy scipy matplotlib nose pillow pytest pytest-cov pytest-faulthandler coverage imageio imageio-ffmpeg codecov pyqt5==5.9 --cache-dir $(PIP_CACHE_FOLDER)
      pip install traits traitsui pyface vtk mayavi nibabel --cache-dir $(PIP_CACHE_FOLDER)
