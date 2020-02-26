@@ -1,3 +1,4 @@
+import gc
 import os
 import os.path as op
 from os.path import join as pjoin
@@ -208,6 +209,17 @@ def test_data():
     brain.set_surf('white')
     brain.add_data([], vertices=np.array([], int))
     brain.close()
+
+
+@requires_fsaverage()
+def test_close():
+    """Test that close and del actually work."""
+    _set_backend()
+    brain = Brain('fsaverage', 'both', 'inflated')
+    brain.close()
+    brain.__del__()
+    del brain
+    gc.collect()
 
 
 @requires_fsaverage()
