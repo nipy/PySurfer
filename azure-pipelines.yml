@@ -1,19 +1,50 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- master
+  # start a new build for every push
+  batch: False
+  branches:
+    include:
+      - master
 
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+jobs:
+- job: Windows
+  pool:
+    vmIMage: 'VS2017-Win2016'
+  strategy:
+    maxParallel: 4
+    matrix:
+      Python37-64bit:
+        PYTHON_VERSION: '3.7'
+        PYTHON_ARCH: 'x64'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: $(PYTHON_VERSION)
+      architecture: $(PYTHON_ARCH)
+      addToPath: true
+  - powershell: |
+     pip install numpy scipy matplotlib nose pillow pytest pytest-cov pytest-faulthandler coverage imageio imageio-ffmpeg codecov pyqt5==5.9
+     pip install traits traitsui pyface vtk mayavi nibabel
+    displayName: 'Install pip dependencies'
+  - powershell: |
+     powershell make/get_fsaverage.ps1
+     $env:SUBJECTS_DIR = '$(System.DefaultWorkingDirectory)' + '\subjects'
+     Write-Host ("##vso[task.setvariable variable=PATH]" + $env:PATH)     SET SUBJECTS_DIR=%CD%\\subjects"
+    displayName: 'Get fsaverage'
+  - powershell: |
+     git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
+     powershell gl-ci-helpers/appveyor/install_opengl.ps1
+    displayName: 'Get OpenGL'
+  - script: python setup.py develop
+    displayName: 'Install'
+  - script: pytest surfer --cov=surfer -v
+    displayName: 'Run tests'
+  - script: codecov --root %BUILD_REPOSITORY_LOCALPATH% -t %CODECOV_TOKEN%
+    displayName: 'Codecov'
+    env:
+      CODECOV_TOKEN: $(CODECOV_TOKEN)
+    condition: always()
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: 'junit-*.xml'
+      testRunTitle: 'Publish test results for Python $(python.version)'
+    condition: always()
