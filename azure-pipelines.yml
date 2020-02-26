@@ -28,7 +28,7 @@ jobs:
   - powershell: |
      powershell make/get_fsaverage.ps1
      $env:SUBJECTS_DIR = '$(System.DefaultWorkingDirectory)' + '\subjects'
-     Write-Host ("##vso[task.setvariable variable=PATH]" + $env:PATH)     SET SUBJECTS_DIR=%CD%\\subjects"
+     Write-Host ("##vso[task.setvariable variable=PATH]" + $env:PATH)
     displayName: 'Get fsaverage'
   - powershell: |
      git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
