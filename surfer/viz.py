@@ -2296,7 +2296,10 @@ class Brain(object):
 
     def close(self):
         """Close all figures and cleanup data structure."""
-        for ri, ff in enumerate(self._figures):
+        self._close()
+
+    def _close(self, force_render=True):
+        for ri, ff in enumerate(getattr(self, '_figures', [])):
             for ci, f in enumerate(ff):
                 if f is not None:
                     try:
@@ -2305,7 +2308,8 @@ class Brain(object):
                         pass
                     self._figures[ri][ci] = None
 
-        _force_render([])
+        if force_render:
+            _force_render([])
 
         # should we tear down other variables?
         if getattr(self, '_v', None) is not None:
@@ -2316,7 +2320,8 @@ class Brain(object):
             self._v = None
 
     def __del__(self):
-        self.close()
+        # Forcing the GUI updates during GC seems to be problematic
+        self._close(force_render=False)
 
     ###########################################################################
     # SAVING OUTPUT
