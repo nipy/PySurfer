@@ -2299,7 +2299,7 @@ class Brain(object):
         self._close()
 
     def _close(self, force_render=True):
-        for ri, ff in enumerate(self._figures):
+        for ri, ff in enumerate(getattr(self, '_figures', [])):
             for ci, f in enumerate(ff):
                 if f is not None:
                     try:
