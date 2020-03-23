@@ -3237,7 +3237,6 @@ class _Hemisphere(object):
 
         # Set scaling for the glyphs
         quiver.glyph.glyph.scale_factor = scale_factor
-        quiver.glyph.glyph.scale_factor = scale_factor
         quiver.glyph.glyph.clamping = False
         quiver.glyph.glyph.range = (0., 1.)
 
