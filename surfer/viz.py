@@ -1095,7 +1095,6 @@ class Brain(object):
             smooth_mat = None
 
         magnitude = None
-        magnitude_max = None
         if array.ndim == 3:
             if array.shape[1] != 3:
                 raise ValueError('If array has 3 dimensions, array.shape[1] '
@@ -1111,7 +1110,6 @@ class Brain(object):
                                     (4 * array.shape[0] ** (0.33)))
             if self._units == 'm':
                 scale_factor = scale_factor / 1000.
-            magnitude_max = magnitude.max()
         elif array.ndim not in (1, 2):
             raise ValueError('array has must have 1, 2, or 3 dimensions, '
                              'got (%s)' % (array.ndim,))
@@ -1188,7 +1186,7 @@ class Brain(object):
             if brain['hemi'] == hemi:
                 s, ct, bar, gl = brain['brain'].add_data(
                     array, min, mid, max, thresh, lut, colormap, alpha,
-                    colorbar, layer_id, smooth_mat, magnitude, magnitude_max,
+                    colorbar, layer_id, smooth_mat, magnitude,
                     scale_factor, vertices, vector_alpha, **kwargs)
                 surfs.append(s)
                 bars.append(bar)
@@ -2115,13 +2113,11 @@ class Brain(object):
                     if vectors is not None:
                         vectors = vectors[:, :, time_idx]
 
-                vector_values = scalar_data.copy()
                 if data['smooth_mat'] is not None:
                     scalar_data = data['smooth_mat'] * scalar_data
                 for brain in self.brains:
                     if brain.hemi == hemi:
-                        brain.set_data(data['layer_id'], scalar_data,
-                                       vectors, vector_values)
+                        brain.set_data(data['layer_id'], scalar_data, vectors)
                 del brain
                 data["time_idx"] = time_idx
 
@@ -3225,24 +3221,23 @@ class _Hemisphere(object):
         self._mesh_clones.pop(array_id).remove()
         self._mesh_dataset.point_data.remove_array(array_id)
 
-    def _add_vector_data(self, vectors, vector_values, fmin, fmid, fmax,
-                         scale_factor_norm, vertices, vector_alpha, lut):
+    def _add_vector_data(self, vectors, fmin, fmid, fmax,
+                         scale_factor, vertices, vector_alpha, lut):
         vertices = slice(None) if vertices is None else vertices
         x, y, z = np.array(self._geo_mesh.data.points.data)[vertices].T
         vector_alpha = min(vector_alpha, 0.9999999)
         with warnings.catch_warnings(record=True):  # HasTraits
             quiver = mlab.quiver3d(
                 x, y, z, vectors[:, 0], vectors[:, 1], vectors[:, 2],
-                scalars=vector_values, colormap='hot', vmin=fmin,
+                colormap='hot', vmin=fmin, scale_mode='vector',
                 vmax=fmax, figure=self._f, opacity=vector_alpha)
 
         # Enable backface culling
         quiver.actor.property.backface_culling = True
         quiver.mlab_source.update()
 
-        # Compute scaling for the glyphs
-        quiver.glyph.glyph.scale_factor = (scale_factor_norm *
-                                           vector_values.max())
+        # Set scaling for the glyphs
+        quiver.glyph.glyph.scale_factor = scale_factor
 
         # Scale colormap used for the glyphs
         l_m = quiver.parent.vector_lut_manager
@@ -3293,7 +3288,7 @@ class _Hemisphere(object):
 
     @verbose
     def add_data(self, array, fmin, fmid, fmax, thresh, lut, colormap, alpha,
-                 colorbar, layer_id, smooth_mat, magnitude, magnitude_max,
+                 colorbar, layer_id, smooth_mat, magnitude,
                  scale_factor, vertices, vector_alpha, **kwargs):
         """Add data to the brain"""
         # Calculate initial data to plot
@@ -3308,7 +3303,6 @@ class _Hemisphere(object):
             array_plot = magnitude[:, 0]
         else:
             raise ValueError("data has to be 1D, 2D, or 3D")
-        vector_values = array_plot
         if smooth_mat is not None:
             array_plot = smooth_mat * array_plot
 
@@ -3316,16 +3310,13 @@ class _Hemisphere(object):
         array_plot = _prepare_data(array_plot)
 
         array_id, pipe = self._add_scalar_data(array_plot)
-        scale_factor_norm = None
         if array.ndim == 3:
-            scale_factor_norm = scale_factor / magnitude_max
             vectors = array[:, :, 0].copy()
             glyphs = self._add_vector_data(
-                vectors, vector_values, fmin, fmid, fmax,
-                scale_factor_norm, vertices, vector_alpha, lut)
+                vectors, fmin, fmid, fmax,
+                scale_factor, vertices, vector_alpha, lut)
         else:
             glyphs = None
-        del scale_factor
         mesh = pipe.parent
         if thresh is not None:
             if array_plot.min() >= thresh:
@@ -3364,7 +3355,7 @@ class _Hemisphere(object):
 
         self.data[layer_id] = dict(
             array_id=array_id, mesh=mesh, glyphs=glyphs,
-            scale_factor_norm=scale_factor_norm)
+            scale_factor=scale_factor)
         return surf, orig_ctable, bar, glyphs
 
     def add_annotation(self, annot, ids, cmap, **kwargs):
@@ -3475,7 +3466,7 @@ class _Hemisphere(object):
         self._remove_scalar_data(data['array_id'])
         self._remove_vector_data(data['glyphs'])
 
-    def set_data(self, layer_id, values, vectors=None, vector_values=None):
+    def set_data(self, layer_id, values, vectors=None):
         """Set displayed data values and vectors."""
         data = self.data[layer_id]
         self._mesh_dataset.point_data.get_array(
@@ -3492,12 +3483,10 @@ class _Hemisphere(object):
 
             # Update glyphs
             q.mlab_source.vectors = vectors
-            q.mlab_source.scalars = vector_values
             q.mlab_source.update()
 
             # Update changed parameters, and glyph scaling
-            q.glyph.glyph.scale_factor = (data['scale_factor_norm'] *
-                                          values.max())
+            q.glyph.glyph.scale_factor = data['scale_factor']
             l_m.load_lut_from_list(lut / 255.)
             l_m.data_range = data_range
 
