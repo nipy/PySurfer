@@ -1101,8 +1101,7 @@ class Brain(object):
                                  'must equal 3, got %s' % (array.shape[1],))
             magnitude = np.linalg.norm(array, axis=1)
             if scale_factor is None:
-                distance = np.sum([array[:, dim, :].ptp(axis=0).max() ** 2
-                                   for dim in range(3)])
+                distance = 4 * np.linalg.norm(array, axis=1).max()
                 if distance == 0:
                     scale_factor = 1
                 else:
@@ -3238,6 +3237,9 @@ class _Hemisphere(object):
 
         # Set scaling for the glyphs
         quiver.glyph.glyph.scale_factor = scale_factor
+        quiver.glyph.glyph.scale_factor = scale_factor
+        quiver.glyph.glyph.clamping = False
+        quiver.glyph.glyph.range = (0., 1.)
 
         # Scale colormap used for the glyphs
         l_m = quiver.parent.vector_lut_manager
@@ -3487,6 +3489,8 @@ class _Hemisphere(object):
 
             # Update changed parameters, and glyph scaling
             q.glyph.glyph.scale_factor = data['scale_factor']
+            q.glyph.glyph.range = (0., 1.)
+            q.glyph.glyph.clamping = False
             l_m.load_lut_from_list(lut / 255.)
             l_m.data_range = data_range
 
