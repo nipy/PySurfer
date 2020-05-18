@@ -229,7 +229,7 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
     # Execute the command
     out_file = mktemp(prefix="pysurfer-v2s", suffix='.mgz')
     cmd_list.extend(["--o", out_file])
-    logger.info(" ".join(cmd_list))
+    logger.debug(" ".join(cmd_list))
     p = Popen(cmd_list, stdout=PIPE, stderr=PIPE, env=env)
     stdout, stderr = p.communicate()
     out = p.returncode
