@@ -76,5 +76,5 @@ mask = project_volume_data(mask_file, "lh", subject_id="fsaverage",
 mask = ~mask
 brain.add_data(mask, min=0, max=10, thresh=.5,
                colormap="bone", alpha=.6, colorbar=False)
-
-brain.show_view("medial")
+if not hasattr(brain,'patch_mode'):
+    brain.show_view("medial")

@@ -23,7 +23,7 @@ from pyface.api import GUI
 from traitsui.api import View, Item, Group, VGroup, HGroup, VSplit, HSplit
 
 from . import utils, io
-from .utils import (Surface, verbose, create_color_lut, _get_subjects_dir,
+from .utils import (Surface, Patch, verbose, create_color_lut, _get_subjects_dir,
                     string_types, threshold_filter, _check_units)
 
 
@@ -37,7 +37,8 @@ lh_viewdict = {'lateral': {'v': (180., 90.), 'r': 90.},
                'dorsal': {'v': (180., 0.), 'r': 90.},
                'ventral': {'v': (180., 180.), 'r': 90.},
                'frontal': {'v': (120., 80.), 'r': 106.739},
-               'parietal': {'v': (-120., 60.), 'r': 49.106}}
+               'parietal': {'v': (-120., 60.), 'r': 49.106},
+               'flatmap': {'v': (0., 0.), 'r': -90}}
 rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
                'medial': {'v': (0., -90.), 'r': 90.},
                'rostral': {'v': (-90., -90.), 'r': 180.},
@@ -45,7 +46,8 @@ rh_viewdict = {'lateral': {'v': (180., -90.), 'r': -90.},
                'dorsal': {'v': (180., 0.), 'r': 90.},
                'ventral': {'v': (180., 180.), 'r': 90.},
                'frontal': {'v': (60., 80.), 'r': -106.739},
-               'parietal': {'v': (-60., 60.), 'r': -49.106}}
+               'parietal': {'v': (-60., 60.), 'r': -49.106},
+               'flatmap': {'v': (0., 0.), 'r': -90}}
 viewdicts = dict(lh=lh_viewdict, rh=rh_viewdict)
 
 
@@ -361,7 +363,9 @@ class Brain(object):
         views to use
     offset : bool
         If True, aligs origin with medial wall. Useful for viewing inflated
-        surface where hemispheres typically overlap (Default: True)
+        surface where hemispheres typically overlap. For flat patches,
+        this aligns the two patches along their posterior
+        edges. (Default: True)
     show_toolbar : bool
         If True, toolbars will be shown for each view.
     offscreen : bool | str
@@ -391,18 +395,25 @@ class Brain(object):
         The overlays.
     texts : dict
         The text objects.
+    patch_mode: logical
+        True if a patch is visualized instead of a standard surface.
     """
 
     def __init__(self, subject_id, hemi, surf, title=None,
                  cortex="classic", alpha=1.0, size=800, background="black",
                  foreground=None, figure=None, subjects_dir=None,
-                 views=['lat'], offset=True, show_toolbar=False,
+                 views=None, offset=True, show_toolbar=False,
                  offscreen='auto', interaction='trackball', units='mm'):
 
         if not isinstance(interaction, string_types) or \
                 interaction not in ('trackball', 'terrain'):
             raise ValueError('interaction must be "trackball" or "terrain", '
                              'got "%s"' % (interaction,))
+
+        self.patch_mode = 'patch' in surf.lower().split('.')
+        if views is None:
+            views={False:['lat'],True:['flatmap']}[self.patch_mode]
+
         self._units = _check_units(units)
         col_dict = dict(lh=1, rh=1, both=1, split=2)
         n_col = col_dict[hemi]
@@ -435,8 +446,12 @@ class Brain(object):
         geo_kwargs, geo_reverse, geo_curv = self._get_geo_params(cortex, alpha)
         for h in geo_hemis:
             # Initialize a Surface object as the geometry
-            geo = Surface(subject_id, h, surf, subjects_dir, offset,
-                          units=self._units)
+            if self.patch_mode:
+                geo = Patch(subject_id, h, surf, subjects_dir, offset,
+                              units=self._units)
+            else:
+                geo = Surface(subject_id, h, surf, subjects_dir, offset,
+                              units=self._units)
             # Load in the geometry and (maybe) curvature
             geo.load_geometry()
             if geo_curv:
@@ -940,6 +955,10 @@ class Brain(object):
         hemi = self._check_hemi(hemi)
         # load data here
         scalar_data, name = self._read_scalar_data(source, hemi, name=name)
+
+        if self.patch_mode:
+            scalar_data = self.geo[hemi].surf_to_patch_array(scalar_data)
+
         min, max = self._get_display_range(scalar_data, min, max, sign)
         if sign not in ["abs", "pos", "neg"]:
             raise ValueError("Overlay sign must be 'abs', 'pos', or 'neg'")
@@ -1062,6 +1081,11 @@ class Brain(object):
         hemi = self._check_hemi(hemi)
         array = np.asarray(array)
 
+        if self.patch_mode:
+            if vertices is None:
+                array = self.geo[hemi].surf_to_patch_array(array)
+            else:
+                vertices, array = self.geo[hemi].surf_to_patch_vertices(vertices,array)
         if center is None:
             if min is None:
                 min = array.min() if array.size > 0 else 0
@@ -1286,7 +1310,8 @@ class Brain(object):
             self.annot_list = []
 
         for hemi, (labels, cmap) in zip(hemis, annots):
-
+            if self.patch_mode:
+                labels = self.geo[hemi].surf_to_patch_array(labels)
             # Maybe zero-out the non-border vertices
             self._to_borders(labels, hemi, borders)
 
@@ -1418,6 +1443,9 @@ class Brain(object):
 
             if scalar_thresh is not None:
                 ids = ids[scalars >= scalar_thresh]
+
+        if self.patch_mode:
+            ids = self.geo[hemi].surf_to_patch_vertices(ids)
 
         label = np.zeros(self.geo[hemi].coords.shape[0])
         label[ids] = 1
@@ -1610,6 +1638,8 @@ class Brain(object):
 
             # Read in the morphometric data
             morph_data = nib.freesurfer.read_morph_data(morph_file)
+            if self.patch_mode:
+                morph_data = self.geo[hemi].surf_to_patch_array(morph_data)
 
             # Get a cortex mask for robust range
             self.geo[hemi].load_label("cortex")
@@ -1679,6 +1709,12 @@ class Brain(object):
 
         # Figure out how to interpret the first parameter
         if coords_as_verts:
+            if self.patch_mode:
+                patch_coords=self.geo[hemi].surf_to_patch_vertices(coords)
+                if len(patch_coords)<len(coords):
+                    raise Warning('{} foci not found on patch.'.format(
+                            len(coords)-len(patch_coords)))
+                coords=patch_coords
             coords = self.geo[hemi].coords[coords]
             map_surface = None
 
@@ -1691,6 +1727,13 @@ class Brain(object):
                                 units=self._units)
             foci_surf.load_geometry()
             foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
+            if self.patch_mode:
+                patch_foci_vtxs=self.geo[hemi].surf_to_patch_vertices(foci_vtxs)
+                if len(patch_foci_vtxs)<len(foci_vtxs):
+                    raise Warning('{} foci not found on patch.'.format(
+                            len(coords)-len(foci_vtxs.shape)))
+                    #TODO: add an option for nearest neighbor localization of off-patch foci
+                foci_vtxs=patch_foci_vtxs
             foci_coords = self.geo[hemi].coords[foci_vtxs]
 
         # Get a unique name (maybe should take this approach elsewhere)
@@ -1754,6 +1797,8 @@ class Brain(object):
 
         # Read the scalar data
         scalar_data, _ = self._read_scalar_data(source, hemi)
+        if self.patch_mode:
+            scalar_data = self.geo[hemi].surf_to_patch_array(scalar_data)
         min, max = self._get_display_range(scalar_data, min, max, "pos")
 
         # Deal with Mayavi bug
