@@ -30,10 +30,7 @@ install from your local source directory::
 Dependencies
 ~~~~~~~~~~~~
 
-PySurfer works on Python 2.7 and 3.6+.
-(Older Python 3 versions will probably work, but are not tested.)
-
-To use PySurfer, you will need to have the following Python packages:
+PySurfer works on Python 3.6+ and requires the following Python packages:
 
 * numpy_
 * scipy_
@@ -91,4 +88,3 @@ as a static PNG image, or ``'x3d'`` to render it using
 If you are having trouble getting started using PySurfer, please describe the problem on the `nipy mailing list`_.
 
 .. include:: links_names.txt
-

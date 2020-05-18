@@ -66,6 +66,8 @@ if __name__ == "__main__":
           platforms='any',
           packages=['surfer', 'surfer.tests'],
           scripts=['bin/pysurfer'],
-          install_requires=['numpy', 'scipy', 'matplotlib', 'nibabel >= 1.2', 'mayavi'],
+          python_requires='>=3.6',
+          install_requires=[
+              'numpy', 'scipy', 'matplotlib', 'nibabel >= 1.2', 'mayavi'],
           extras_require={'save_movie': ['imageio >= 1.5']},
           )
