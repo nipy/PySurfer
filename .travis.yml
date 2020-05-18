@@ -40,7 +40,11 @@ before_install:
     - pip install vtk
     - pip install mayavi
     - mkdir -p $SUBJECTS_DIR
-    - pip install "https://api.github.com/repos/mne-tools/mne-python/zipball/master"
+    - if [ "${PYTHON_VERSION}" == "3.5" ]; then
+        pip install "mne<0.21";
+      else
+        pip install "https://api.github.com/repos/mne-tools/mne-python/zipball/master";
+      fi;
     - python -c "import mne; mne.datasets.fetch_fsaverage(verbose=True)"
 
 install:

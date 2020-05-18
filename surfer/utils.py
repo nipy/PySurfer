@@ -608,7 +608,7 @@ def _nearest(vertices, adj_mat):
 
 def _smooth(vertices, adj_mat, smoothing_steps):
     from scipy import sparse
-    logger.info("Updating smoothing matrix, be patient..")
+    logger.debug("Updating smoothing matrix, be patient..")
     e = adj_mat.copy()
     e.data[e.data == 2] = 1
     n_vertices = e.shape[0]
@@ -626,7 +626,7 @@ def _smooth(vertices, adj_mat, smoothing_steps):
 
         smooth_mat = scale_mat * e_use[idx_use, :] * smooth_mat
 
-        logger.info("Smoothing matrix creation, step %d" % (k + 1))
+        logger.debug("Smoothing matrix creation, step %d" % (k + 1))
         if smoothing_steps is None and len(idx_use) >= n_vertices:
             break
 
@@ -690,7 +690,7 @@ def coord_to_label(subject_id, coord, label, hemi='lh', n_steps=30,
     idx = np.where(data.ravel() > 0)[0]
     # Write label
     label_fname = label + '-' + hemi + '.label'
-    logger.info("Saving label : %s" % label_fname)
+    logger.debug("Saving label : %s" % label_fname)
     f = open(label_fname, 'w')
     f.write('#label at %s from subject %s\n' % (coord, subject_id))
     f.write('%d\n' % len(idx))
