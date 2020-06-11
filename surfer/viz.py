@@ -190,7 +190,7 @@ def _force_render(figures):
 
 
 def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
-                 interaction='trackball'):
+                 interaction='trackball', antialias=True):
     """Triage viewer creation
 
     If n_row == n_col == 1, then we can use a Mayavi figure, which
@@ -229,11 +229,13 @@ def _make_viewer(figure, n_row, n_col, title, scene_size, offscreen,
                     for f in figure:
                         f.scene.interactor.interactor_style = \
                             tvtk.InteractorStyleTerrain()
-            for figure in figures:
-                for f in figure:
-                    # on a non-testing backend, and using modern VTK/Mayavi
-                    if hasattr(getattr(f.scene, 'renderer', None), 'use_fxaa'):
-                        f.scene.renderer.use_fxaa = True
+            if antialias:
+                for figure in figures:
+                    for f in figure:
+                        # on a non-testing backend, and using modern VTK/Mayavi
+                        if hasattr(getattr(f.scene, 'renderer', None),
+                                   'use_fxaa'):
+                            f.scene.renderer.use_fxaa = True
     else:
         if isinstance(figure, int):  # use figure with specified id
             figure = [mlab.figure(figure, size=scene_size)]
@@ -374,6 +376,9 @@ class Brain(object):
         camera.
     units : str
         Can be 'm' or 'mm' (default).
+    antialias : bool
+        If True (default), turn on antialiasing. Can be problematic for
+        some renderers (e.g., software rendering with MESA).
 
     Attributes
     ----------
@@ -397,7 +402,8 @@ class Brain(object):
                  cortex="classic", alpha=1.0, size=800, background="black",
                  foreground=None, figure=None, subjects_dir=None,
                  views=['lat'], offset=True, show_toolbar=False,
-                 offscreen='auto', interaction='trackball', units='mm'):
+                 offscreen='auto', interaction='trackball', units='mm',
+                 antialias=True):
 
         if not isinstance(interaction, string_types) or \
                 interaction not in ('trackball', 'terrain'):
@@ -448,7 +454,7 @@ class Brain(object):
         del background, foreground
         figures, _v = _make_viewer(figure, n_row, n_col, title,
                                    self._scene_size, offscreen,
-                                   interaction)
+                                   interaction, antialias)
         self._figures = figures
         self._v = _v
         self._window_backend = 'Mayavi' if self._v is None else 'TraitsUI'
