@@ -423,7 +423,7 @@ class Brain(object):
             title = subject_id
         self.subject_id = subject_id
 
-        if not isinstance(views, list):
+        if not isinstance(views, (list, tuple)):
             views = [views]
         n_row = len(views)
 
