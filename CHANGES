@@ -3,8 +3,16 @@ Changelog
 
 .. currentmodule:: surfer
 
-Development version (0.10.dev0)
--------------------------------
+Version 0.11.0
+--------------
+
+- Minimum Python version increased to 3.6
+- Add support to turn off full-screen antialiasing, which can be problematic on
+  some drivers (e.g., MESA software rendering on Linux)
+- Simplification and refactoring of vector-valued data plotting
+- Removal of unnecessary ``info`` log messages about smoothing matrix and
+  colormap generation (changed to ``debug`` level)
+- Clean up of exit functions like ``__del__`` to avoid segfaults
 
 
 Version 0.10.0
