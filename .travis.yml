@@ -50,7 +50,7 @@ before_install:
         pip install https://github.com/enthought/mayavi/zipball/master;
       fi;
     - mkdir -p $SUBJECTS_DIR
-    - pip install "https://api.github.com/repos/mne-tools/mne-python/zipball/master";
+    - pip install "https://github.com/mne-tools/mne-python/archive/master.zip"
     - python -c "import mne; mne.datasets.fetch_fsaverage(verbose=True)"
 
 install:

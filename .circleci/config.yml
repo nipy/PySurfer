@@ -49,7 +49,7 @@ jobs:
             command: |
               python -m pip install --user -q --upgrade pip numpy
               python -m pip install --user -q --upgrade --progress-bar off scipy matplotlib vtk pyqt5 pyqt5-sip nibabel sphinx numpydoc pillow imageio imageio-ffmpeg sphinx-gallery
-              python -m pip install --user -q --upgrade mayavi "https://api.github.com/repos/mne-tools/mne-python/zipball/master"
+              python -m pip install --user -q --upgrade mayavi "https://github.com/mne-tools/mne-python/archive/master.zip"
         - save_cache:
             key: pip-cache
             paths:
