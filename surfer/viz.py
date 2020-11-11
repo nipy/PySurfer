@@ -365,6 +365,10 @@ class Brain(object):
         camera.
     units : str
         Can be 'm' or 'mm' (default).
+    apply_surf_xfm: bool | False
+        If True, the transform defined by xras, yras,zras and cras
+        in Freesurfer's surface file will be applied to the surface
+        node coordinates.
 
     Attributes
     ----------
@@ -387,7 +391,8 @@ class Brain(object):
                  cortex="classic", alpha=1.0, size=800, background="black",
                  foreground=None, figure=None, subjects_dir=None,
                  views=['lat'], offset=True, show_toolbar=False,
-                 offscreen=False, interaction='trackball', units='mm'):
+                 offscreen=False, interaction='trackball', units='mm',
+                 apply_surf_xfm=False):
 
         if not isinstance(interaction, string_types) or \
                 interaction not in ('trackball', 'terrain'):
@@ -406,6 +411,7 @@ class Brain(object):
         if title is None:
             title = subject_id
         self.subject_id = subject_id
+        self.apply_surf_xfm = apply_surf_xfm
 
         if not isinstance(views, list):
             views = [views]
@@ -426,7 +432,7 @@ class Brain(object):
         for h in geo_hemis:
             # Initialize a Surface object as the geometry
             geo = Surface(subject_id, h, surf, subjects_dir, offset,
-                          units=self._units)
+                          units=self._units, apply_surf_xfm=self.apply_surf_xfm)
             # Load in the geometry and (maybe) curvature
             geo.load_geometry()
             if geo_curv:
@@ -1623,7 +1629,8 @@ class Brain(object):
             foci_coords = np.atleast_2d(coords)
         else:
             foci_surf = Surface(self.subject_id, hemi, map_surface,
-                                subjects_dir=self.subjects_dir)
+                                subjects_dir=self.subjects_dir,
+                                apply_surf_xfm=self.apply_surf_xfm)
             foci_surf.load_geometry()
             foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
             foci_coords = self.geo[hemi].coords[foci_vtxs]
