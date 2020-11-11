@@ -9,10 +9,11 @@ according to coordinates or vertex ids.
 """
 import os
 import os.path as op
-from numpy import arange
+from numpy import arange, linspace
 from numpy.random import permutation
 import nibabel as nib
 from surfer import Brain
+from mayavi import mlab
 
 print(__doc__)
 
@@ -78,3 +79,31 @@ center each sphereoid at its vertex id.
 """
 brain.add_foci(coords, coords_as_verts=True,
                scale_factor=scale_factor, color="#A52A2A")
+
+"""
+Now we demonstrate plotting some data with a set of randomly
+choosen vertices from within the middle temporal sulcus.
+"""
+verts = arange(0, len(ids))
+coords = permutation(verts[ids == 26])[:10]
+
+"""
+Generate a dataset with some values in the [-1, 1] range
+"""
+dataset_name ='some_data'
+data = linspace(start=-1, stop=1, num=10)
+
+"""
+Now we plot the foci colorcoded acording to data values, whereas foci sizes will be
+coded using the absolute values of data.
+Using the 'name' argument we can reference newly added foci to create a colorbar using mayavi.
+"""
+brain.add_foci(coords, coords_as_verts=True, name=dataset_name,
+               scale_factor=1, data=data, colormap='cool')
+
+""" 
+Sometimes a qualitative representation is not enough, and we need to plot the colorbar as well. 
+This can be done using the 'name' argument in add_foci, by referencing the newly added foci to 
+create a colorbar with mayavi.
+"""
+mlab.colorbar(brain.foci[dataset_name], nb_labels=5, label_fmt='  %.2f  ')
