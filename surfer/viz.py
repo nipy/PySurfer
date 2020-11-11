@@ -379,6 +379,10 @@ class Brain(object):
     antialias : bool
         If True (default), turn on antialiasing. Can be problematic for
         some renderers (e.g., software rendering with MESA).
+    apply_surf_xfm: bool | False
+        If True, the transform defined by xras, yras,zras and cras
+        in Freesurfer's surface file will be applied to the surface
+        node coordinates.
 
     Attributes
     ----------
@@ -403,7 +407,7 @@ class Brain(object):
                  foreground=None, figure=None, subjects_dir=None,
                  views=['lat'], offset=True, show_toolbar=False,
                  offscreen='auto', interaction='trackball', units='mm',
-                 antialias=True):
+                 antialias=True, apply_surf_xfm=False):
 
         if not isinstance(interaction, string_types) or \
                 interaction not in ('trackball', 'terrain'):
@@ -422,6 +426,7 @@ class Brain(object):
         if title is None:
             title = subject_id
         self.subject_id = subject_id
+        self.apply_surf_xfm = apply_surf_xfm
 
         if not isinstance(views, (list, tuple)):
             views = [views]
@@ -442,7 +447,7 @@ class Brain(object):
         for h in geo_hemis:
             # Initialize a Surface object as the geometry
             geo = Surface(subject_id, h, surf, subjects_dir, offset,
-                          units=self._units)
+                          units=self._units, apply_surf_xfm=self.apply_surf_xfm)
             # Load in the geometry and (maybe) curvature
             geo.load_geometry()
             if geo_curv:
@@ -1643,7 +1648,7 @@ class Brain(object):
 
     def add_foci(self, coords, coords_as_verts=False, map_surface=None,
                  scale_factor=1, color="white", alpha=1, name=None,
-                 hemi=None, **kwargs):
+                 hemi=None, data=None, colormap=None, **kwargs):
         """Add spherical foci, possibly mapping to displayed surf.
 
         The foci spheres can be displayed at the coordinates given, or
@@ -1673,6 +1678,14 @@ class Brain(object):
             If None, it is assumed to belong to the hemipshere being
             shown. If two hemispheres are being shown, an error will
             be thrown.
+        data : numpy array
+            None or 1D array the same size as the number of foci (n,).
+            Spheres sizes will be coded using the absolute values of data.
+            If data is None, all spheres will have the same size.
+        colormap : str
+            Mayavi colormap name. Default is None, which means all foci will
+            have the same color given by the 'color' argument. If colormap is
+            not None, foci will be colorcoded acording to data values.
         **kwargs : additional keyword arguments
             These are passed to the underlying
              :func:`mayavi.mlab.points3d` call.
@@ -1691,7 +1704,8 @@ class Brain(object):
         else:
             foci_surf = Surface(self.subject_id, hemi, map_surface,
                                 subjects_dir=self.subjects_dir,
-                                units=self._units)
+                                units=self._units,
+                                apply_surf_xfm=self.apply_surf_xfm)
             foci_surf.load_geometry()
             foci_vtxs = utils.find_closest_vertices(foci_surf.coords, coords)
             foci_coords = self.geo[hemi].coords[foci_vtxs]
@@ -1710,9 +1724,12 @@ class Brain(object):
             scale_factor = scale_factor / 1000.
         for brain in self._brain_list:
             if brain['hemi'] == hemi:
+                vtxs = utils.find_closest_vertices(self.geo[hemi].coords,
+                                                   foci_coords)
                 fl.append(brain['brain'].add_foci(foci_coords, scale_factor,
-                                                  color, alpha, name,
-                                                  **kwargs))
+                                                  color, alpha, name, data,
+                                                  self.geo[hemi].nn[vtxs, :],
+                                                  colormap, **kwargs))
         self.foci_dict[name] = fl
         self._toggle_render(True, views)
 
@@ -1814,6 +1831,44 @@ class Brain(object):
         text = self.brain_matrix[row, col].add_text(x, y, text,
                                                     name, color, opacity,
                                                     **kwargs)
+        self.texts_dict[name] = dict(row=row, col=col, text=text)
+        if font_size is not None:
+            text.property.font_size = font_size
+            text.actor.text_scale_mode = 'viewport'
+        if justification is not None:
+            text.property.justification = justification
+
+    def add_text3d(self, x, y, z, text, name, color=None, opacity=1.0,
+                 row=-1, col=-1, font_size=None, justification=None):
+        """ Add a text to the visualization
+
+        Parameters
+        ----------
+        x : Float
+            x coordinate
+        y : Float
+            y coordinate
+        z : Float
+            z coordinate
+        text : str
+            Text to add
+        name : str
+            Name of the text (text label can be updated using update_text())
+        color : Tuple
+            Color of the text. Default is the foreground color set during
+            initialization (default is black or white depending on the
+            background color).
+        opacity : Float
+            Opacity of the text. Default: 1.0
+        row : int
+            Row index of which brain to use
+        col : int
+            Column index of which brain to use
+        """
+        if name in self.texts_dict:
+            self.texts_dict[name]['text'].remove()
+        text = self.brain_matrix[row, col].add_text3d(x, y, z, text,
+                                                    name, color, opacity, **kwargs)
         self.texts_dict[name] = dict(row=row, col=col, text=text)
         if font_size is not None:
             text.property.font_size = font_size
@@ -3414,16 +3469,30 @@ class _Hemisphere(object):
         return dict(surface=surf, colorbar=bar, measure=measure, brain=self,
                     array_id=array_id)
 
-    def add_foci(self, foci_coords, scale_factor, color, alpha, name,
-                 **kwargs):
-        """Add spherical foci, possibly mapping to displayed surf"""
+    def add_foci(self, foci_coords, scale_factor, color, alpha, name, data, normals, colormap):
+        """Add spherical foci with attached data, possibly mapping to displayed surf"""
         # Create the visualization
+        if data is None:
+            u = np.array(normals[:,0])
+            v = np.array(normals[:,1])
+            w = np.array(normals[:,2])
+        else:
+            u = normals[:,0] * np.abs(data)
+            v = normals[:,1] * np.abs(data)
+            w = normals[:,2] * np.abs(data)
         with warnings.catch_warnings(record=True):  # traits
-            points = mlab.points3d(
-                foci_coords[:, 0], foci_coords[:, 1], foci_coords[:, 2],
-                np.ones(foci_coords.shape[0]), name=name, figure=self._f,
-                scale_factor=(10. * scale_factor), color=color, opacity=alpha,
-                reset_zoom=False, **kwargs)
+            if colormap is None:
+                points = mlab.quiver3d(foci_coords[:, 0],foci_coords[:, 1],foci_coords[:, 2],
+                    u,v,w, scalars = data, mode='sphere',
+                    name=name, figure=self._f, scale_factor=(10. * scale_factor),
+                    color=color, opacity=alpha)
+            else:
+                points = mlab.quiver3d(foci_coords[:, 0],foci_coords[:, 1],foci_coords[:, 2],
+                    u,v,w, scalars = data, colormap=colormap, mode='sphere',
+                    name=name, figure=self._f, scale_factor=(10. * scale_factor),
+                    color=color, opacity=alpha)
+                points.glyph.color_mode = 'color_by_scalar'
+            points.glyph.glyph_source.glyph_source.center = [0, 0, 0]
         return points
 
     def add_contour_overlay(self, scalar_data, min=None, max=None,
@@ -3459,6 +3528,14 @@ class _Hemisphere(object):
         with warnings.catch_warnings(record=True):
             text = mlab.text(x, y, text, name=name, color=color,
                              opacity=opacity, figure=self._f, **kwargs)
+            return text
+
+    def add_text3d(self, x, y, z, text, name, color=None, opacity=1.0):
+        """ Add a text in 3D to the visualization"""
+        color = self._fg_color if color is None else color
+        with warnings.catch_warnings(record=True):
+            text = mlab.text3d(x, y, z, text, name=name, color=color,
+                             opacity=opacity, figure=self._f)
             return text
 
     def remove_data(self, layer_id):
