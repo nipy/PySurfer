@@ -3372,6 +3372,10 @@ class _Hemisphere(object):
         l_m = surf.module_manager.scalar_lut_manager
         l_m.lut.table = np.round(cmap).astype(np.uint8)
 
+        # There is a bug on some graphics cards concerning overlays that is
+        # fixed by setting force_opaque.
+        surf.actor.actor.force_opaque = True
+
         # Set the brain attributes
         return dict(surface=surf, name=annot, colormap=cmap, brain=self,
                     array_id=array_id)
