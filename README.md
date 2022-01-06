@@ -37,7 +37,7 @@ If you do not have sudo privileges, you can install locally:
     python setup.py install --home
 
 For information about dependencies, please see the [online
-documentation](http://pysurfer.github.com/install.html)
+documentation](http://pysurfer.github.io/install.html)
 
 License
 -------
