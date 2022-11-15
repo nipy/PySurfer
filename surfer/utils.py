@@ -1,4 +1,8 @@
-from collections import Sequence
+import platform
+if "3.10" in platform.python_version():
+    from collections.abc import Sequence
+else:
+    from collections import Sequence
 from distutils.version import LooseVersion
 import logging
 import warnings
