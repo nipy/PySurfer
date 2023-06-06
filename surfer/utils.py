@@ -150,7 +150,7 @@ class Surface(object):
         """Load in curvature values from the ?h.curv file."""
         curv_path = op.join(self.data_path, "surf", "%s.curv" % self.hemi)
         self.curv = nib.freesurfer.read_morph_data(curv_path)
-        self.bin_curv = np.array(self.curv > 0, np.int)
+        self.bin_curv = np.array(self.curv > 0, int)
 
     def load_label(self, name):
         """Load in a Freesurfer .label file.
@@ -163,7 +163,7 @@ class Surface(object):
         """
         label = nib.freesurfer.read_label(op.join(self.data_path, 'label',
                                           '%s.%s.label' % (self.hemi, name)))
-        label_array = np.zeros(len(self.x), np.int)
+        label_array = np.zeros(len(self.x), int)
         label_array[label] = 1
         try:
             self.labels[name] = label_array
@@ -513,10 +513,10 @@ def create_color_lut(cmap, n_colors=256, center=None):
         if np.ndim(cmap) == 2:
             if cmap.shape[1] == 4:
                 # This looks likes a LUT that's ready to go
-                lut = cmap.astype(np.int)
+                lut = cmap.astype(int)
             elif cmap.shape[1] == 3:
                 # This looks like a LUT, but it's missing the alpha channel
-                alpha = np.ones(len(cmap), np.int) * 255
+                alpha = np.ones(len(cmap), int) * 255
                 lut = np.c_[cmap, alpha]
 
             return lut
@@ -548,7 +548,7 @@ def create_color_lut(cmap, n_colors=256, center=None):
             raise ValueError("Input %r was not valid for making a lut" % cmap)
 
     # Convert from a matplotlib colormap to a lut array
-    lut = (cmap(np.linspace(0, 1, n_colors)) * 255).astype(np.int)
+    lut = (cmap(np.linspace(0, 1, n_colors)) * 255).astype(int)
 
     return lut
 
