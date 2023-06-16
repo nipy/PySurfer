@@ -1,4 +1,7 @@
-from collections.abc import Sequence
+try:
+    from collections.abc import Sequence
+except ImportError:  # Py 2.7
+    from collections import Sequence
 from distutils.version import LooseVersion
 import logging
 import warnings
