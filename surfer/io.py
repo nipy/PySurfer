@@ -139,7 +139,7 @@ def read_stc(filepath):
 def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
                         projmeth="frac", projsum="avg", projarg=[0, 1, .1],
                         surf="white", smooth_fwhm=3, mask_label=None,
-                        target_subject=None, verbose=None):
+                        target_subject=None, subjects_dir=None, verbose=None):
     """Sample MRI volume onto cortical manifold.
 
     Note: this requires Freesurfer to be installed with correct
@@ -171,6 +171,10 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         Path to label file to constrain projection; otherwise uses cortex
     target_subject : string
         Subject to warp data to in surface space after projection
+    subjects_dir : string | None
+        If not None, this directory will be used as the subjects directory
+        instead of the value set using the SUBJECTS_DIR environment
+        variable.
     verbose : bool, str, int, or None
         If not None, override default verbose level (see surfer.verbose).
     """
@@ -228,6 +232,8 @@ def project_volume_data(filepath, hemi, reg_file=None, subject_id=None,
         cmd_list.extend(["--mask", mask_label])
     if target_subject is not None:
         cmd_list.extend(["--trgsubject", target_subject])
+    if subjects_dir is not None:
+        cmd_list.extend(["--sd", subjects_dir])
 
     # Execute the command
     out_file = mktemp(prefix="pysurfer-v2s", suffix='.mgz')
