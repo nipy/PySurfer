@@ -73,7 +73,7 @@ def test_huge_cross():
 def test_create_color_lut():
     """Test various ways of making a colormap."""
     # Test valid lut
-    cmap_in = (np.random.rand(256, 4) * 255).astype(np.int)
+    cmap_in = (np.random.rand(256, 4) * 255).astype(int)
     cmap_out = utils.create_color_lut(cmap_in)
     assert_array_equal(cmap_in, cmap_out)
 
@@ -81,7 +81,7 @@ def test_create_color_lut():
     cmap_in = cmap_in[:, :3]
     cmap_out = utils.create_color_lut(cmap_in)
     assert_array_equal(cmap_in, cmap_out[:, :3])
-    assert_array_equal(cmap_out[:, 3], np.ones(256, np.int) * 255)
+    assert_array_equal(cmap_out[:, 3], np.ones(256, int) * 255)
 
     # Test named matplotlib lut
     cmap_out = utils.create_color_lut("BuGn_r")

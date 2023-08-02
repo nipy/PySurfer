@@ -7,7 +7,10 @@ from subprocess import Popen, PIPE
 import gzip
 import numpy as np
 import nibabel as nib
-from nibabel.spatialimages import ImageFileError
+try:
+    from nibabel.spatialimages import ImageFileError  # removed in nibabel 5.1
+except ImportError:
+    from nibabel.filebasedimages import ImageFileError
 
 from .utils import verbose
 

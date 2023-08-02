@@ -1457,7 +1457,7 @@ class Brain(object):
             n_vertices = label.size
             edges = utils.mesh_edges(self.geo[hemi].faces)
             border_edges = label[edges.row] != label[edges.col]
-            show = np.zeros(n_vertices, dtype=np.int)
+            show = np.zeros(n_vertices, dtype=int)
             keep_idx = np.unique(edges.row[border_edges])
             if isinstance(borders, int):
                 for _ in range(borders):
