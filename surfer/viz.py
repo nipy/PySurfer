@@ -658,7 +658,7 @@ class Brain(object):
             try:  # check if it's a non-string color specification
                 color = colorConverter.to_rgb(cortex)
                 geo_params = dict(color=color, opacity=alpha), False, False
-            except ValueError:
+            except (ValueError, TypeError):
                 try:
                     lut = create_color_lut(cortex)
                     geo_params = dict(colormap="Greys", opacity=alpha,
