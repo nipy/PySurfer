@@ -82,10 +82,14 @@ class Surface(object):
         If None, do not change coordinates (default).
     units : str
         Can be 'm' or 'mm' (default).
+    apply_surf_xfm: bool | False
+        If True, the transform defined by xras, yras,zras and cras
+        in Freesurfer's surface file will be applied to the surface
+        node coordinates.
     """
 
     def __init__(self, subject_id, hemi, surf, subjects_dir=None,
-                 offset=None, units='mm'):
+                 offset=None, units='mm', apply_surf_xfm=False):
         """Surface
 
         Parameters
@@ -100,6 +104,10 @@ class Surface(object):
             If 0.0, the surface will be offset such that the medial
             wall is aligned with the origin. If None, no offset will
             be applied. If != 0.0, an additional offset will be used.
+        apply_surf_xfm: bool | False
+            If True, the transform defined by xras, yras,zras and cras
+            in Freesurfer's surface file will be applied to the surface
+            node coordinates.
         """
         if hemi not in ['lh', 'rh']:
             raise ValueError('hemi must be "lh" or "rh')
@@ -111,6 +119,7 @@ class Surface(object):
         self.faces = None
         self.nn = None
         self.units = _check_units(units)
+        self.apply_surf_xfm = apply_surf_xfm
 
         subjects_dir = _get_subjects_dir(subjects_dir)
         self.data_path = op.join(subjects_dir, subject_id)
@@ -118,7 +127,7 @@ class Surface(object):
     def load_geometry(self):
         surf_path = op.join(self.data_path, "surf",
                             "%s.%s" % (self.hemi, self.surf))
-        coords, faces = nib.freesurfer.read_geometry(surf_path)
+        coords, faces, metadata = nib.freesurfer.read_geometry(surf_path, read_metadata=True)
         if self.units == 'm':
             coords /= 1000.
         if self.offset is not None:
@@ -126,6 +135,9 @@ class Surface(object):
                 coords[:, 0] -= (np.max(coords[:, 0]) + self.offset)
             else:
                 coords[:, 0] -= (np.min(coords[:, 0]) + self.offset)
+        if self.apply_surf_xfm:
+            sxfm = np.vstack([np.stack([metadata[k] for k in metadata.keys() if 'ras' in k]).T, np.array([0, 0, 0, 1])])
+            coords = np.hstack([coords, np.ones((coords.shape[0], 1))]).dot(np.linalg.inv(sxfm))[:,0:3]
         nn = _compute_normals(coords, faces)
 
         if self.coords is None:
